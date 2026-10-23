@@ -125,3 +125,23 @@ All three are `interface X<C extends string = string>` exactly as plan §4.1 dec
   only `"a"`. The plan has M3's intake check events against `charter.capabilities`; M3 is not built.
 - Every field is a claim made by whoever wrote the event; the doc comments say which later milestone the
   plan gives the check to, and none is performed in M1.
+
+## Decision 5 — the event and log types, and what they do not say about `seq`
+
+`GrantEvent`, `RevokeEvent`, `CommitEvent`, `EventInput`, `LogEvent` and `Log` are plan §4.1 as
+written. `proofs/event.proofs.ts` has four failing routes (a `LogEvent` literal and an `EventInput`
+promoted to a `LogEvent`, both missing `seq`; a payload that does not match its `kind`, by a bound
+value; a bare `string` as `by`) and three controls. `events.test.ts` runs one exhaustive consumer
+`switch` over the union (adding a fourth variant makes its `never` line stop compiling, which
+`npm run typecheck` reports and `npm test` does not).
+
+- **Plan D3 says "a caller cannot choose `seq`". The types do not say that, and cannot with the plan's
+  shape.** `EventInput` has no `seq?: never`, so an object carrying a `seq` is assignable to it through
+  any non-literal route (a control in the proofs file pins this). The usual fix is unavailable: the plan
+  defines `LogEvent` as `EventInput & { seq }`, and `seq?: never` on every input variant would intersect
+  with `seq: Seq` to `never`. So that sentence of D3 is a property of M5's `append` (which must build the
+  logged event from explicitly read fields and stamp its own `seq`), and M5 does not exist. This is
+  recorded as a plan observation in the PR report, not fixed here.
+- **`Log` is just an array of `LogEvent`.** Nothing in the type says `seq` starts at 1, increases by one
+  or is unique; a control pins that `[at(5), at(5), at(1), at(0), at(-2)]` is a `Log`. The plan's
+  `seq-mismatch` fault is M5's.
