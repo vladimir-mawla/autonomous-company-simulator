@@ -271,3 +271,41 @@ to produce and to test.
 order, has an exhaustive consumer over the real `Standing`, and `proofs/closed-union-gates.proofs.ts` shows
 `assertNeverStanding` failing to compile in a switch that misses `void` and compiling in one that
 does not.
+
+## Decision 10 — `assertStandingWellFormed`: the run-time guard for what `?: never` cannot close
+
+`assertStandingWellFormed(standing: Standing): StandingIntegrity` lives in `standing.ts`. It reads each field
+by name and returns the FIRST problem it finds: a missing common field (`commitId`, `committedAt`), then a
+missing field of the variant, then a forbidden field.
+
+- **One deviation from the plan's types: a third error, `unknown-variant`.** Plan §4.2 gives
+  `StandingIntegrityError` two members, both carrying `variant: Standing["kind"]`. A value whose `kind` is
+  none of the three (a cast-built fourth variant, parsed JSON, `null`, a string) cannot be described by
+  either. Letting it pass would make the guard a hole; making it throw would turn a function that returns a
+  verdict into one that sometimes throws. `{ kind: "unknown-variant"; found: string }` reports it. The
+  plan's two members and the three cases it gives M2's health route are unchanged and pinned in
+  `integrity.test.ts`. M2 and M5 were written against a two-member union and will need a third arm in any
+  exhaustive switch over the error.
+- **Presence semantics, chosen and pinned.** A required field counts as absent when it is `undefined`, or
+  `null` unless it is `chargedTo` (the one field whose type admits `null`; the plan says "null allowed,
+  undefined not"). A forbidden field counts as present when it is anything but `undefined`, so `null` is
+  reported but an explicit `undefined` is not: it is the same as absent to every reader and to JSON, and
+  `tsconfig.json` already treats the two alike (Decision 9). Because the field is read by name, an
+  inherited, non-enumerable or accessor-defined property is seen as well.
+- **The tables cannot drift from the types unnoticed.** The guard's per-variant tables are mirrored by seven
+  `Assert<Equal<...>>` lines that derive the required and forbidden fields from the `?: never` and
+  required declarations of the real interfaces (a field a variant does not declare at all does not count as
+  forbidden) and the common fields from `StandingBase`. A table that omits a field, lists one the type does
+  not declare, or a new common field the guard was not told about, fails `npm run typecheck`.
+- **What it catches and what it does not, at full strength** (the same text is on the function):
+  it catches a contaminated value however it arrived, including `as unknown as` and an implicit `any`
+  (`integrity.test.ts` builds the same contaminated value both ways and the guard reports it both times).
+  It checks presence only: a present field of the wrong kind (`heir: 42`, an empty `warrant.chain`) passes;
+  no relation between fields is checked (`severed.atSeq > committedAt`, the heir not being the actor); an
+  arbitrary extra key, such as `note` or a leaked `verdict`, passes because only the fields the tables name
+  are read; and a hostile accessor makes it throw. Each of these is a passing HONEST LIMIT test. Closing the
+  extra-key case would be a short `Object.keys` check; it was not built because the plan describes the guard
+  in terms of named fields (`unexpected-field` / `missing-field`) and does not ask for it. It is a candidate
+  for M5 if M5 builds standings by spreading a `CommitRecord`.
+- **Nothing calls it yet.** Plan §5 has M5 call it on every standing it builds and plan §6 has M2's health
+  route run three cases against it. Neither milestone exists.
