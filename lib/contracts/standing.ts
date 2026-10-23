@@ -29,10 +29,11 @@ import type { Warrant } from "./warrant.js";
  *    assignable to `Standing` with no cast written, whatever it contains.
  *  - A field the variants do not mention at all. `?: never` closes the fields listed here, not
  *    every possible extra property: an object with an unrelated extra key still reaches `Standing`
- *    through a non-literal route (pinned in `__tests__/standing.test.ts`).
+ *    through a non-literal route (a directive-free line in `__tests__/proofs/standing-residuals.proofs.ts`).
  *  - A typed `undefined` under `tsconfig.json`, which does not set `exactOptionalPropertyTypes`
- *    (`warrant?: never` then accepts `warrant: undefined`; `tsconfig.lib.json` rejects it). No
- *    other value gets through, and a reader cannot tell `undefined` from absent.
+ *    (`warrant?: never` then accepts `warrant: undefined`; `tsconfig.lib.json` rejects it; pinned in
+ *    `__tests__/standing.test.ts`). No other value gets through, and a reader cannot tell `undefined`
+ *    from absent.
  * The plan pairs these types with a run-time check, `assertStandingWellFormed` (below, plan §4.2, §5).
  * It sees a contaminated value however it got there, but only the fields it is told about: its own
  * comment states what it does and does not catch.
