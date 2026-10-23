@@ -22,6 +22,7 @@ const EXPECTED_DIRECTIVES: Readonly<Record<string, number>> = {
   "closed-union-gates.proofs.ts": 4,
   "event.proofs.ts": 4,
   "non-empty-array.proofs.ts": 4,
+  "public-surface.proofs.ts": 2,
   "standing-forbidden.proofs.ts": 72,
   "standing-residuals.proofs.ts": 0,
   "standing-required.proofs.ts": 32,

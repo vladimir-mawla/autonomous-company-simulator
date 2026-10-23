@@ -309,3 +309,18 @@ missing field of the variant, then a forbidden field.
   for M5 if M5 builds standings by spreading a `CommitRecord`.
 - **Nothing calls it yet.** Plan §5 has M5 call it on every standing it builds and plan §6 has M2's health
   route run three cases against it. Neither milestone exists.
+
+## Decision 11 — the barrel `index.ts`, and what it keeps private
+
+`index.ts` re-exports exactly the names plan §5's "Function ownership" and §4.1 give M1: `principalId`,
+`grantId`, `commitId`, `assertNeverStanding`, `assertNeverBreach`, `assertNeverRejection`,
+`assertNeverFoldFault`, `assertStandingWellFormed`, the four `MAX_*` bounds, and every type of §4.1 to §4.3.
+`public-surface.test.ts` pins the twelve run-time names exactly, so a leaked internal fails it. Two internal
+type names are kept out and proved so (`proofs/public-surface.proofs.ts`, two directives):
+`StandingBase`, which the plan declares without `export`, and `StandingTablesMatchTypes`, the compile-time
+assertion of Decision 10. The same file imports every exported type by name, so a name dropped from the
+barrel is a compile error. `unreachable` is internal and is pinned absent at run time.
+
+The name `StandingIntegrityError` gained a member (Decision 10) and is exported with it. `Verdict`,
+`Charge`, `DeadLink` and `GrantTree` are exported even though no M1 function takes them, because plan §5
+has M3 to M5 import them from `lib/contracts`.
