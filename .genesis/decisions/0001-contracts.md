@@ -174,8 +174,8 @@ the four `assertNever*` gates.
   compile-time except the last: `support/samples.ts` keys one sample per variant by `kind` as a mapped
   type over the real union (a new variant leaves a key missing, a renamed one leaves an unknown key);
   `closed-unions.test.ts` has an exhaustive consumer of the real `Breach`; and
-  `proofs/breach-and-verdict.proofs.ts` shows the gate firing: the same switch missing `over-limit` fails
-  with `TS2345` at the `assertNeverBreach` call, and the same switch with all five handled compiles. The
+  `proofs/closed-union-gates.proofs.ts` shows the gate firing: a switch missing `over-limit` fails with
+  `TS2345` at the `assertNeverBreach` call, and the same switch with all five handled compiles. The
   runtime part is `closed-unions.test.ts` pinning the five names in the plan's order and checking that
   `assertNeverBreach` throws, naming the union and the value, on a stray value (and still throws on one
   `JSON.stringify` cannot print). `npm test` strips types, so a sixth variant shows up there only as the
@@ -188,3 +188,22 @@ the four `assertNever*` gates.
   Two controls pin this. The reason not to add it is the one a sibling ADR records: a defensive measure
   past what any plan refusal asks for is a surface for bypasses, and the consumer that matters
   switches on `kind`. The `Standing` a `Verdict` feeds is exclusive and has a runtime guard.
+
+## Decision 8 — `Rejection` (fifteen) and `FoldFault` (five), closed the same way
+
+Both are plan §4.3 as written; `Rejection`'s per-variant comments name the milestone the PLAN assigns
+each kind to, worded as the plan's assignment because none of M3, M4 or M5 exists. `assertNeverRejection`
+and `assertNeverFoldFault` use the shared `unreachable` helper of Decision 7.
+
+- The same three checks as `Breach`, extended: `support/samples.ts` has a mapped-type sample table per
+  union; `closed-unions.test.ts` pins the fifteen and five names in the plan's order and has an exhaustive
+  consumer of each real union (the `FoldFault` consumer also recurses into `Rejection`);
+  `proofs/closed-union-gates.proofs.ts` has one failing gate per union (`Breach` missing `over-limit`,
+  `Rejection` missing `revoker-not-authorised`, `FoldFault` missing `inadmissible-event`) and three controls
+  with every variant handled. The runtime test is table-driven over the three gates: each throws on a stray
+  value naming its union, and still throws on one `JSON.stringify` cannot print.
+- **Which of the fifteen are producible is not M1's question.** The plan's §8 B notes its own throwaway model
+  reached eleven of the fifteen and that four (`invalid-event-shape`, `unknown-capability`, `duplicate-id`,
+  `unknown-parent`) need hand-built input. That concerns M3/M5 tests; M1 only fixes the shapes.
+- `seq-mismatch.actual` is a plain `number` rather than a `Seq`, as the plan writes it, since it records a
+  value found in input the engine does not trust. Nothing else here depends on that.

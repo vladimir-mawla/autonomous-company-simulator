@@ -17,8 +17,9 @@ const PROOFS_DIR = join(import.meta.dirname, "proofs");
 
 const EXPECTED_DIRECTIVES: Readonly<Record<string, number>> = {
   "ids.proofs.ts": 7,
-  "breach-and-verdict.proofs.ts": 5,
+  "breach-and-verdict.proofs.ts": 4,
   "capability.proofs.ts": 7,
+  "closed-union-gates.proofs.ts": 3,
   "event.proofs.ts": 4,
   "non-empty-array.proofs.ts": 4,
   "tree-and-warrant.proofs.ts": 6,
