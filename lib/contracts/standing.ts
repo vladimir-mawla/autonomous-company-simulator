@@ -13,7 +13,8 @@ import type { Warrant } from "./warrant.js";
  * THE VARIANTS ARE MUTUALLY EXCLUSIVE BY ASSIGNABILITY, NOT BY EXCESS-PROPERTY CHECKING.
  * Each variant declares every field that belongs to another variant as `?: never`. That is
  * what makes "a `void` standing carrying a `warrant`, or an `inherited` standing without a
- * `heir`, does not compile" true at EVERY assignment site. The tempting alternative, simply
+ * `heir`, does not compile" true at EVERY assignment site, for any value whose STATIC TYPE
+ * includes the field (see the first limit below for the one that does not). The tempting alternative, simply
  * not declaring the field, relies on the excess-property check, which only fires on a fresh
  * object literal; a sibling project made that claim and seven ordinary routes walked past it:
  * an intermediate binding, a spread, a function return, `satisfies`, a generic helper,
@@ -23,8 +24,17 @@ import type { Warrant } from "./warrant.js";
  * of this repo's tsconfigs.
  *
  * WHAT THIS DOES NOT CLOSE, at full strength:
+ *  - A value whose STATIC TYPE no longer names the forbidden field. `?: never` refuses every value
+ *    whose static type carries one, by every route above. It cannot refuse an object that was first
+ *    assigned to a supertype mentioning fewer fields (TypeScript allows that for any non-fresh
+ *    object, through a variable, a function parameter or an explicit type argument), nor one whose
+ *    type the compiler reduces to such a supertype (the branches of a conditional expression, the
+ *    elements of an array literal). The field is still there at run time. Found by probing beyond
+ *    the seven routes; four of these are directive-free lines in
+ *    `__tests__/proofs/standing-residuals.proofs.ts`.
  *  - An explicit assertion through `unknown` (`x as unknown as Standing`), or any other assertion
- *    TypeScript permits from the source type.
+ *    TypeScript permits from the source type: a plain `x as Standing` (no `unknown`) also compiles
+ *    under `tsconfig.lib.json`, though not under `tsconfig.json` (pinned in `__tests__/standing.test.ts`).
  *  - An implicit `any`: a value from `JSON.parse(...)`, or from any library call typed `any`, is
  *    assignable to `Standing` with no cast written, whatever it contains.
  *  - A field the variants do not mention at all. `?: never` closes the fields listed here, not

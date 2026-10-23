@@ -254,18 +254,44 @@ Two observations from writing them, stated because they are not what one expects
   `tsconfig.json`; the directive lists both.
 
 **What it does not close, at full strength** (each is a comment in `standing.ts`):
-1. An explicit assertion through `unknown`, or any assertion TypeScript permits from the source type.
-2. An implicit `any`, such as `JSON.parse(...)`: assignable to `Standing` with no cast written.
-3. A field the variants do not mention. `?: never` closes the fields the plan names, not every possible
+1. **A value whose static type no longer names the forbidden field.** Found by probing beyond the seven routes
+   after the proofs were written, and not one of them. `?: never` refuses every value whose static type carries
+   a forbidden field, by every route. It cannot refuse an object that was first assigned to a supertype that
+   mentions fewer fields, which TypeScript allows for any non-fresh object: through an annotated variable
+   (`const lax: WithoutWarrant = contaminated; const s: Standing = lax`), through a function parameter and
+   return type, or through an explicit type argument; nor one whose type the compiler reduces to such a
+   supertype: the branches of a conditional expression and the elements of an array literal are reduced by
+   subtype reduction, so `flag ? contaminated : plain` has type `WithoutWarrant`. The field is still on the
+   object at run time. This is the same class as 2 and 3, reached with fully typed code and no cast.
+2. An explicit assertion through `unknown`, or any assertion TypeScript permits from the source type. A plain
+   `x as Standing` (no `unknown`) of a contaminated object compiles under `tsconfig.lib.json` and is an error
+   (`TS2352`) under `tsconfig.json`; `standing.test.ts` pins that by asking the harness to expect the error
+   under both configs and requiring that its only complaint is that `tsconfig.lib.json` has none.
+3. An implicit `any`, such as `JSON.parse(...)`: assignable to `Standing` with no cast written.
+4. A field the variants do not mention. `?: never` closes the fields the plan names, not every possible
    extra key: `{ ...clean, note: "x" }`, bound first, is a `Standing`.
-4. An explicit `undefined` under `tsconfig.json` only (`standing.test.ts` pins it, by asking the harness to
+5. An explicit `undefined` under `tsconfig.json` only (`standing.test.ts` pins it, by asking the harness to
    expect the error under both configs and requiring that its only complaint is that `tsconfig.json` has
    none). `app/` and `components/` compile under that config. No value other than `undefined` gets
    through, and `undefined` is indistinguishable from absent to a reader and to JSON.
 
-Items 1 to 3 are written as directive-free lines in `proofs/standing-residuals.proofs.ts` (zero
-directives, checked by the harness to compile under both configs). That file is a disclosure, not a
-regression guard: nothing in this repository could make the first two stop compiling.
+Items 1 (four routes), 2 (`as unknown as`), 3 and 4 are seven directive-free lines in
+`proofs/standing-residuals.proofs.ts` (zero directives, checked by the harness to compile under both configs).
+That file is a disclosure, not a regression guard: nothing in this repository could make the cast and `any`
+lines stop compiling, and the supertype lines stop compiling only if `Standing` stopped being structural.
+
+**The guarantee, at the strength the probing supports.** For a value whose static type includes a forbidden
+field with a value other than `undefined`, every ASSIGNMENT route tried refuses it: the eight proved per
+field, and sixteen more probed once and not committed, each refused under both configs (a conditional spread,
+a function argument, a generic with a constraint, an `async` return, `push`, `Map.set`, a nested property, a
+default parameter, `new`, a union target, `as const satisfies`, a tuple, `Promise.resolve`, `Object.assign`
+onto a clean object, a spread inside a literal, `.flat()`), plus `structuredClone` under `tsconfig.json` only
+(the `lib` of `tsconfig.lib.json` has no `structuredClone`, so it did not exercise that route there). An
+assertion is not an assignment and is item 2. For an `inherited` standing missing a required field the
+refusal is the same, because an absent field cannot be hidden by a supertype. For a `void` or `binding`
+standing carrying a forbidden field whose static type has been widened, or that arrives by cast or `any`,
+nothing in the types refuses it, and `assertStandingWellFormed` (Decision 10) is the check that does. The
+probe list is not a proof of completeness.
 
 **Cross-field facts the plan states are not in the types:** `severed.atSeq > committedAt`; `heir` is the
 grantor of the first dead link and never the actor; `chargedTo` names the heir's own grant. They are M5's
@@ -346,7 +372,7 @@ must lie inside `lib/`; the test never counts `../`.
   `export * from`, an import type, `typeof import`, a reference directive, a bare and a `node:` import in library
   source, a `require`, a computed `import(expr)`, a literal `import("node:os")`, an unresolvable specifier, an
   import of an undeclared directory under `lib/`, a `.ts` file directly in `lib/`, a `.json`, a `.d.ts`, a `.js`
-  and a symlink. A second tree is clean; a third file does not parse and must be a violation, not a skip.
+  and a symlink. A second tree is clean, and a third tree holds a file that does not parse, which must be a violation, not a skip.
 - **Allowlist.** Library SOURCE may import nothing from outside `lib/`. Files under `__tests__/` may import the
   seven externals the tests use today, and the test fails if an allowlisted external is imported by no file, so
   no allowance is speculative.

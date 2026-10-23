@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { commitId, grantId, principalId } from "../ids.js";
+import type { Breach } from "../breach.js";
+import { commitId, grantId, principalId, type CommitId } from "../ids.js";
 import { assertStandingWellFormed, type Standing } from "../standing.js";
 import { STANDING_SAMPLES, WARRANT_C1 } from "./support/samples.js";
 
@@ -164,6 +165,16 @@ describe("the same contaminated value is caught whichever way it reached the typ
 
   it("by an implicit any (JSON.parse), with no cast written", () => {
     const standing: Standing = JSON.parse(JSON.stringify(contaminated));
+    expect(assertStandingWellFormed(standing)).toEqual({
+      ok: false,
+      error: { kind: "unexpected-field", variant: "void", field: "warrant" },
+    });
+  });
+
+  it("by widening the static type to a supertype first (no cast, no any: the compiler accepts it)", () => {
+    type WithoutWarrant = { readonly kind: "void"; readonly commitId: CommitId; readonly committedAt: number; readonly breach: Breach };
+    const lax: WithoutWarrant = contaminated;
+    const standing: Standing = lax;
     expect(assertStandingWellFormed(standing)).toEqual({
       ok: false,
       error: { kind: "unexpected-field", variant: "void", field: "warrant" },

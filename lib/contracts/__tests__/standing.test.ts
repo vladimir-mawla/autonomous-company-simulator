@@ -29,6 +29,26 @@ describe("HONEST LIMIT: `?: never` forbids every value except an explicit `undef
     ]);
   });
 
+  it("a plain `as Standing` (no `unknown`) of a contaminated object compiles under tsconfig.lib.json and is an error under tsconfig.json", () => {
+    // Pins the other half of the assertion residual: under tsconfig.json the same assertion is rejected as a
+    // mistaken conversion (TS2352). The harness is asked to expect the error under both configs and must
+    // complain only that tsconfig.lib.json has none.
+    const source = [
+      'import type { Breach } from "../../breach.js";',
+      'import { commitId } from "../../ids.js";',
+      'import type { Standing } from "../../standing.js";',
+      'import type { Warrant } from "../../warrant.js";',
+      "declare const breach: Breach;",
+      "declare const warrant: Warrant;",
+      'const contaminated = { kind: "void" as const, commitId: commitId("c"), committedAt: 1, breach, warrant };',
+      "// @ts-expect-error TS2352 Conversion of type",
+      "export const viaPlainAs = contaminated as Standing;",
+    ].join("\n");
+    expect(checkProofSource(source, PROOFS_DIR).problems).toEqual([
+      '[tsconfig.lib.json] line 9: expected TS2352 containing "Conversion of type", got no diagnostic at all',
+    ]);
+  });
+
   it("a real warrant is refused under BOTH configs (the proofs files above check this for every forbidden field)", () => {
     const source = [
       'import type { VoidStanding } from "../../standing.js";',
