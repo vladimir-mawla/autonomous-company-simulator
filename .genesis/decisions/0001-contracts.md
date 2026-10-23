@@ -62,3 +62,24 @@ or `@ts-ignore` suppression, and a source whose error exists under one config on
 reported with its specific problem. Sabotage run while writing it: disabling the same-line
 extra-diagnostic check turned exactly the "real error PLUS an unused-local error" case red
 (9 passed, 1 failed), and restoring it turned that case green again.
+
+## Decision 2 — `PrincipalId`, `GrantId`, `CommitId` are branded strings with unvalidated mint functions
+
+`ids.ts` declares each id as `string & { readonly [brand]: "<Name>" }`, where `brand` is a
+non-exported `unique symbol`, and exports `principalId`, `grantId` and `commitId` (`string -> id`).
+The `Brand` helper itself is not exported: nothing else in M1 needs to mint a brand.
+
+- **What the brands stop, proved:** `proofs/ids.proofs.ts` has seven directives: each id refused for
+  each other id (three ordered pairs), a bare `string` refused for each of the three, and
+  `Map<GrantId, _>.get(principalId)` refused. Two controls (a `PrincipalId` read as `string`, and a
+  `GrantId` lookup) have no directive and must compile. Sabotage run: giving `GrantId` the same
+  brand label as `PrincipalId` turned `npm run typecheck` red with `TS2578` at the two proofs that
+  depend on the labels differing, and turned the harness test red.
+- **What they do not do, stated at full strength:** the brand exists only at compile time. At run
+  time the three are the same primitive string, so `grantId("x") === commitId("x")`
+  (`ids.test.ts`). A brand is not a trust boundary either: any string can be minted into any id,
+  which is the plan's D5 (authorship is asserted, not authenticated), not an oversight.
+- **No parsers** (plan §4.1). The mint functions validate nothing: `principalId("")` is a valid
+  `PrincipalId`, as is a 10 000-character string. `ids.test.ts` pins this as an HONEST LIMIT. The
+  plan assigns the non-empty and `MAX_ID_LENGTH` checks to M3's intake; M3 does not exist, so until
+  it does nothing in this repository enforces either.
