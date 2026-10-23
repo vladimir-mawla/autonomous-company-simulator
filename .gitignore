@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# Next.js generates this triple-slash-reference file itself on every
+# `next dev`/`next build`; it's local wiring, not project content.
+next-env.d.ts
+
+# Environment. Real env files are ignored; .env.example is the one
+# exception and IS committed. (adaptive-agent's .gitignore ended with a bare
+# `.env*`, which also matches .env.example and silently stops it being
+# committed, contradicting its own comment. The negation below is what makes
+# the exception real.)
+.env
+.env.*
+!.env.example
+
+# Secrets. Nothing in this project needs API keys to run its engine or
+# tests, but an .env inviting real values makes a leak one careless
+# `git add -A` away.
+secrets/
+*.pem
+*.key
+
+# Next.js auto-generates these on every build; they are advisory agent
+# notes, not project content.
+AGENTS.md
+CLAUDE.md
+
+# Editors and OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Deploy
+.vercel
+
+# Test output
+coverage/
+
+# A later milestone's demo build (if one is needed to run lib/+scripts/
+# under plain `node`) would compile into here; it is always regenerated,
+# never committed.
+.demo-build/
