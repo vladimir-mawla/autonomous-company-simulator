@@ -324,3 +324,41 @@ barrel is a compile error. `unreachable` is internal and is pinned absent at run
 The name `StandingIntegrityError` gained a member (Decision 10) and is exported with it. `Verdict`,
 `Charge`, `DeadLink` and `GrantTree` are exported even though no M1 function takes them, because plan §5
 has M3 to M5 import them from `lib/contracts`.
+
+## Decision 12 — `lib/**` is a closed module graph, and the layer table of plan §5 is enforced from M1
+
+`__tests__/architecture.test.ts` (with `support/module-graph.ts`) is the plan's M1(e). For every `.ts` file under
+`lib/` it parses the file with the compiler API the plan names (`typescript/unstable/{ast,sync}`, which ships
+with `typescript@7.0.2`; `ts.createSourceFile` does not exist there) and checks every module reference the
+grammar has a form for: `import`, `export ... from`, `import x = require()`, dynamic `import()`, a `require()`
+call, an import TYPE (`import("x").T`, `typeof import("x")`) and the `/// <reference>` directives. A specifier
+that is not a string literal is a violation. A relative specifier is resolved to a real file and its REAL path
+must lie inside `lib/`; the test never counts `../`.
+
+- **Rules and their fixtures.** One synthetic tree under the OS temp directory has a single violation per file
+  (24 `file:rule` pairs, asserted as an exact set) beside valid files that must not be flagged: an upward
+  import between layers (contracts to chain, chain to standing, domains to app), a cycle (the offending edge is
+  the upward one), a relative specifier that resolves out through `../../node_modules`, one through a symlink,
+  `export * from`, an import type, `typeof import`, a reference directive, a bare and a `node:` import in library
+  source, a `require`, a computed `import(expr)`, a literal `import("node:os")`, an unresolvable specifier, an
+  import of an undeclared directory under `lib/`, a `.ts` file directly in `lib/`, a `.json`, a `.d.ts`, a `.js`
+  and a symlink. A second tree is clean; a third file does not parse and must be a violation, not a skip.
+- **Allowlist.** Library SOURCE may import nothing from outside `lib/`. Files under `__tests__/` may import the
+  seven externals the tests use today, and the test fails if an allowlisted external is imported by no file, so
+  no allowance is speculative.
+- **Layer table.** `lib/contracts` < `lib/chain` < `lib/allowance` < `lib/standing` < `domains` < `scripts`,
+  `components`, `app`; an import may go to the same or a lower layer. Strict ordering between layers cannot
+  contain a cycle between layers, which is what the "zero cycles" gate asks for at that level; a cycle between
+  two files inside one layer is NOT checked. The plan names `domains/company`; the table uses `domains`, so any
+  directory under it shares that rank.
+- **Beyond the plan:** the file inventory (only non-declaration `.ts` files, no symlinks, under `lib/`), because
+  a `.d.ts` plus a `.js` inside `lib/` is an import that resolves inside `lib/` and lies about its type.
+- **What is not covered, stated at full strength.** This is about imports. It does not look at what a file
+  declares (an ambient `declare module` or `declare global`), and it does not stop library code using an ambient
+  global (`fetch`, `process`, `Date.now`, `Math.random`): a closed graph says where code can come from, not that
+  it is pure. It scans `.ts` files under `lib/` and `domains/` only. Files under `domains/` get the layer rule
+  and nothing else.
+- **This test is frozen with M1 yet polices M3 to M5.** A later milestone that needs a new external in a test, or
+  a layer directory the table does not list, has to edit this milestone's files, which plan §6 forbids ("a
+  milestone may not edit another's paths"). That is deliberate for the tripwire and awkward for the milestone;
+  the plan does not say who owns such an edit.
