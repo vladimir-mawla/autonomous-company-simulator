@@ -15,7 +15,14 @@ import { BREACH_SAMPLES, FOLD_FAULT_SAMPLES, REJECTION_SAMPLES, STANDING_SAMPLES
  * The COMPILE-TIME halves are reported by `npm run typecheck`, not by `npm test` (which strips types): the
  * sample tables in `support/samples.ts` and the exhaustive switches below stop compiling when a variant is
  * added or renamed, and `proofs/closed-union-gates.proofs.ts` shows each gate firing when a switch misses a
- * variant. What `npm test` itself can see of a changed union is the pinned name lists below failing to match.
+ * variant.
+ *
+ * Because `npm test` strips types, NOTHING IN THIS FILE notices a changed union at run time: the name lists
+ * below are compared with the run-time keys of hand-written sample tables, which a change to a type does not
+ * alter. (Measured by sabotage: deleting a `Breach` or `Rejection` variant left this file green under
+ * `npm test`.) What the lists do pin is that the sample tables keep the plan's names in the plan's order.
+ * The only `npm test` signal of a changed union is indirect, through `type-proofs.test.ts`, which compiles
+ * the proof files; `npm run typecheck` is the direct gate.
  */
 
 /** The names, in the order the plan lists them. A rename or a new variant must be a deliberate edit here. */

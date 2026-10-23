@@ -186,8 +186,12 @@ the four `assertNever*` gates.
   `TS2345` at the `assertNeverBreach` call, and the same switch with all five handled compiles. The
   runtime part is `closed-unions.test.ts` pinning the five names in the plan's order and checking that
   `assertNeverBreach` throws, naming the union and the value, on a stray value (and still throws on one
-  `JSON.stringify` cannot print). `npm test` strips types, so a sixth variant shows up there only as the
-  pinned name list failing; `npm run typecheck` is what reports the compile errors.
+  `JSON.stringify` cannot print). `npm test` strips types, so nothing in `closed-unions.test.ts` notices a
+  changed union at run time: the pinned name lists are compared with the keys of hand-written sample
+  tables, which a type change does not alter (measured: deleting a `Breach` or `Rejection` variant leaves
+  that file green). The pinned lists guard the sample tables, not the types. The only `npm test` signal of
+  a changed union is indirect, through the proof harness compiling `closed-union-gates.proofs.ts`;
+  `npm run typecheck` is the direct gate.
 - **The order of the five is not in the type.** The plan says precedence is the listed order; a union has
   no order. It is a property of M5's `judgeCommit`, which is not built.
 - **Not mutually exclusive, deliberately and as the plan wrote it.** Plan §4.2 asks for `?: never`
