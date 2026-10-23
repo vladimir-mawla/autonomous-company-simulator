@@ -160,3 +160,31 @@ with an empty `chain` and one with an empty `trail`) and two controls.
 - **`Warrant.trail` is not tied to `Warrant.chain`.** The plan says `trail` is the charter root plus each
   grantee, so one longer than `chain`. The type cannot say that; a control pins that a one-grant chain
   with a four-principal trail compiles. Producing and testing consistent warrants is M5's.
+
+## Decision 7 — `Breach` and `Verdict`, and a shared `unreachable` helper the plan did not list
+
+`Breach` (five variants) and `Verdict` are plan §4.1 as written, and `assertNeverBreach` is the first of
+the four `assertNever*` gates.
+
+- **Not named in the plan's M1 file list: `unreachable.ts`.** The plan lists one file per type and no home
+  for the body the four `assertNever*` functions share. It is added inside `lib/contracts/**` (which M1
+  owns) rather than copied four times, and it is not exported from `index.ts`.
+- **What "closed" means here, and where it is enforced.** A switch over `Breach` that ends in
+  `assertNeverBreach(breach)` compiles only while every variant is handled. Three checks, all
+  compile-time except the last: `support/samples.ts` keys one sample per variant by `kind` as a mapped
+  type over the real union (a new variant leaves a key missing, a renamed one leaves an unknown key);
+  `closed-unions.test.ts` has an exhaustive consumer of the real `Breach`; and
+  `proofs/breach-and-verdict.proofs.ts` shows the gate firing: the same switch missing `over-limit` fails
+  with `TS2345` at the `assertNeverBreach` call, and the same switch with all five handled compiles. The
+  runtime part is `closed-unions.test.ts` pinning the five names in the plan's order and checking that
+  `assertNeverBreach` throws, naming the union and the value, on a stray value (and still throws on one
+  `JSON.stringify` cannot print). `npm test` strips types, so a sixth variant shows up there only as the
+  pinned name list failing; `npm run typecheck` is what reports the compile errors.
+- **The order of the five is not in the type.** The plan says precedence is the listed order; a union has
+  no order. It is a property of M5's `judgeCommit`, which is not built.
+- **Not mutually exclusive, deliberately and as the plan wrote it.** Plan §4.2 asks for `?: never`
+  disjointness on `Standing`. `Breach` and `Verdict` are written without it, so a `no-such-grant` breach
+  carrying a `holder`, or a `warranted` verdict carrying a `breach`, compiles through a non-literal route.
+  Two controls pin this. The reason not to add it is the one a sibling ADR records: a defensive measure
+  past what any plan refusal asks for is a surface for bypasses, and the consumer that matters
+  switches on `kind`. The `Standing` a `Verdict` feeds is exclusive and has a runtime guard.
