@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DONE — autonomous-company-simulator</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --line:#30363d; --ink:#e6edf3; --mut:#8b949e;
+          --ok:#2ea043; --warn:#d29922; --bad:#f85149; --accent:#58a6ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:15px/1.55 ui-sans-serif,-apple-system,Segoe UI,Roboto,sans-serif; }
+  .wrap { max-width:920px; margin:0 auto; padding:32px 24px 80px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  h2 { font-size:18px; margin:32px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+  .sub { color:var(--mut); margin:0 0 24px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin:12px 0; }
+  .locked { border-left:3px solid var(--warn); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--mut); font-weight:600; }
+  code { background:#1f2630; padding:1px 6px; border-radius:5px; font-size:13px; }
+  .gate { display:flex; gap:10px; align-items:flex-start; padding:6px 0; }
+  .box { width:16px; height:16px; border:1.5px solid var(--mut); border-radius:4px; flex:0 0 auto; margin-top:2px; }
+  .done .box { background:var(--ok); border-color:var(--ok); }
+  .done .label { color:var(--mut); text-decoration:line-through; }
+  .pill { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--mut); }
+  .pill.ok{color:var(--ok);border-color:var(--ok);} .pill.wip{color:var(--warn);border-color:var(--warn);} .pill.todo{color:var(--mut);border-color:var(--mut);}
+  .note { color:var(--mut); font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>DONE — autonomous-company-simulator</h1>
+  <p class="sub">The single source of truth for <b>what "done" means</b> and <b>the implementation plan</b>.
+     This file is LOCKED — the driver model may not edit it without explicit user request.
+     Updated: 2026-10-24</p>
+
+  <!-- ───────────── THE LOCKED SPEC ───────────── -->
+  <h2>1 · The Locked Spec (what we are building)</h2>
+  <div class="card locked">
+    <p><b>Cognitive job:</b> Given an append-only log of grants, revocations and commitments, decide for
+       every commitment whether it <b>binds</b> the organisation, and who answers for it — against the
+       record as it stood when the act was made. See <code>.genesis/PLAN.md</code> §2–§5 for the full claim
+       and the closed vocabulary.</p>
+    <p><b>Inputs:</b> typed events (<code>grant</code> · <code>revoke</code> · <code>commit</code>)
+       &nbsp;→&nbsp; <b>Outputs:</b> a closed <code>Standing</code>
+       (<code>binding</code> · <code>inherited</code> · <code>void</code>), always with its
+       <code>Warrant</code> or its <code>Breach</code>, or a typed <code>Rejection</code> /
+       <code>FoldFault</code>; never a boolean, never a score.</p>
+    <p><b>Autonomy level:</b> Fully autonomous end to end — admission, verdict and standing involve no
+       human; humans appear only as <b>roots</b> of authority (the charter).</p>
+    <p><b>Failure tolerance:</b> Fail toward the weaker standing — an unprovable act is <code>void</code>,
+       an unreadable log is a <code>FoldFault</code>; a revocation never voids a validly-made commitment
+       and never returns spent authority.</p>
+    <p class="note">Filled during Genesis (G0–G2, <code>.genesis/PLAN.md</code>, §16 handoff to G3), following
+       the shape used in the sibling projects' own <code>.genesis/DONE.html</code> — content is
+       project-specific, structure only is borrowed. No engine code exists yet: M1 (contracts) is a
+       separate milestone with its own PR and its own verifier.</p>
+  </div>
+
+  <!-- ───────────── DEFINITION OF DONE ───────────── -->
+  <h2>2 · Definition of Done (binary gates — checked by the VERIFIER, not the maker)</h2>
+  <div class="card">
+    <div class="gate"><span class="box"></span><span class="label">Dependency direction inward, zero cycles: <code>lib/contracts</code> → <code>lib/chain</code> → <code>lib/allowance</code> → <code>lib/standing</code> → <code>domains/company</code>, one-directional <span class="note">(modular-architecture gate)</span></span></div>
+    <div class="gate"><span class="box"></span><span class="label"><code>npm run typecheck</code> clean AND <code>npm test</code> green</span></div>
+    <div class="gate"><span class="box"></span><span class="label">One <code>verify</code> pass by a <b>separate</b> agent/model (L4) per milestone</span></div>
+    <div class="gate"><span class="box"></span><span class="label">No earlier milestone's freeze boundary touched by a later milestone <span class="note">(freeze-boundary gate — the independent verifier's first job on every milestone)</span></span></div>
+    <div class="gate"><span class="box"></span><span class="label">A <code>void</code> <code>Standing</code> carrying a <code>warrant</code> (or an <code>inherited</code> <code>Standing</code> without a <code>heir</code>) does not compile <span class="note">(disjoint-variants gate, from M1)</span></span></div>
+    <div class="gate"><span class="box"></span><span class="label">Conservation holds at every prefix of every generated log <span class="note">(conservation gate, from M4/M5)</span></span></div>
+    <div class="gate"><span class="box"></span><span class="label">A commit's verdict never depends on a later event <span class="note">(prefix-determinism gate, from M5)</span></span></div>
+    <div class="gate"><span class="box"></span><span class="label"><code>void</code> is absorbing: no later event turns a <code>void</code> standing into anything else <span class="note">(lattice gate, from M5)</span></span></div>
+    <div class="gate"><span class="box"></span><span class="label">The live demo and <code>npm run demo:company</code> produce the same standings, diffed by the verifier <span class="note">(deliverable gate — the brief requires a live demo)</span></span></div>
+    <div class="gate"><span class="box"></span><span class="label">A clean clone plus <code>npm ci</code> plus typecheck plus test passes with no credentials configured <span class="note">(clean-clone gate)</span></span></div>
+    <p class="note">A milestone is DONE only when every applicable box above is checked by the verifier,
+       and never by the building agent marking its own work. This genesis repo has no engine code yet —
+       every gate above becomes checkable starting with M1's own PR and its own verifier.</p>
+  </div>
+
+  <!-- ───────────── IMPLEMENTATION PLAN ───────────── -->
+  <h2>3 · Implementation Plan (the work, sliced into milestones)</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>#</th><th>Milestone</th><th>Phase</th><th>Demo command (proves it works)</th><th>Loops</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>M1</td><td>Contracts: Grant, Commitment, Standing, Breach, Rejection</td><td>BUILD</td><td><code>npm test -- lib/contracts</code> and <code>npm run typecheck</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M2</td><td>Deploy skeleton (deployed now, never last)</td><td>DEPLOY</td><td><code>curl -sf $DEPLOY_URL/api/health</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M3</td><td>Chain: intake and structure (<code>lib/chain</code>)</td><td>BUILD</td><td><code>npm test -- lib/chain</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M4</td><td>Allowance: conservation (<code>lib/allowance</code>)</td><td>BUILD</td><td><code>npm test -- lib/allowance</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M5</td><td>Standing: the ledger fold, the verdict, the heir (<code>lib/standing</code>)</td><td>BUILD</td><td><code>npm test -- lib/standing</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M6</td><td>Domain: Meridian Supply Co. (<code>domains/company</code>)</td><td>INTEGRATE</td><td><code>npm run demo:company</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M7</td><td>The failure suite (11 cases)</td><td>VERIFY</td><td><code>npm test -- failures</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M8</td><td>Interactive demo</td><td>BUILD</td><td>deployed URL renders the same table as the last block of <code>npm run demo:company</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M9</td><td>Deliverables</td><td>RELEASE</td><td><code>git clone ... && npm ci && npm run typecheck && npm test && npm run build</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+      </tbody>
+    </table>
+    <p class="note">Total token budget = 9 milestones × 150000. Update <span class="pill wip">wip</span> /
+       <span class="pill ok">done</span> as loops complete — a milestone only flips to <code>done</code>
+       after independent (L4) verification, never by the building agent marking its own work. This is the
+       genesis (G0–G2) repo only: no milestone has started, so all nine rows above are <code>todo</code>.
+       This table is mirrored in <code>PLAN.md</code> (§6) for the agent to parse.</p>
+  </div>
+
+</div>
+</body>
+</html>
