@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { PROOF_CONFIGS, checkProofSource } from "./support/proof-harness.js";
 
@@ -97,5 +100,25 @@ describe("proof harness: the two configs really differ, and both are consulted",
     );
     expect(report.problems.join("\n")).toMatch(/\[tsconfig\.json\] line 3: expected TS2375/);
     expect(report.problems.join("\n")).not.toMatch(/\[tsconfig\.lib\.json\]/);
+  });
+});
+
+describe("proof harness: a contract source that stops compiling is reported under its own file, not as a broken proof", () => {
+  it("names the imported file and does not blame a proof line", () => {
+    const dir = mkdtempSync(join(tmpdir(), "act-proof-harness-import-"));
+    try {
+      writeFileSync(join(dir, "broken.ts"), 'export const broken: number = "not a number";\n');
+      const report = checkProofSource(
+        ["import { broken } from \"./broken.js\";", "export const used = broken;"].join("\n"),
+        dir,
+      );
+      expect(report.problems.length).toBeGreaterThan(0);
+      for (const problem of report.problems) {
+        expect(problem).toMatch(/broken\.ts\(1\): TS2322 in a file the proof imports, not in the proof/);
+      }
+      expect(report.problems.join("\n")).not.toMatch(/outside any proof line/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

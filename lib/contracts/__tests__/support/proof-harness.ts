@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 
 /**
  * WHY THIS FILE EXISTS: a `// @ts-expect-error` line proves only that SOME
@@ -54,6 +54,7 @@ const TSC = join(REPO_ROOT, "node_modules", "typescript", "bin", "tsc");
 /** The two compile settings every proof is checked under. */
 export const PROOF_CONFIGS = ["tsconfig.lib.json", "tsconfig.json"] as const;
 
+const PROOF_FILE = "proof.ts";
 const DIRECTIVE = /^\s*\/\/ @ts-expect-error (TS\d+(?:\|TS\d+)*) (\S.*)$/;
 const ANY_SUPPRESSION = /@ts-(?:expect-error|ignore|nocheck)/;
 
@@ -64,6 +65,8 @@ interface Directive {
 }
 
 interface Diag {
+  /** The path as tsc prints it (relative, and spelled differently on macOS where the temp dir is a symlink). */
+  readonly file: string;
   readonly line: number;
   readonly code: number;
   readonly text: string;
@@ -107,7 +110,7 @@ function parseTscOutput(output: string): { diags: Diag[]; unparsed: string[] } {
     if (raw.trim() === "") continue;
     const header = DIAGNOSTIC_HEADER.exec(raw);
     if (header !== null) {
-      diags.push({ line: Number(header[2]), code: Number(header[4]), text: header[5] as string });
+      diags.push({ file: header[1] as string, line: Number(header[2]), code: Number(header[4]), text: header[5] as string });
     } else if (/^\s/.test(raw) && diags.length > 0) {
       const last = diags[diags.length - 1] as Diag;
       diags[diags.length - 1] = { ...last, text: `${last.text}\n${raw.trim()}` };
@@ -164,15 +167,22 @@ export function checkProofSource(source: string, baseDir: string): ProofReport {
 
   const scratch = mkdtempSync(join(tmpdir(), "act-proof-harness-"));
   try {
-    writeFileSync(join(scratch, "proof.ts"), stripped);
+    writeFileSync(join(scratch, PROOF_FILE), stripped);
     for (const config of PROOF_CONFIGS) {
       const { diags, unparsed } = compile(config, scratch);
       for (const line of unparsed) {
         problems.push(`[${config}] tsc printed something that is not a diagnostic: ${line}`);
       }
+      // A diagnostic in a file the proof IMPORTS (a contract source that no longer compiles) is not a proof
+      // line; it is reported under its own file name so the cause is not mistaken for a broken proof.
+      const isProof = (d: Diag): boolean => basename(d.file) === PROOF_FILE;
+      const inProof = diags.filter(isProof);
+      for (const other of diags.filter((d) => !isProof(d))) {
+        problems.push(`[${config}] ${other.file}(${other.line}): TS${other.code} in a file the proof imports, not in the proof`);
+      }
       for (const directive of directives) {
         const target = directive.line + 1;
-        const here = diags.filter((d) => d.line === target);
+        const here = inProof.filter((d) => d.line === target);
         const matching = here.find(
           (d) => directive.codes.includes(d.code) && d.text.includes(directive.fragment),
         );
@@ -192,7 +202,7 @@ export function checkProofSource(source: string, baseDir: string): ProofReport {
           }
         }
       }
-      for (const diag of diags) {
+      for (const diag of inProof) {
         if (!targetLines.has(diag.line)) {
           problems.push(`[${config}] line ${diag.line}: unexpected diagnostic TS${diag.code} outside any proof line`);
         }

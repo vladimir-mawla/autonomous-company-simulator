@@ -51,6 +51,14 @@ trailing text, so `npm run typecheck` still treats it as an ordinary directive. 
 `tsconfig.lib.json` and `tsconfig.json`, because they differ in `exactOptionalPropertyTypes` and a
 consumer under `app/` compiles under the second.
 
+**Revised after the first sabotage run on a contract source.** The harness first counted every
+diagnostic in the compiled program against the proof file's line numbers, so a compile error in an
+IMPORTED contract file (for example `standing.ts`) turned every proof test red with the message
+"unexpected diagnostic outside any proof line", which blames the proofs for a source fault. It now
+reports a diagnostic in any file other than the proof under that file's name ("in a file the proof
+imports, not in the proof"), and `proof-harness.test.ts` pins that. The blast radius is unchanged
+(a broken contract source still turns the proof tests red, which is correct) but the cause is named.
+
 **What this does not do.** It checks that each route that is written fails for the stated reason
 under both configs. It does not show the set of routes is complete, and the message fragments are
 tied to TypeScript's wording, so a TypeScript upgrade can require editing them (the version is
