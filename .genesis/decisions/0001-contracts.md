@@ -406,3 +406,109 @@ It is NOT evidence about behaviour. The numbers are copied from §7, which says 
 throwaway model; no engine exists to compute them, `CANON_SCRIPT` is M6's, and nothing here is imported by
 anything. Each final standing is passed through `assertStandingWellFormed` and accepted, which says only that
 the standings have the right fields.
+
+## Falsifiability log
+
+Each run is ONE edit to the shipped source (or, for the harness and scanner runs, to their own source); a row that says "each" or lists several edits groups runs of the same kind. For each run, the
+FULL `npm run typecheck` and the FULL `npm test` run against it, then `git checkout` of the edited file and a
+clean `git status`: 48 runs, all restored clean (one of them, "guard treats `null` as present for required
+fields", left an unused variable and is superseded by its `heir`-only version, but is kept in the count).
+Measured on the tree of commit `9d2404a` (13 test files, 129 tests, typecheck clean), by a script that applied
+the edit, ran both commands and parsed their output. The edits are mine, not a
+verifier's; the list is not exhaustive.
+
+**Read the red counts with care.** A compile error in a contract source that proofs import turns every harness
+test over a proof importing it red (Decision 1), so a one-line edit to `standing.ts` routinely reds 7 to 12
+tests while only one or two are about the property. The last column names the tests that ARE about it. Rows
+whose `typecheck` cell shows an unrelated code (`TS6196`, `TS2367`, `TS2339`) are artifacts of how the edit
+was made (an unused type parameter, a type-narrowing side effect), not of the property.
+
+| Edit | `npm run typecheck` | `npm test`, red of 129 | Tests about the property |
+|---|---|---|---|
+| `breach?: never` to `breach?: Breach` on `binding` (plan ledger) | 8 x `TS2578` at the eight `binding`+`breach` proofs, 1 x `TS2344` (table assertion) | 8 | `standing-forbidden.proofs.ts` |
+| `heir` optional on `inherited` (plan ledger) | 8 x `TS2578` at the eight `inherited`-without-`heir` proofs, 1 x `TS2344` | 8 | `standing-required.proofs.ts` |
+| a fourth member added to the REAL `Standing` union (the plan's ledger does this on a stand-in) | 2 x `TS2345` (`assertNeverStanding` in `closed-unions.test.ts` and in `closed-union-gates.proofs.ts`), 1 x `TS2741` (`samples.ts`) | 4 | the proof-harness tests over the proofs that import `Standing` |
+| drop `chargedTo` from the guard's `void.forbidden` (plan ledger) | 1 x `TS2344` | 9 | "void carrying chargedTo is unexpected-field" |
+| insert `import "node:fs"` into `ids.ts` (plan ledger) | passes | 14 | architecture "has no violation", which names `lib/contracts/ids.ts:external-not-allowed`; 13 harness tests also fail because the harness's scratch project has no `@types/node` |
+| delete ONE `?: never`, each of the nine forbidden fields in turn | 7 x `TS2578` (the seven non-literal routes of that field) + 1 x `TS2344`, every time | 8, every time | `standing-forbidden.proofs.ts` |
+| `warrant?: never` to `warrant?: Warrant` on `void` | 8 x `TS2578`, 1 x `TS2344` | 8 | `standing-forbidden.proofs.ts` |
+| `NonEmptyReadonlyArray` to `readonly T[]` | 4 x `TS2578` | 3 | the three proof files that use it |
+| `GrantId` given `PrincipalId`'s brand label | 2 x `TS2578` | 1 | `ids.proofs.ts` |
+| `Grant.capabilities` ignores `C` | 4 x `TS2578`, 1 x `TS6196` | 11 | `capability.proofs.ts` |
+| `Amount` made a branded number | 23 x `TS2322` (the honest-limit lines in `limits.test.ts` and every literal amount) | 6 | `limits.test.ts` fails to COMPILE; the 6 red are harness tests |
+| `GrantTree.revokedAt` a mutable `Map` | 1 x `TS2578` | 1 | `tree-and-warrant.proofs.ts` |
+| `Warrant.chain` allowed empty | 1 x `TS2578` | 1 | `tree-and-warrant.proofs.ts` |
+| `LogEvent.seq` optional | 2 x `TS2578` | 1 | `event.proofs.ts` |
+| delete the `over-limit` variant of `Breach` | 8 errors across `breach.ts`, the samples, the consumers and the gate proofs | 9 | harness tests only; `closed-unions.test.ts` stays green under `npm test` |
+| delete the `already-dead` variant of `Rejection` | 5 errors (`TS2678` x 3, `TS2322`, `TS2353`) | 2 | harness tests only; same |
+| add a sixteenth variant to `Rejection` | 2 x `TS2345`, 1 x `TS2741` | 2 | harness tests only; same |
+| `unreachable` returns instead of throwing | passes | 8 | the eight `assertNever*` throw tests |
+| guard treats `null` as present for `heir` | passes | 1 | "a required field holding undefined is missing, as is one holding null" |
+| guard drops `commitId` from its common fields | 1 x `TS2344` | 12 | the three "without the common field commitId" tests and the null/undefined test |
+| guard reports a forbidden field before a missing one | passes | 1 | "a missing variant field comes before a forbidden field" |
+| barrel also exports `unreachable` | passes | 2 | `public-surface.test.ts` |
+| barrel drops `assertNeverFoldFault` | 1 x `TS7053` | 2 | `public-surface.test.ts` |
+| `contracts` imports `../chain/x.js` (a new file) | passes | 1 | architecture "has no violation" |
+| harness: same-line extra-diagnostic check off | passes | 1 | "a real error PLUS an unused-local error on the same line" |
+| harness: diagnostic-code comparison off | passes | 1 | "an error whose message matches but whose code is not the stated one" |
+| harness: message-fragment comparison off | passes | 1 | "an error with the right code but a different message" |
+| harness: directives not removed before compiling | passes | 19 | every proof file (11), the three harness-based tests in `standing.test.ts`, five harness self-tests |
+| harness: only `tsconfig.lib.json` | passes | 3 | "runs under both of the repo's tsconfigs", the exactOptional self-test, the `undefined` pin |
+| scanner: import types / `require()` / `/// <reference>` / dynamic `import()` not collected | passes (two artifacts: `TS2367`, `TS2339`) | 1, 1, 2, 1 | the synthetic-tree test, each |
+| scanner: `.d.ts` not an inventory violation / symlinks not / unresolvable passes / layer order off | passes | 1 each | the synthetic-tree test |
+| scanner: a relative specifier leaving `lib/` unchecked | passes | 2 | the synthetic-tree test and the named-specifier test |
+| scanner: an unused allowlisted external (`node:crypto`) added | passes | 1 | "every allowlisted external for tests is imported by some file" |
+
+**A finding the harness itself needed.** A sabotage run on `standing.ts` showed one compile error in a contract
+source reds every harness test; that is Decision 1's revision. A run on the harness itself showed that
+dropping its code comparison left every self-test green (each bad proof there also failed the message
+comparison); the "message matches but code does not" self-test was added for that.
+
+**A finding about this ADR's own earlier text.** Sabotaging `Breach` and `Rejection` showed `npm test` does not
+notice a deleted variant through `closed-unions.test.ts` at all (Decision 7 was corrected), and probing beyond
+the seven routes found the supertype residual (Decision 9 was corrected).
+
+## What M1 does not claim
+
+- No engine behaviour. Nothing here computes a verdict, a standing, a headroom or a rejection; `lib/chain`,
+  `lib/allowance` and `lib/standing` do not exist. Every comment that names M3, M4 or M5 is the plan's
+  assignment, not a statement about code.
+- That the eight routes per field are all the routes. They are the eight the series' history names; sixteen
+  more were probed once; one further class (a widened static type) was found by probing and is disclosed.
+- That a `Standing` carrying a forbidden field cannot exist. It can, by a cast, an `any`, or a widened static
+  type; `assertStandingWellFormed` reports it only if something calls it, and nothing does yet.
+- That ids, amounts, `seq` or `depth` are valid, or that a caller cannot choose `seq`: those are M3's intake and
+  M5's `append`, and they do not exist.
+- That the library is pure. The closed module graph is about imports, not ambient globals.
+- That `npm run build` exercises `lib/`: see the next section.
+
+## Plan observations (found by building; none edited in the plan, which is frozen)
+
+1. **D3's "a caller cannot choose `seq`" is not a property the plan's types can have** (Decision 5): `LogEvent =
+   EventInput & { seq }` makes `seq?: never` on the inputs collapse the whole `LogEvent` to `never`. Checked in a
+   scratch file. It must be M5's `append` building the logged event from explicitly read fields.
+2. **`StandingIntegrityError` has no member for a value whose kind is not one of the three** (Decision 10). Added
+   `unknown-variant`.
+3. **The plan's M1 file list has no home for the shared `assertNever` body** (Decision 7, `unreachable.ts`), and
+   **no path for the ADR** (`.genesis/decisions/0001-contracts.md` is outside `lib/contracts/**`, the one path
+   §6 gives M1, though §6 also says each milestone ends with its ADR).
+4. **`npm run build` does not exercise `lib/` until something under `app/` imports it.** `app/page.tsx` is a
+   placeholder, so the `.js`-suffixed imports M1 writes are checked by `tsc` and `vitest` but not by webpack.
+   `.genesis/checkpoints/CURRENT.md` and the smoke test's comment say `npm run build` covers this "from M1";
+   for M1 that is not so. Checked once, by hand and not pinned by any test: `app/page.tsx` temporarily imported
+   `../lib/contracts/index.js`, `npm run build` ("next build --webpack") compiled, type-checked under
+   `tsconfig.json` and prerendered, and the change was reverted. M2's health route is the first real check.
+5. **`?: never` behaves differently under the repo's two tsconfigs** (Decision 9): `tsconfig.json` (for `app/` and
+   `components/`) has no `exactOptionalPropertyTypes`, so an explicit `undefined` is accepted there. A consumer in
+   `components/` (M8) compiles `lib/contracts` under that config. Setting `exactOptionalPropertyTypes` in
+   `tsconfig.json` is a scaffold change, outside M1's paths.
+6. **M1's frozen architecture test polices M3 to M5 and lists their allowed externals** (Decision 12); a milestone
+   that needs a new external or a new layer directory has to edit M1's files, which plan §6 forbids.
+7. **The brief's seven-route snippet fails for the wrong reason as written.** `const x = { kind: "void", ... }` without
+   `as const` widens `kind` to `string`, and `noUnusedLocals` is on in both tsconfigs, so a bare
+   `// @ts-expect-error` over `const a: Standing = x;` is satisfied by `TS6133` or by the `kind` mismatch whatever
+   `Standing` looks like (Decision 1). The proofs here use `as const`, export every binding and are checked by the
+   harness.
+8. **Not edited because it is not M1's:** `README.md` still says there is "one smoke test"; `.genesis/DONE.html`
+   and `.genesis/checkpoints/CURRENT.md` still show M1 `todo` (they change only in a `chore(genesis): mark M1 done`
+   PR after independent verification).
