@@ -145,3 +145,18 @@ value; a bare `string` as `by`) and three controls. `events.test.ts` runs one ex
 - **`Log` is just an array of `LogEvent`.** Nothing in the type says `seq` starts at 1, increases by one
   or is unique; a control pins that `[at(5), at(5), at(1), at(0), at(-2)]` is a `Log`. The plan's
   `seq-mismatch` fault is M5's.
+
+## Decision 6 — `GrantTree`, `Charge`, `DeadLink` and `Warrant`: whole facts, with the plan's construction claims left unmade
+
+Plan §4.1 as written. `proofs/tree-and-warrant.proofs.ts` has six failing routes (no `set` and no
+`delete` on the map views; a `DeadLink` without `atSeq` and a `Charge` without `amount`; a `Warrant`
+with an empty `chain` and one with an empty `trail`) and two controls.
+
+- **Two plan sentences about `GrantTree` are not properties of the type, and the doc comment says so:**
+  "built only inside `fold`" and "`revokedAt` is write-once". `ReadonlyMap` is a type-level view, not a
+  freeze. `tree.test.ts` shows that a `revokedAt` view follows its underlying `Map` and that a key can be
+  overwritten through it, and a control shows a tree can be built by hand (M3's hostile-tree tests need
+  to). Both properties would have to come from M5's construction of the tree, and M5 is not built.
+- **`Warrant.trail` is not tied to `Warrant.chain`.** The plan says `trail` is the charter root plus each
+  grantee, so one longer than `chain`. The type cannot say that; a control pins that a one-grant chain
+  with a four-principal trail compiles. Producing and testing consistent warrants is M5's.

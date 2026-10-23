@@ -20,6 +20,7 @@ const EXPECTED_DIRECTIVES: Readonly<Record<string, number>> = {
   "capability.proofs.ts": 7,
   "event.proofs.ts": 4,
   "non-empty-array.proofs.ts": 4,
+  "tree-and-warrant.proofs.ts": 6,
 };
 
 describe("every proof file fails to compile for exactly the stated reasons", () => {
