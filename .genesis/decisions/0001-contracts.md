@@ -83,3 +83,24 @@ The `Brand` helper itself is not exported: nothing else in M1 needs to mint a br
   `PrincipalId`, as is a 10 000-character string. `ids.test.ts` pins this as an HONEST LIMIT. The
   plan assigns the non-empty and `MAX_ID_LENGTH` checks to M3's intake; M3 does not exist, so until
   it does nothing in this repository enforces either.
+
+## Decision 3 — `Seq`, `Amount` and `NonEmptyReadonlyArray`, and the four invented bounds
+
+- **`Seq` and `Amount` are bare `number` aliases** (plan §4.1). The plan itself says the type cannot
+  carry "a non-negative safe integer at most `MAX_AMOUNT`" and assigns the check to M3's intake, which
+  is not built. `limits.test.ts` pins the consequence as an HONEST LIMIT: `-1`, `1.5`, `NaN`,
+  `Infinity` and `MAX_AMOUNT + 1` all compile as an `Amount`, and `0` and `-3` as a `Seq`. If `Amount`
+  is ever tightened those lines stop compiling and `npm run typecheck` goes red there.
+- **The four bounds are invented, not derived:** `MAX_AMOUNT = 2 ** 40`, `MAX_ROOT_DEPTH = 7`,
+  `MAX_LOG_EVENTS = 5000`, `MAX_ID_LENGTH = 128`. `limits.test.ts` pins their values (so changing one
+  is a deliberate edit that must touch that file) and that two `MAX_AMOUNT`s add to `2 ** 41`, below
+  `Number.MAX_SAFE_INTEGER`. That is the one-addition bound the plan's §8 C relies on; it is **not**
+  a proof that `used` can never exceed a limit, which is M4/M5's conservation property and has no
+  code yet.
+- **`NonEmptyReadonlyArray<T> = readonly [T, ...T[]]`.** `proofs/non-empty-array.proofs.ts` has four
+  failing routes (an empty literal, a `number[]` that might be empty, `push`, and index assignment)
+  and two controls (the first element is `number`, not `number | undefined`, under
+  `noUncheckedIndexedAccess`; widening to `readonly number[]` is allowed). It is a compile-time
+  statement only: at run time it is an ordinary array, and `map`/`filter`/`slice` return plain arrays,
+  so M3/M4/M5 will have to rebuild a tuple where they need the guarantee. M1 provides no helper for
+  that (the plan's function-ownership list for M1 names none).
