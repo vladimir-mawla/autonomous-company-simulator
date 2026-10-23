@@ -362,3 +362,17 @@ must lie inside `lib/`; the test never counts `../`.
   a layer directory the table does not list, has to edit this milestone's files, which plan §6 forbids ("a
   milestone may not edit another's paths"). That is deliberate for the tripwire and awkward for the milestone;
   the plan does not say who owns such an edit.
+
+## Decision 13 — plan §7's canonical incident is typed against the real contracts, as an expressibility check only
+
+`canonical-incident.test.ts` writes every value of `.genesis/PLAN.md` §7 as a value of the real types: the
+charter, grants G1 to G7 as `Grant<Cap>` (`Cap` = the four company capabilities), commits c1 to c10, the 18
+admitted events as a `Log<Cap>` with `seq` 1 to 18, the fifteen attempted rejections (one of each `Rejection`
+kind), and the final standings (c1, c2, c4 inherited by `cfo` severed at `G2@11` charged to `G1`; c3 and c10
+binding; c5 to c9 void with one of each of the five `Breach` kinds). It is the plan's own §8.A "type trace"
+re-run against the real types, and it found nothing the types cannot express.
+
+It is NOT evidence about behaviour. The numbers are copied from §7, which says they were executed on a
+throwaway model; no engine exists to compute them, `CANON_SCRIPT` is M6's, and nothing here is imported by
+anything. Each final standing is passed through `assertStandingWellFormed` and accepted, which says only that
+the standings have the right fields.
