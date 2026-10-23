@@ -207,3 +207,59 @@ and `assertNeverFoldFault` use the shared `unreachable` helper of Decision 7.
   `unknown-parent`) need hand-built input. That concerns M3/M5 tests; M1 only fixes the shapes.
 - `seq-mismatch.actual` is a plain `number` rather than a `Seq`, as the plan writes it, since it records a
   value found in input the engine does not trust. Nothing else here depends on that.
+
+## Decision 9 — `Standing`: the variants are exclusive by assignability (`?: never`), proved for every field by eight routes
+
+`standing.ts` is plan §4.2 as written: `BindingStanding`, `InheritedStanding`, `VoidStanding`, and
+`Standing` as their union; `assertNeverStanding` is the fourth `assertNever*` gate.
+
+**The mechanism.** Each variant declares every field that belongs to another variant as `?: never`:
+`binding` forbids `breach`, `severed`, `heir`, `chargedTo`; `inherited` forbids `breach`; `void` forbids
+`warrant`, `severed`, `heir`, `chargedTo`. The check is then ordinary assignability, made at every site
+where a value meets `Standing`, not the excess-property check, which fires only on a fresh object
+literal. That is the difference between this design and the rejected sibling's.
+
+**What is proved, and how.** `proofs/standing-forbidden.proofs.ts` has 72 directives: nine
+(variant, forbidden field) pairs times eight routes (a fresh literal, then an intermediate binding, a
+spread, a function return, `satisfies`, a generic helper, `Object.assign`, an array element). Each pair
+has its own bound value carrying exactly one forbidden field, so removing `?: never` from one field
+cannot be masked by another. `proofs/standing-required.proofs.ts` has 32: `inherited` without `heir`,
+without `severed`, without `chargedTo`, and with `chargedTo: undefined` (`null` is a control that
+compiles), times the same eight routes. Controls in the forbidden file push a clean value of each
+variant through the same eight routes and must compile, so each error is about the field and not about
+a route being illegal code. The harness (Decision 1) checks each line under BOTH tsconfigs and by code
+and message, so the proofs cannot be satisfied by `noUnusedLocals`, by `kind` widening to `string`
+(every bound `kind` is `as const`; the seven-route snippet in the M1 brief, written without `as const`,
+would fail on `kind`), or by an excess-property error.
+
+Two observations from writing them, stated because they are not what one expects:
+- The last line of the elaboration differs between configs and routes. Under `tsconfig.json` every route
+  ends "Type 'Warrant' is not assignable to type 'undefined'". Under `tsconfig.lib.json` the non-literal
+  routes end "... to type 'never'" and the fresh literal ends "... to type 'undefined'". The proofs
+  therefore match the line all of them share, "Types of property 'warrant' are incompatible".
+- An explicit `chargedTo: undefined` reports `TS2375` under `tsconfig.lib.json` (the
+  `exactOptionalPropertyTypes` form of the same assignability error) and `TS2322` under
+  `tsconfig.json`; the directive lists both.
+
+**What it does not close, at full strength** (each is a comment in `standing.ts`):
+1. An explicit assertion through `unknown`, or any assertion TypeScript permits from the source type.
+2. An implicit `any`, such as `JSON.parse(...)`: assignable to `Standing` with no cast written.
+3. A field the variants do not mention. `?: never` closes the fields the plan names, not every possible
+   extra key: `{ ...clean, note: "x" }`, bound first, is a `Standing`.
+4. An explicit `undefined` under `tsconfig.json` only (`standing.test.ts` pins it, by asking the harness to
+   expect the error under both configs and requiring that its only complaint is that `tsconfig.json` has
+   none). `app/` and `components/` compile under that config. No value other than `undefined` gets
+   through, and `undefined` is indistinguishable from absent to a reader and to JSON.
+
+Items 1 to 3 are written as directive-free lines in `proofs/standing-residuals.proofs.ts` (zero
+directives, checked by the harness to compile under both configs). That file is a disclosure, not a
+regression guard: nothing in this repository could make the first two stop compiling.
+
+**Cross-field facts the plan states are not in the types:** `severed.atSeq > committedAt`; `heir` is the
+grantor of the first dead link and never the actor; `chargedTo` names the heir's own grant. They are M5's
+to produce and to test.
+
+**The closed enum itself.** `closed-unions.test.ts` pins `binding`, `inherited`, `void` in the plan's
+order, has an exhaustive consumer over the real `Standing`, and `proofs/closed-union-gates.proofs.ts` shows
+`assertNeverStanding` failing to compile in a switch that misses `void` and compiling in one that
+does not.

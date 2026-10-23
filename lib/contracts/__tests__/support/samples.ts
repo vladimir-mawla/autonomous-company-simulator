@@ -1,7 +1,9 @@
 import type { Breach } from "../../breach.js";
 import type { FoldFault } from "../../fold-fault.js";
-import { grantId, principalId } from "../../ids.js";
+import { commitId, grantId, principalId } from "../../ids.js";
 import type { Rejection } from "../../rejection.js";
+import type { Standing } from "../../standing.js";
+import type { Warrant } from "../../warrant.js";
 
 /**
  * One well-formed value per variant of each closed union, as an object KEYED BY
@@ -42,4 +44,25 @@ export const FOLD_FAULT_SAMPLES: { [K in FoldFault["kind"]]: Extract<FoldFault, 
   "log-too-long": { kind: "log-too-long", length: 5001, max: 5000 },
   "seq-mismatch": { kind: "seq-mismatch", index: 3, expected: 4, actual: 7 },
   "inadmissible-event": { kind: "inadmissible-event", index: 2, rejection: { kind: "capability-widening", capability: "hire" } },
+};
+
+/** The warrant of plan section 7's `c1`: buyer-a acting under G4, delegated G1 (cfo) then G2 (ops). */
+export const WARRANT_C1: Warrant = {
+  chain: [grantId("G1"), grantId("G2"), grantId("G4")],
+  trail: [principalId("dana"), principalId("cfo"), principalId("ops"), principalId("buyer-a")],
+};
+
+/** Values shaped like plan section 7's `c3` (binding), `c1` (inherited, heir cfo) and `c5` (void, link-dead). */
+export const STANDING_SAMPLES: { [K in Standing["kind"]]: Extract<Standing, { kind: K }> } = {
+  binding: { kind: "binding", commitId: commitId("c3"), committedAt: 9, warrant: WARRANT_C1 },
+  inherited: {
+    kind: "inherited",
+    commitId: commitId("c1"),
+    committedAt: 7,
+    warrant: WARRANT_C1,
+    severed: { grantId: grantId("G2"), atSeq: 11 },
+    heir: principalId("cfo"),
+    chargedTo: grantId("G1"),
+  },
+  void: { kind: "void", commitId: commitId("c5"), committedAt: 12, breach: { kind: "link-dead", grantId: grantId("G2"), atSeq: 11 } },
 };

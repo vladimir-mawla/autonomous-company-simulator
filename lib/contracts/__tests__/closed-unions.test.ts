@@ -3,11 +3,12 @@ import { assertNeverBreach, type Breach } from "../breach.js";
 import { assertNeverFoldFault, type FoldFault } from "../fold-fault.js";
 import { grantId, principalId } from "../ids.js";
 import { assertNeverRejection, type Rejection } from "../rejection.js";
+import { assertNeverStanding, type Standing } from "../standing.js";
 import type { Verdict } from "../verdict.js";
-import { BREACH_SAMPLES, FOLD_FAULT_SAMPLES, REJECTION_SAMPLES } from "./support/samples.js";
+import { BREACH_SAMPLES, FOLD_FAULT_SAMPLES, REJECTION_SAMPLES, STANDING_SAMPLES } from "./support/samples.js";
 
 /**
- * The closed unions of M1 (`.genesis/PLAN.md` §4.3, §6 M1(d)): each is closed in the sense that adding a
+ * The four closed unions of M1 (`Standing`, `Breach`, `Rejection`, `FoldFault`; `.genesis/PLAN.md` §4.2, §4.3, §6 M1(d)): each is closed in the sense that adding a
  * variant must be a compile error at every consumer that switches on it, and a value that the type does
  * not describe must make the `assertNever*` function throw rather than fall through.
  *
@@ -36,6 +37,7 @@ const REJECTION_KINDS = [
   "already-dead",
   "revoker-not-authorised",
 ];
+const STANDING_KINDS = ["binding", "inherited", "void"];
 const FOLD_FAULT_KINDS = ["invalid-charter", "hostile-log-input", "log-too-long", "seq-mismatch", "inadmissible-event"];
 
 /** An exhaustive consumer of the REAL union: a new variant makes the `default` stop compiling. */
@@ -108,6 +110,37 @@ function labelOfFoldFault(fault: FoldFault): string {
   }
 }
 
+/** An exhaustive consumer of the real `Standing`: a fourth variant makes the `default` stop compiling. */
+function labelOfStanding(standing: Standing): string {
+  switch (standing.kind) {
+    case "binding":
+      return `binding under ${standing.warrant.chain.join(">")}`;
+    case "inherited":
+      return `inherited by ${standing.heir}, severed at ${standing.severed.atSeq}`;
+    case "void":
+      return `void: ${standing.breach.kind}`;
+    default:
+      return assertNeverStanding(standing);
+  }
+}
+
+describe("Standing: three variants", () => {
+  it("has exactly the kinds the plan lists, in the plan's order", () => {
+    expect(Object.keys(STANDING_SAMPLES)).toEqual(STANDING_KINDS);
+  });
+
+  it("each sample carries its own kind, and the exhaustive consumer reaches every variant", () => {
+    for (const kind of STANDING_KINDS) {
+      expect(STANDING_SAMPLES[kind as Standing["kind"]].kind).toBe(kind);
+    }
+    expect(Object.values(STANDING_SAMPLES).map(labelOfStanding)).toEqual([
+      "binding under G1>G2>G4",
+      "inherited by cfo, severed at 11",
+      "void: link-dead",
+    ]);
+  });
+});
+
 describe("Breach: five variants", () => {
   it("has exactly the kinds the plan lists, in the plan's order", () => {
     expect(Object.keys(BREACH_SAMPLES)).toEqual(BREACH_KINDS);
@@ -167,6 +200,7 @@ describe("every assertNever gate throws on a value the type does not describe", 
     ["Breach", assertNeverBreach],
     ["Rejection", assertNeverRejection],
     ["FoldFault", assertNeverFoldFault],
+    ["Standing", assertNeverStanding],
   ];
 
   for (const [union, gate] of gates) {

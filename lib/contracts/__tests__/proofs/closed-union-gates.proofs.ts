@@ -1,6 +1,7 @@
 import { assertNeverBreach, type Breach } from "../../breach.js";
 import { assertNeverFoldFault, type FoldFault } from "../../fold-fault.js";
 import { assertNeverRejection, type Rejection } from "../../rejection.js";
+import { assertNeverStanding, type Standing } from "../../standing.js";
 
 /**
  * Type-only proofs that each `assertNever*` gate fires when a `switch` over a real
@@ -66,7 +67,19 @@ export function foldFaultMissingInadmissibleEvent(fault: FoldFault): string {
   }
 }
 
-// CONTROLS (no directive, so they must compile): the same three switches with every variant handled.
+// ---- Standing: the last of the three is missing ----
+export function standingMissingVoid(standing: Standing): string {
+  switch (standing.kind) {
+    case "binding":
+    case "inherited":
+      return standing.kind;
+    default:
+      // @ts-expect-error TS2345 Argument of type 'VoidStanding' is not assignable to parameter of type 'never'
+      return assertNeverStanding(standing);
+  }
+}
+
+// CONTROLS (no directive, so they must compile): the same four switches with every variant handled.
 // They show each error above is about the missing variant and not about the gate's own signature.
 export function breachHandlesAll(breach: Breach): string {
   switch (breach.kind) {
@@ -112,5 +125,15 @@ export function foldFaultHandlesAll(fault: FoldFault): string {
       return fault.kind;
     default:
       return assertNeverFoldFault(fault);
+  }
+}
+export function standingHandlesAll(standing: Standing): string {
+  switch (standing.kind) {
+    case "binding":
+    case "inherited":
+    case "void":
+      return standing.kind;
+    default:
+      return assertNeverStanding(standing);
   }
 }
