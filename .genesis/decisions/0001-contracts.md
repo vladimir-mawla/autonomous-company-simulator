@@ -104,3 +104,24 @@ The `Brand` helper itself is not exported: nothing else in M1 needs to mint a br
   statement only: at run time it is an ordinary array, and `map`/`filter`/`slice` return plain arrays,
   so M3/M4/M5 will have to rebuild a tuple where they need the guarantee. M1 provides no helper for
   that (the plan's function-ownership list for M1 names none).
+
+## Decision 4 — `Grant`, `Commitment` and `Charter` carry the capability vocabulary as a type parameter `C`
+
+All three are `interface X<C extends string = string>` exactly as plan §4.1 declares them.
+`proofs/capability.proofs.ts` has seven failing routes and five controls.
+
+- **What narrowing `C` refuses, proved:** a misspelt capability in a `Grant<Cap>` by a fresh literal,
+  by a separately bound `capabilities` array, and by a separately bound whole grant; in a
+  `Commitment<Cap>` by a bound commitment and by a plain `string`; in a `Charter<Cap>` literal; and an
+  unparameterised `Grant` handed to a `Grant<Cap>` (so a value built without a domain cannot be
+  laundered into one). The fresh-literal route reports `TS2820` ("did you mean") rather than
+  `TS2322`, and the proof pins that code; the harness is what caught that my first draft had guessed
+  `TS2322`.
+- **HONEST LIMIT, as a control that must keep compiling:** with the default `C = string`, an
+  unparameterised `Grant`, `Commitment` or `Charter` refuses nothing about capabilities. A misspelling
+  is only caught once a domain narrows `C`, which is M6's job (`CompanyCapability`).
+- **The type parameter and the run-time vocabulary are not tied together.** `Charter<C>` lists its
+  capabilities as data, and nothing here forces that list to match `C`: a `Charter<"a" | "b">` may list
+  only `"a"`. The plan has M3's intake check events against `charter.capabilities`; M3 is not built.
+- Every field is a claim made by whoever wrote the event; the doc comments say which later milestone the
+  plan gives the check to, and none is performed in M1.
