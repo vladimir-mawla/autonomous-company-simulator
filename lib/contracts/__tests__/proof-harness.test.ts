@@ -65,6 +65,12 @@ describe("proof harness: rejects each way a @ts-expect-error can be satisfied fo
     expect(report.problems.join("\n")).toMatch(/expected TS2322 containing .* got TS2353/);
   });
 
+  it("an error whose message matches but whose code is not the stated one", () => {
+    // The message contains the fragment, so only the code check can reject this line.
+    const report = check(["// @ts-expect-error TS2345 is not assignable to type 'number'", 'export const wrongCode: number = "x";'].join("\n"));
+    expect(report.problems.join("\n")).toMatch(/expected TS2345 containing .* got TS2322/);
+  });
+
   it("an error with the right code but a different message than the stated one", () => {
     const report = check(
       [
