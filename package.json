@@ -1,0 +1,33 @@
+{
+  "name": "autonomous-company-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Who answers for what an organisation of autonomous agents has done: authority is conserved when delegated, revoked only forward, and every commitment is ruled binding, inherited or void against the record as it stood when the act was made.",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit && tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "demo:company": "node --import ./scripts/register-ts-loader.mjs scripts/demo-company.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.11.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  },
+  "dependencies": {
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}
