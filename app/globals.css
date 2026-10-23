@@ -1,0 +1,25 @@
+/*
+ * Minimal reset, plus (M8) the page-level layout for the one real page
+ * this app will have: `app/page.tsx` and `components/company/CompanyDemo.tsx`.
+ * Component-scoped styling, if any, will live alongside that component;
+ * this file only owns the document-level reset and the `<main>` container.
+ */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+main {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
