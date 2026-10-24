@@ -331,8 +331,8 @@ missing field of the variant, then a forbidden field.
   either. Letting it pass would make the guard a hole; making it throw would turn a function that returns a
   verdict into one that sometimes throws. `{ kind: "unknown-variant"; found: string }` reports it. The
   plan's two members and the three cases it gives M2's health route are unchanged and pinned in
-  `integrity.test.ts`. M2 and M5 were written against a two-member union and will need a third arm in any
-  exhaustive switch over the error.
+  `integrity.test.ts`. Plan §4.2 defines `StandingIntegrityError` with two members, so any exhaustive switch over
+  the error that was written against the plan's type needs a third arm.
 - **Presence semantics, chosen and pinned.** A required field counts as absent when it is `undefined`, or
   `null` unless it is `chargedTo` (the one field whose type admits `null`; the plan says "null allowed,
   undefined not"). A forbidden field counts as present when it is anything but `undefined`, so `null` is
