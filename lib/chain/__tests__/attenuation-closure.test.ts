@@ -35,6 +35,15 @@ import type { Cap } from "./fixtures.js";
 const SEEDS = 1000;
 const STEPS = 100;
 
+/**
+ * Per-test timeout for the two tests that check every accepted grant of all SEEDS worlds (the pool-of-5 closure
+ * test and the pool-of-12 longest-chain test). vitest's default is 5 s. Measured on 2026-10-24: about 0.8 s and
+ * 1.4 s on an idle 10-core machine, 3.2 s and 3.6 s on the GitHub runner (CI run 40097885316), and 4.0 to 5.9 s
+ * and 5.7 to 7.8 s with 20 busy processes on the 10 cores, where the default timed out. The work is not cut
+ * because the longest-chain assertion rests on 3 of the 1000 seeds (ADR 0003, Decision 7).
+ */
+const SEED_LOOP_TIMEOUT_MS = 60_000;
+
 type Counts = Map<string, number>;
 
 interface WorldOptions {
@@ -337,7 +346,7 @@ describe("attenuation closure: every accepted grant is attenuated, every refusal
       for (const [key, count] of outcome.counts) totals.set(key, (totals.get(key) ?? 0) + count);
     }
     expect(totals.get("accepted") ?? 0).toBeGreaterThan(1000);
-  });
+  }, SEED_LOOP_TIMEOUT_MS);
 
   it("COVERAGE: the generator reaches every rejection kind M3 owns, and no other", () => {
     const totals: Counts = new Map();
@@ -367,7 +376,7 @@ describe("attenuation closure: every accepted grant is attenuated, every refusal
       longest = Math.max(longest, outcome.longestChain);
     }
     expect(longest).toBe(MAX_ROOT_DEPTH + 1);
-  });
+  }, SEED_LOOP_TIMEOUT_MS);
 
   it("with a pool of 5 the longest accepted chain is at most 4 grants: a trail of 5 principals is all the pool can fill", () => {
     let longest = 0;

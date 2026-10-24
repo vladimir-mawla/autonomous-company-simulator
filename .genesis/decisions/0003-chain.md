@@ -195,7 +195,22 @@ failing rule, in precedence order, is the one reported; the pair table covers th
   (`eager`: parents mostly taken from grants that can still delegate, depths mostly narrowing by exactly one,
   grantors almost always the holder, an unknown parent rare), and a test requires that an accepted chain of 8
   was reached. With the default weights, before the tilt was added, the longest chain reached in the same 1000
-  seeds was 7.
+  seeds was 7. Even tilted, an accepted chain of 8 occurs in only 3 of the 1000 seeds (seeds 28, 148 and 496).
+- **Timeout, and why the work was not cut.** The two tests that check every accepted grant of all 1000 seeds (the
+  pool-of-5 closure test and the pool-of-12 longest-chain test) have an explicit 60 s per-test timeout,
+  `SEED_LOOP_TIMEOUT_MS`; every other test in the layer runs under vitest's 5 s default. Measured on 2026-10-24,
+  pool of 5 then pool of 12: about 0.8 s and 1.4 s on an idle 10-core machine; 3.2 s and 3.6 s on the GitHub
+  runner for the pushed branch (CI run 40097885316); with 20 busy `yes` processes on the 10 cores, 4.0 to 5.9 s and
+  5.7 to 7.8 s over three full runs, in which the 5 s default failed the pool-of-12 test all three times and the
+  pool-of-5 test once. After the change, three full runs under the same load had 0 failed (the two tests took 3.9
+  to 4.2 s and 5.3 to 5.5 s), and `--testTimeout=500` on the file gave 2 failed before and 0 after, since a
+  per-test timeout overrides the flag. The work was not cut because the longest-chain assertion rests on 3 of the
+  1000 seeds: 300 seeds would leave two of them, and the generator's tilt would have to change to leave more. The
+  pool-of-5 coverage test could be cut (at 300 seeds the least frequent kind, `depth-exhausted`, was produced 502
+  times against the floor of 100) but it is the faster of the two, so cutting it would not remove the problem. A
+  timeout is a failure threshold, not a guard against a hang: these tests are synchronous, and a 7.8 s run was
+  reported as timed out at 5 s only after it had finished. Raising it to 60 s adds margin for a slow machine and
+  no protection against a test that never returns, and none is claimed.
 - **What it does not show.** The property is over what this generator produces. It does not build a hand-made
   hostile tree (Decision 5 does), and its "walkers agree with the data" test runs 200 of the seeds.
 
