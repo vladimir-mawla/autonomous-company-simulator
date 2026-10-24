@@ -37,7 +37,10 @@ import { API } from "typescript/unstable/sync";
  *  3. A bare or `node:` specifier is allowed only if it is on the allowlist for the file's role: NONE for
  *     library source, a short list for files under `__tests__/`.
  *  4. The file's own layer and the target's layer obey the order above; a directory under `lib/` that is
- *     not a declared layer, and a `.ts` file directly in `lib/`, are violations.
+ *     not a declared layer, and a `.ts` file directly in `lib/`, are violations. A library SOURCE file
+ *     (no `__tests__` segment in its path) may not import a file under `__tests__/` either, because that
+ *     file is allowed the test externals and the import would carry them into library code (rule
+ *     `source-imports-test`).
  *  5. Inventory: every file under `lib/` is a `.ts` file that is not a declaration file, and none is a
  *     symlink. (A hand-written `.d.ts` plus a `.js` inside `lib/` would otherwise be an import that
  *     resolves inside `lib/` and lies about its type.)
@@ -55,6 +58,7 @@ export type Rule =
   | "outside-lib"
   | "unresolvable"
   | "external-not-allowed"
+  | "source-imports-test"
   | "non-literal-specifier"
   | "upward-layer-import"
   | "undeclared-lib-directory"
@@ -279,6 +283,10 @@ export function scanModuleGraph(options: ScanOptions): ScanResult {
         for (const path of real) {
           if (isLib && !inLib(path)) {
             violation("outside-lib");
+            break;
+          }
+          if (isLib && role === "source" && rel(path).split("/").includes("__tests__")) {
+            violation("source-imports-test");
             break;
           }
           const targetLayer = layerOf(path);

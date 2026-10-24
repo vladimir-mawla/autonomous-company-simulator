@@ -371,14 +371,14 @@ that is not a string literal is a violation. A relative specifier is resolved to
 must lie inside `lib/`; the test never counts `../`.
 
 - **Rules and their fixtures.** One synthetic tree under the OS temp directory has a single violation per file
-  (24 `file:rule` pairs, asserted as an exact set) beside valid files that must not be flagged: an upward
+  (25 `file:rule` pairs, asserted as an exact set) beside valid files that must not be flagged: an upward
   import between layers (contracts to chain, chain to standing, domains to app), a cycle (the offending edge is
   the upward one), a relative specifier that resolves out through `../../node_modules`, one through a symlink,
   `export * from`, an import type, `typeof import`, a reference directive, a bare and a `node:` import in library
   source, a `require`, a computed `import(expr)`, a literal `import("node:os")`, an unresolvable specifier, an
-  import of an undeclared directory under `lib/`, a `.ts` file directly in `lib/`, a `.json`, a `.d.ts`, a `.js`
+  import of an undeclared directory under `lib/`, a library source file importing a file under `__tests__/`, a `.ts` file directly in `lib/`, a `.json`, a `.d.ts`, a `.js`
   and a symlink. A second tree is clean, and a third tree holds a file that does not parse, which must be a violation, not a skip.
-- **Allowlist.** Library SOURCE may import nothing from outside `lib/`. Files under `__tests__/` may import the
+- **Allowlist.** Library SOURCE may import nothing from outside `lib/`. No SOURCE file may import a file under `__tests__/` (rule `source-imports-test`), because that file may import the test externals. Files under `__tests__/` may import the
   seven externals the tests use today, and the test fails if an allowlisted external is imported by no file, so
   no allowance is speculative.
 - **Layer table.** `lib/contracts` < `lib/chain` < `lib/allowance` < `lib/standing` < `domains` < `scripts`,
@@ -481,6 +481,14 @@ working tree that the commit adding each bullet leaves, not on `9d2404a`.
 - **D1, harness: revert only the `if (extra !== matching) {` line to its old form
   (`... && !directive.codes.includes(extra.code)`).** `npm run typecheck` passes; `npm test`: 1 failed, 129 passed
   (130): "a real error PLUS a second error with the SAME code on the same line", and no other test.
+- **D6, scanner: the new `source-imports-test` rule.** Rule block deleted, fixture kept: `npm run typecheck`
+  passes; `npm test`: 1 failed, 129 passed (130), "reports exactly these file:rule pairs", whose diff shows
+  `- "lib/contracts/uses-test.ts:source-imports-test"`. Rule in place and `import "./__tests__/support/module-graph.js";`
+  prepended to `lib/contracts/ids.ts`: typecheck passes; 14 failed, 116 passed (130): "has no violation", whose
+  diff shows `+ "lib/contracts/ids.ts:source-imports-test"`, and 13 harness tests (their scratch projects import `ids.ts` and,
+  through it, `module-graph.ts`). With the rule deleted AND that import
+  prepended, "has no violation" passes: the earlier scan accepted a library source file importing a test file.
+  Both edits restored; 130 passed.
 
 ## What M1 does not claim
 

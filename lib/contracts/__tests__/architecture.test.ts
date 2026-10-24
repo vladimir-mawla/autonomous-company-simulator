@@ -89,6 +89,7 @@ describe("a synthetic tree with one violation per file: each is reported, and th
     "lib/standing/back.ts": 'import { a } from "../chain/cycle-a.js";\nexport const b = a;\n',
     "domains/company/ok.ts": 'import { b } from "../../lib/standing/back.js";\nexport const c = b;\n',
     "lib/contracts/__tests__/t-ok.ts": 'import "vitest";\nimport "node:fs";\nimport { base } from "../base.js";\nexport const t = base;\n',
+    "lib/contracts/__tests__/t-chain.ts": 'import { t } from "./t-ok.js";\nexport const tc = t;\n', // test -> test is fine
     // ---- one violation each ----
     "lib/contracts/cycle-b.ts": 'import { a } from "../chain/cycle-a.js";\nexport const x = a;\n', // contracts -> chain, closing a cycle
     "lib/chain/up.ts": 'import { b } from "../standing/back.js";\nexport const y = b;\n', // chain -> standing
@@ -109,6 +110,7 @@ describe("a synthetic tree with one violation per file: each is reported, and th
     "lib/contracts/dyn.ts": "declare const id: string;\nexport const d = import(id);\n",
     "lib/contracts/dyn-literal.ts": 'export const d2 = import("node:os");\n',
     "lib/contracts/unresolved.ts": 'import "./nope.js";\n',
+    "lib/contracts/uses-test.ts": 'import { t } from "./__tests__/t-ok.js";\nexport const ut = t;\n', // SOURCE -> a test file that imports node:fs
     "lib/contracts/uses-shared.ts": 'import { h } from "../shared/helper.js";\nexport const s = h;\n',
     "lib/shared/helper.ts": "export const h = 1;\n",
     "lib/loose.ts": "export const loose = 1;\n",
@@ -145,6 +147,7 @@ describe("a synthetic tree with one violation per file: each is reported, and th
         "lib/contracts/typeimport.ts:outside-lib",
         "lib/contracts/typeof-import.ts:outside-lib",
         "lib/contracts/unresolved.ts:unresolvable",
+        "lib/contracts/uses-test.ts:source-imports-test",
         "lib/contracts/uses-shared.ts:import-of-undeclared-lib-directory",
         "lib/contracts/viasym.ts:outside-lib",
         "lib/loose.ts:undeclared-lib-directory",
@@ -162,7 +165,7 @@ describe("a synthetic tree with one violation per file: each is reported, and th
 
   it("does not flag a library test file that imports vitest and a Node built-in, nor any downward import", () => {
     const flagged = new Set(result.violations.map((v) => v.file));
-    for (const clean of ["lib/contracts/__tests__/t-ok.ts", "lib/chain/cycle-a.ts", "lib/standing/back.ts", "domains/company/ok.ts"]) {
+    for (const clean of ["lib/contracts/__tests__/t-ok.ts", "lib/contracts/__tests__/t-chain.ts", "lib/chain/cycle-a.ts", "lib/standing/back.ts", "domains/company/ok.ts"]) {
       expect(flagged.has(clean), clean).toBe(false);
     }
   });
