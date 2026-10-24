@@ -213,6 +213,11 @@ killed after each run (`pgrep -x yes` printed 0). The slowest, 2 715 ms in a ful
 about that much slower than a local idle run) are 8% to 18% of it. That is why the named constant exists: under the heaviest
 load measured the default would leave less than a factor of 2.
 
+On GitHub's runner (the CI run for the pushed branch at `e5447fe`, run 40131944360, full suite) the slowest test of
+`conservation.test.ts` took 646 ms (the file 1 175 ms) and `exact-return.test.ts` took 253 ms as a file: 13% of the 5 s
+default and 2% of the named 30 s, and about twice what the same test took in the quiet local full-suite runs (315 to 356 ms),
+a little under the 2.5 used above.
+
 **It could be cut, and was not cut further.** With the coverage-floor tests not counted, every edit in the ledger is still
 caught at 20 seeds and at 10 (checked on a scratch export of `842f0b0`; see "Seeds" below), and the floors hold,
 unsabotaged, at 20 seeds and fail at 10. 40 was kept so that the floors sit at about a third of what the run reaches
