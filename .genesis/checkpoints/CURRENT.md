@@ -1,15 +1,15 @@
 # CURRENT
 
-- **active_loop:** none recorded. M1 (contracts, `lib/contracts/**`) and M2 (deploy skeleton,
-  `app/api/health/**`) are `done`; M3 to M9 are `todo` in this revision. Each milestone is separate, with
-  its own branch, its own PR, and its own independent (L4) verifier. `app/page.tsx` is still the genesis
-  placeholder.
+- **active_loop:** none recorded. M1 (contracts, `lib/contracts/**`), M2 (deploy skeleton,
+  `app/api/health/**`) and M3 (chain: intake and structure, `lib/chain/**`) are `done`; M4 to M9 are `todo`
+  in this revision. Each milestone is separate, with its own branch, its own PR, and its own independent
+  (L4) verifier. `app/page.tsx` is still the genesis placeholder.
 
-- **last updated:** 2026-10-24, in the `chore(genesis): mark M2 done` bookkeeping PR, after M2 passed
-  independent L4 verification and merged (PR #4). The previous revision was the `mark M1 done` PR's, and
-  the one before it was written immediately after genesis, before any milestone build had begun. Recorded
-  honestly rather than implying progress that does not exist: a checkpoint that overstates status is worse
-  than no checkpoint at all.
+- **last updated:** 2026-10-24, in the `chore(genesis): mark M3 done` bookkeeping PR, after M3 passed
+  independent L4 verification and merged (PR #6). The previous revision was the `mark M2 done` PR's (#5),
+  the one before it was the `mark M1 done` PR's, and the one before that was written immediately after
+  genesis, before any milestone build had begun. Recorded honestly rather than implying progress that does
+  not exist: a checkpoint that overstates status is worse than no checkpoint at all.
 
 ## Milestone state, as of this revision
 
@@ -17,7 +17,7 @@
 |---|---|---|
 | M1 contracts | `done` | PR #2 → `fc7b4ac` (squash-merged); independent L4 APPROVE in round 3, after three fix rounds |
 | M2 deploy | `done` | PR #4 → `167e4e7` (squash-merged); independent L4 APPROVE in round 3, after two fix rounds; live, see "What M2 adds" below |
-| M3 chain: intake and structure | `todo` | designed only |
+| M3 chain: intake and structure | `done` | PR #6 → `aebd77e` (squash-merged); independent L4 APPROVE in round 2, after one fix round; see "What M3 adds" below |
 | M4 allowance: conservation | `todo` | designed only |
 | M5 standing: fold, verdict, heir | `todo` | designed only |
 | M6 domain (Meridian Supply Co.) | `todo` | designed only |
@@ -26,10 +26,12 @@
 | M9 deliverables | `todo` | designed only |
 
 `main` is the genesis base (the plan, tooling config, app shell, a CI workflow, the README and the
-`.genesis/` ritual) plus four merged PRs: #1 (the `next` 16.4.3 security upgrade), #2 (M1:
-`lib/contracts/**` and its tests), #3 (`mark M1 done`, which edited only the two `.genesis/` files) and
-#4 (M2: `app/api/health/**` with its tests, ADR 0002 and the README's `Live:` line). There is no
-`domains/`, and `lib/` holds only `lib/contracts`.
+`.genesis/` ritual) plus six merged PRs: #1 (the `next` 16.4.3 security upgrade), #2 (M1:
+`lib/contracts/**` and its tests), #3 (`mark M1 done`, which edited only the two `.genesis/` files), #4
+(M2: `app/api/health/**` with its tests, ADR 0002 and the README's `Live:` line), #5 (`mark M2 done`, which
+edited only the same two `.genesis/` files) and #6 (M3: `lib/chain/**` with its tests, and ADR 0003). There
+is no `domains/`, and `lib/` holds `lib/contracts` and `lib/chain` only: there is no `lib/allowance` and no
+`lib/standing`.
 
 ## `main` history was rewritten on 2026-10-24 (SHAs you may see on PR pages)
 
@@ -46,8 +48,8 @@ GitHub's PR pages still show the pre-rewrite merge SHAs. To match one against `g
 | #1 `next` 16.4.3 security upgrade | `fc17afd` | `ab14763` |
 | #2 M1 contracts | `6302394` | `fc7b4ac` |
 
-PR #3 and PR #4 show the same merge SHAs as `main` (`2cca53b` and `167e4e7`; read with `gh pr view`), so no
-pair is needed for them.
+PR #3, #4, #5 and #6 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53` and `aebd77e`; read
+with `gh pr view`), so no pair is needed for them.
 
 ## What the scaffold does and does not prove
 
