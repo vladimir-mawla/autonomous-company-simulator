@@ -12,8 +12,9 @@ import {
 /**
  * `force-dynamic`: plan §6 M2 requires it, and it makes the opt-out of static rendering explicit, so a
  * prerendered response (the checks run once, during the build, and `commit` frozen at whatever the build
- * saw) cannot happen. It is not what makes this handler dynamic on Next 16.4.3: with the line removed, a
- * scratch build still lists `/api/health` as `ƒ (Dynamic)` and a started server still read
+ * saw) cannot happen. It is not what makes this handler dynamic on Next 16.4.3: with the line removed (and
+ * the test's `route.dynamic` assertion neutralised, since `next build` type-checks the tests and otherwise stops
+ * with TS2339), a scratch build still lists `/api/health` as `ƒ (Dynamic)` and a started server still read
  * `VERCEL_GIT_COMMIT_SHA` at request time. A health endpoint has to run its checks on every request, so the
  * declaration stays.
  */

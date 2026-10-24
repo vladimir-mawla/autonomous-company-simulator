@@ -44,9 +44,10 @@ gives HTTP 503 and `status: "degraded"`; the response names which assertion fail
 three checks. `export const dynamic = "force-dynamic"` is set because plan §6 M2 requires it, so that Next cannot prerender
 one response at build time (which would run the checks once during the build and freeze `commit`);
 `route.test.ts` asserts the exported value. It is not what makes the route dynamic on this Next version: a
-scratch `next build --webpack` (Next 16.4.3, this config, `.next` removed first) with the export deleted still
-lists `/api/health` as `ƒ (Dynamic)`, and `next start` of that build read `VERCEL_GIT_COMMIT_SHA` at request
-time. So the `ƒ (Dynamic)` line in the build output does not show what the export does, and the test pins the
+scratch `next build --webpack` (Next 16.4.3, this config, `.next` removed first) with the export deleted and the
+test's `route.dynamic` assertion neutralised (with only the export deleted, `next build` stops at typecheck with
+`error TS2339: Property 'dynamic' does not exist`) still lists `/api/health` as `ƒ (Dynamic)`, and `next start` of
+that build read `VERCEL_GIT_COMMIT_SHA` at request time. So the `ƒ (Dynamic)` line in the build output does not show what the export does, and the test pins the
 declaration, not an effect.
 
 ## Decision 3 — the commit is `VERCEL_GIT_COMMIT_SHA` or the literal `"unknown (local dev)"`, never guessed
