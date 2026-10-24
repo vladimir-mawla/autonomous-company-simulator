@@ -151,7 +151,7 @@ function compile(config: string, scratch: string, tsc: string): { diags: Diag[];
  * Check one proof file's text. `baseDir` is the directory its RELATIVE imports
  * are written against; they are rewritten to absolute paths because the
  * stripped copy is compiled from a scratch directory (this repo's tests do not
- * write scratch files inside `lib/`). `tsc` is the compiler script to run; it defaults to this repo's
+ * write scratch files inside `lib/`). `tsc` is the compiler script to run; it defaults to this repo's own compiler
  * and exists so a test can hand in a stub that prints something that is not a diagnostic.
  */
 export function checkProofSource(source: string, baseDir: string, tsc: string = TSC): ProofReport {
