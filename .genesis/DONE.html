@@ -84,7 +84,7 @@
     <table>
       <thead><tr><th>#</th><th>Milestone</th><th>Phase</th><th>Demo command (proves it works)</th><th>Loops</th><th>Status</th></tr></thead>
       <tbody>
-        <tr><td>M1</td><td>Contracts: Grant, Commitment, Standing, Breach, Rejection</td><td>BUILD</td><td><code>npm test -- lib/contracts</code> and <code>npm run typecheck</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M1</td><td>Contracts: Grant, Commitment, Standing, Breach, Rejection</td><td>BUILD</td><td><code>npm test -- lib/contracts</code> and <code>npm run typecheck</code></td><td>L1, L4</td><td><span class="pill ok">done</span></td></tr>
         <tr><td>M2</td><td>Deploy skeleton (deployed now, never last)</td><td>DEPLOY</td><td><code>curl -sf $DEPLOY_URL/api/health</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
         <tr><td>M3</td><td>Chain: intake and structure (<code>lib/chain</code>)</td><td>BUILD</td><td><code>npm test -- lib/chain</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
         <tr><td>M4</td><td>Allowance: conservation (<code>lib/allowance</code>)</td><td>BUILD</td><td><code>npm test -- lib/allowance</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
@@ -97,8 +97,8 @@
     </table>
     <p class="note">Total token budget = 9 milestones × 150000. Update <span class="pill wip">wip</span> /
        <span class="pill ok">done</span> as loops complete — a milestone only flips to <code>done</code>
-       after independent (L4) verification, never by the building agent marking its own work. This is the
-       genesis (G0–G2) repo only: no milestone has started, so all nine rows above are <code>todo</code>.
+       after independent (L4) verification, never by the building agent marking its own work. M1 is
+       <code>done</code> (PR #2, independent L4 APPROVE in round 3); the other eight rows are still <code>todo</code>.
        This table is mirrored in <code>PLAN.md</code> (§6) for the agent to parse.</p>
   </div>
 
