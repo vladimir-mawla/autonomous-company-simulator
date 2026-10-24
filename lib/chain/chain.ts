@@ -17,7 +17,9 @@ import type { DeadLink, GrantId, GrantTree, NonEmptyReadonlyArray, PrincipalId }
  *
  * What these functions DO trust is the typed VALUES of a grant that is in the tree (`grantor`, `grantee`,
  * `depth`...): those arrived through `readEventInput`, and re-reading each value's shape here would be a second,
- * separate copy of intake's rules. Each grant's `parent`, `grantor` and `grantee` is read once per visit.
+ * separate copy of intake's rules. Each visited grant's `parent` is read once per `chainOf` call
+ * (`hostile-input.test.ts` counts it). In `trailOf` and `liveAuthorityAbove` each field is read once per visit as
+ * written, but no test counts those reads.
  */
 
 /** The most grants a chain can have: a root of depth `MAX_ROOT_DEPTH`, then one grant per remaining depth, ending at depth 0. */

@@ -102,8 +102,10 @@ N+1 for all three uses; N entries all outside the vocabulary are an `unknown-cap
   charter whose own getter throws makes it throw. The route that makes a hostile charter safe is
   `readCharter`, which turns the same object into a typed refusal; one HONEST LIMIT test runs both.
 - `checkGrantStructure` and the walkers are specified for a `Grant` and a `GrantTree` whose VALUES came out
-  of intake. They distrust the tree's TOPOLOGY (Decision 5), not a grant's field values, and they read a
-  grant's `parent` more than once. A second HONEST LIMIT test runs the same grant as plain data (accepted) and
+  of intake. They distrust the tree's TOPOLOGY (Decision 5), not a grant's field values. `checkGrantStructure`
+  reads the grant's `parent` more than once (`chainOf` reads each visited grant's `parent` once per call, and a test
+  counts that; no test counts the reads in `trailOf` and `liveAuthorityAbove`). A second HONEST LIMIT test runs the
+  same grant as plain data (accepted) and
   with an accessor on `parent` that answers `"G2"` then `"g-ghost"` (refused as `unknown-parent` for
   `"g-ghost"`): such a grant is judged on mixed reads.
 - Not tested: a `GrantTree` whose `grants` or `revokedAt` is not a real `Map`, for instance one whose
