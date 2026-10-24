@@ -180,6 +180,71 @@ PR #3 to #8 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`,
   `lib/allowance`'s (M4, below) and a verdict and a standing are `lib/standing`'s (M5, `todo`), so nothing in
   this section shows any of them.
 
+## What M4 adds, and what was run to check it
+
+- **What it is:** `lib/allowance/**` (`accounting.ts`, `index.ts`), four test files under
+  `lib/allowance/__tests__/` (`accounting`, `conservation`, `exact-return` and `architecture`, beside
+  `fixtures.ts`, the shared driver and oracle, which is not a test file) and ADR 0004. `git diff --stat
+  d06b848^ d06b848` lists those eight files and no others. It reaches `lib/contracts` and `lib/chain` through
+  their `index.ts` barrels only. Nothing outside `lib/allowance` imports it yet. On this branch `grep` finds the
+  word under `app/` only in a comment in `app/api/health/route.ts` that still says `lib/allowance` is not
+  built, and in `lib/contracts` and `lib/chain` only in layer-table entries and string fixtures of their
+  architecture tests. So no route or page runs it.
+- **The four functions** (the barrel exports these four and two types, `HeadroomCheck` and `Shortfall`):
+  `usedOf`, `headroomOf`, `absorbedBy` and `checkHeadroom`, each a function of a grant tree and its charges.
+  What each does at the edges (for example: `headroomOf` is `limit - used` and is not clamped, a revoked child
+  costs its parent what was spent in it, an id the tree does not hold gets `undefined` and a refusal) is ADR
+  0004, Decisions 1 to 4, which are the reference; this file does not restate the rest.
+- **Conservation at every prefix.** `conservation.test.ts` checks nine properties after each step of each
+  seeded trace, 40 seeds of 80 steps (ADR 0004 Decision 7 lists them). That is every prefix of the traces this
+  seeded driver builds, not of every log; ADR 0004's "What M4 does not claim" says so, and its Coverage table
+  counts what the traces reached.
+- **The exact return at every revoke.** `exact-return.test.ts` checks, at every revoke the driver applies to a
+  grant that has a parent, that the parent's headroom rose by exactly `limit(h) - subtreeOwn(h)`, with
+  `subtreeOwn(h)` taken from the raw charges by an oracle that does not call the library. Four more relations
+  are checked at every applied revoke, a root's included: the amount returned is never negative, `absorbedBy`
+  equals `subtreeOwn`, `usedOf` changes for no grant but the parent, and no other live grant's headroom moves.
+  The driver revokes only a grant that is live, so a revoke of an already-dead grant is not a step of any of
+  them; ADR 0004 says its library-side counterpart is M5's `already-dead`.
+- **How deep the traces go, and what pins the rest.** In seeds 1 to 40 no charge above 0 lands on a line
+  longer than five grants, while `lib/chain` admits lines of eight (`MAX_ROOT_DEPTH + 1`). ADR 0004 gives the
+  count by line length (1: 395, 2: 294, 3: 122, 4: 26, 5: 5); a scratch script run on this branch and not
+  committed reproduced those five numbers. The sums at the depths the traces do not reach are pinned by one
+  hand-worked eight-link block in `accounting.test.ts`, with a different power of two spent on every grant,
+  and not by any property.
+- **The 30 s timeout.** The tests in `conservation.test.ts` and `exact-return.test.ts` that read the shared
+  seeded pass carry an explicit per-test timeout, the named constant `SHARED_PASS_TIMEOUT_MS` (30 000 ms), in
+  place of vitest's 5 s default. The measurements and the reason are in ADR 0004 Decision 8; this file does
+  not restate them.
+- **What the fix round changed.** ADR 0004 dates the independent review to `acbd7e9`. Read from PR #8's commit
+  list and diff, six commits follow it. `fe17ed2` and `674ec7c` added tests to `accounting.test.ts`: the
+  eight-link block, a check that `absorbedBy` and `usedOf` are read again at every call (no answer kept
+  between calls), a recorded revocation with `seq` 0, and a revoked grant that overspent not being clamped.
+  `fe17ed2` also reworded the describe and test titles of the coverage test in each property file (two lines
+  per file). The other four commits (`2fd4fd4`, `98e79ed`, `1302a66`, `e14907b`) changed ADR 0004 only, and
+  the first two touched it as well. `git diff acbd7e9 e14907b -- lib/allowance/accounting.ts lib/allowance/index.ts` is empty: the
+  library source did not change in the round. That is the PR's commit list, not the verifier's report, which
+  was not re-read for this PR. Neither `acbd7e9` nor `e14907b` (the head of the PR's ref) is on `main`,
+  because the PR was squash-merged.
+- **Tests:** `npm ci && npm test` printed `Test Files  26 passed (26)` and `Tests  712 passed (712)`: 4 files
+  and 84 tests under `lib/allowance/__tests__/` on top of M3's 22 files and 628 tests. `npm test --
+  lib/allowance`, M4's demo command, printed `Test Files  4 passed (4)` and `Tests  84 passed (84)`.
+  `npm run typecheck` and `npm run build` also exited 0 (`build` with `.next` removed first). Those runs were
+  on the mark-done branch, which differs from `d06b848` only in the two `.genesis/` files this PR edits.
+- **Observed 2026-10-24 at 22:21 UTC, before this PR:** `curl https://autonomous-company-simulator.vercel.app/api/health`
+  answered HTTP 200 with `"status":"ok"` and a `commit` of `d06b8487756b859334fa3e32817320833c9a95cb`: the
+  current `main` (`git ls-remote origin refs/heads/main` returned the same SHA at 22:21:09 UTC), which is M4's
+  own merge commit (`gh pr view 8` gives `mergedAt` 22:12:35 UTC). `checks.contracts.pass` was true with all
+  three assertions at `"pass":true`.
+- **What this does not show.** The route checks `lib/contracts` only and imports neither `lib/chain` nor
+  `lib/allowance`, so the curl shows which commit Vercel built and that those three self-checks passed then,
+  and nothing about the allowance layer. The tests pin what they pin: the properties are over the seeded
+  traces and the coverage table's branches, the architecture test is about imports and not purity, and a
+  negative, fractional or non-finite amount is not refused at this layer; ADR 0004's "What M4 does not claim"
+  has the full list. The ADR's falsifiability log (36 one-edit sabotages, each recorded there as failing) is
+  the builder's measurement and was not re-run for this PR. `lib/standing` does not exist, so nothing here
+  shows a verdict, a standing or an heir.
+
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
 - `.genesis/decisions/` holds four decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2),
