@@ -79,8 +79,9 @@ no plan rule asks for them to be refused.
 
 ## Decision 3 — `MAX_CHARTER_ENTRIES`: one bound the plan does not name, added because a list's length is input
 
-A Proxy can report `length` as `2 ** 32 - 1` and answer every index. Intake would not fail on that, it
-would not return. `intake.ts` therefore exports `MAX_CHARTER_ENTRIES` (invented, not derived; its value is
+A Proxy can report `length` as `2 ** 32 - 1` and answer every index. Without a bound, intake would not give a
+typed answer: in the sabotage run below it ran for roughly 16 to 18 s and then threw `RangeError: Invalid array
+length` from `Array.prototype.push`. `intake.ts` therefore exports `MAX_CHARTER_ENTRIES` (invented, not derived; its value is
 in `intake.ts`, and the tests are written in terms of the constant, so nothing pins the literal) and uses
 it three times: a charter's `roots`, a charter's `capabilities`, and an event's `capabilities`. A list
 outside `[1, MAX_CHARTER_ENTRIES]`, or one whose `length` is not a safe integer, is refused with no element
