@@ -11,7 +11,7 @@ and the definition of done are in [`.genesis/DONE.html`](.genesis/DONE.html).
 
 ## Status: in progress, nothing built yet
 
-**Live:** none yet. Nothing is deployed and there is no URL.
+**Live:** https://autonomous-company-simulator.vercel.app (`/api/health` is the only endpoint doing real work)
 
 This repository is a **genesis scaffold only**: the tooling skeleton, a placeholder home page, one smoke
 test, a CI workflow and the planning documents. There is **no engine code and no domain logic**; all
