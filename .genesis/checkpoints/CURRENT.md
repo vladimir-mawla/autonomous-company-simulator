@@ -53,14 +53,18 @@ pair is needed for them.
 
 - **Proves:** a clean clone restores with `npm ci` (all 15 `@rolldown/binding-*` platform bindings are
   in the lockfile), `npm run typecheck` is clean, `npm test` runs the scaffold's one smoke test (M1
-  added 12 more test files, below), and `npm run build` succeeds under webpack.
+  added 12 more test files and M2 added 2, below), and `npm run build` succeeds under webpack.
 - **The one smoke test** (`tests/smoke.test.ts`) pins that the `dev`/`build` scripts really pass
   `--webpack` and that `next.config.ts` really declares `experimental.extensionAlias` (it imports the
   config and reads the exported object rather than matching source text). It does **not** prove that a
-  `.js`-suffixed import resolves in a build: that needs a file under `app/` to import `lib/`. Until one does,
-  `npm run build` does not exercise `lib/` (checked once, with a temporary import, during M1's verification).
+  `.js`-suffixed import resolves in a build. Since M2 the build does: `app/api/health/route.ts` imports
+  `lib/contracts/index.js`, so `npm run build` exercises `extensionAlias` for real. Checked on this branch:
+  with the `experimental.extensionAlias` block removed from `next.config.ts` and `.next` deleted first,
+  `npm run build` exited 1 with `Module not found: Can't resolve '../../../lib/contracts/index.js'` at
+  `app/api/health/route.ts`; with the block in place it exited 0. The same removal on a warm `.next` cache
+  built without error, so run that check with `.next` removed first.
 - **Does not prove anything about the engine.** The scaffold has none. The only engine code is M1's
-  contracts, covered next.
+  contracts and the health route that self-checks them (M2), both covered next.
 
 ## What M1 adds, and what was run to check it
 
