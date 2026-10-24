@@ -28,7 +28,7 @@ import type { Cap } from "./fixtures.js";
  * pool of 5 cannot, however, build a chain of `MAX_ROOT_DEPTH + 1` = 8 grants (the trail needs 9 distinct
  * principals), so the longest-chain end of the property is run again with a pool of 12.
  *
- * To replay a failing case: the failure message carries the seed and the step; `runWorld(seed, pool, ...)` is
+ * To replay a failing case: the failure message carries the seed and the step; `runWorld(seed, options, check)` is
  * deterministic.
  */
 
