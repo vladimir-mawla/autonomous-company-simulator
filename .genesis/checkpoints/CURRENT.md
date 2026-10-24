@@ -55,7 +55,7 @@ with `gh pr view`), so no pair is needed for them.
 
 - **Proves:** a clean clone restores with `npm ci` (all 15 `@rolldown/binding-*` platform bindings are
   in the lockfile), `npm run typecheck` is clean, `npm test` runs the scaffold's one smoke test (M1
-  added 12 more test files and M2 added 2, below), and `npm run build` succeeds under webpack.
+  added 12 more test files, M2 added 2 and M3 added 7, below), and `npm run build` succeeds under webpack.
 - **The one smoke test** (`tests/smoke.test.ts`) pins that the `dev`/`build` scripts really pass
   `--webpack` and that `next.config.ts` really declares `experimental.extensionAlias` (it imports the
   config and reads the exported object rather than matching source text). It does **not** prove that a
@@ -65,8 +65,9 @@ with `gh pr view`), so no pair is needed for them.
   `npm run build` exited 1 with `Module not found: Can't resolve '../../../lib/contracts/index.js'` at
   `app/api/health/route.ts`; with the block in place it exited 0. The same removal on a warm `.next` cache
   built without error, so run that check with `.next` removed first.
-- **Does not prove anything about the engine.** The scaffold has none. The only engine code is M1's
-  contracts and the health route that self-checks them (M2), both covered next.
+- **Does not prove anything about the engine.** The scaffold has none. The engine code that exists is M1's
+  contracts, the health route that self-checks them (M2) and M3's `lib/chain`, each covered next.
+  `lib/allowance`, `lib/standing` and `domains/` do not exist.
 
 ## What M1 adds, and what was run to check it
 
@@ -74,8 +75,8 @@ with `gh pr view`), so no pair is needed for them.
   `Tests  131 passed (131)`: 12 files under `lib/contracts/__tests__/` plus `tests/smoke.test.ts`.
   `npm run typecheck` and `npm run build` also exited 0. That run was on the mark-done branch, which
   differs from `fc7b4ac` only in the two `.genesis/` files that PR edits.
-- That is the whole claim. M1 is the contracts only; M3 to M5 are `todo`, so everything about folding
-  the log, conserving authority and ruling a verdict is still a design, not a result.
+- That is the whole claim for M1. M1 is the contracts only. Folding the log, conserving authority and
+  ruling a verdict (M4 and M5, both `todo`) are still a design, not a result.
 
 ## What M2 adds, and what was run to check it
 
@@ -107,8 +108,9 @@ with `gh pr view`), so no pair is needed for them.
   app/api/health/route.ts` shows only comment lines (`373dee3` is on the PR's head ref, `refs/pull/4/head`,
   not on `main`, because the PR was squash-merged).
 - **What this does not show.** One `curl` is one request at one time: it shows which commit Vercel built
-  and that the three self-checks passed then, not that the deployment is unchanged since. `lib/chain`,
-  `lib/allowance` and `lib/standing` do not exist yet, so a green `/api/health` says nothing about them.
+  and that the three self-checks passed then, not that the deployment is unchanged since. `lib/chain`
+  exists since M3 but `/api/health` does not import it, and `lib/allowance` and `lib/standing` do not
+  exist yet, so a green `/api/health` says nothing about any of them.
   The guard checks presence only (ADR 0001, ADR 0002): a field that is present but of the wrong kind, or
   two fields that contradict each other, pass it.
 
