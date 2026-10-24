@@ -4,11 +4,14 @@
 - **Status:** proposed — written by the builder, not yet verified by an independent L4 pass
 - **Phase / milestone:** M4 (BUILD) — `lib/allowance/**` (`accounting.ts index.ts`, `__tests__/`)
 
-Decisions are in the order of the commits that made them. The falsifiability log near the end was measured on the
-tree of commit `842f0b0` and again on `03c85a4`, the commit that added a named timeout to the tests that share one
-pass; all 23 rows gave the same typecheck result, failed count and files both times (the first measurement's X19 row is the re-run described in "Read these with care"). The commit after `03c85a4` adds this ADR and changes no code. No number below is a count of
-passing tests: those go stale whenever a test is added, and the log quotes only "N failed" for a sabotage. The counts
-in "Coverage" are counts of what a trace did, not of tests that passed.
+Decisions are in the order of the commits that made them. The falsifiability log near the end was first measured (23
+rows) on the tree of commit `842f0b0` and again on `03c85a4`, the commit that added a named timeout to the tests that
+share one pass: the same typecheck result, failed count and files both times (the first measurement's X19 row is the
+re-run described in "Read these with care"). After the independent review of `acbd7e9` it was measured again on the tree
+of commit `1302a66`, with 13 rows (X20 to X32) added and the counts of failures changed by the review's new tests; the
+tables below are that measurement. The commit after `1302a66` changes only this ADR. No number below is a count of passing
+tests: those go stale whenever a test is added, and the log quotes only "N failed" for a sabotage. The counts in
+"Coverage" are counts of what a trace did, not of tests that passed.
 
 ## Context
 
@@ -109,9 +112,12 @@ ancestor's `absorbedBy`, because the sum goes by the child index and not by `cha
 **`accounting.test.ts`: worked examples.** Plan §7's numbers (headroom 500 000 before the revoke of G2 and 680 000
 after, absorbed 220 000, returned 180 000, the two shortfalls `{G2, 200 000, 50 000}` and `{G6, 50 000, 28 000}`, G7's
 cure), the four must-refuse items on minimal trees, failure case 03's numbers (limit 100, child 60, 50 spent: 40
-before, 50 after, not 100 and not 40), a four-link line revoked leaf first, root first and middle first, hostile trees,
-purity (the same tree and charges edited between calls give the new answer; no argument is changed; charge order does
-not matter), and `MAX_AMOUNT`. It is where the absolute numbers are pinned; the properties pin relations. Sabotages X15, X16 and X18 are caught only here.
+before, 50 after, not 100 and not 40), a four-link line revoked leaf first, root first and middle first, an eight-link line (`MAX_ROOT_DEPTH + 1` grants) with a
+different power of two spent on every grant so that a term left out of any sum shows in the total, hostile trees,
+purity (the same tree and charges edited between calls give the new answer, for all four functions; no argument is
+changed; charge order does not matter), a recorded revocation of seq 0, a revoked grant overspent by hand (not
+clamped), and `MAX_AMOUNT`. It is where the absolute numbers are pinned; the properties pin relations. Sabotages X15, X16,
+X18, X21 to X24 and X26 to X32 are caught only here.
 
 **`conservation.test.ts`: the safety half, at every prefix.** After each step of each seeded trace it checks nine
 properties: live headroom >= 0, roots not overspent, a root's `subtreeOwn` non-decreasing, dead headroom exactly 0,
@@ -203,21 +209,29 @@ Each of the two property files runs its seeds once (a memoised pass) and the pro
 to run carries the whole cost. Both files give every test that reads the pass the same named timeout, 30 s, because a
 filtered run (`-t`) may start at any of them.
 
-Measured on 2026-10-24, `--reporter=json`, the slowest test of each file (`conservation.test.ts` / `exact-return.test.ts`):
+Measured on 2026-10-24, `--reporter=json`, the slowest test of each file (`conservation.test.ts` / `exact-return.test.ts`).
+Set 1 is the tree of `03c85a4`; set 2 is the final tree `1302a66`, after the review's new tests:
 
-| Run | Host one-minute load average (10 cores) | conservation / exact-return, ms, three runs |
-|---|---|---|
-| single file (`vitest run lib/allowance`), no added load | 4.5, then 3.9 after (other jobs) | 161, 160, 172 / 48, 57, 88 |
-| full suite, no added load | same set as the row above | 323, 356, 315 / 118, 155, 118 |
-| single file, 20 `yes > /dev/null` processes | 3.2 three seconds after starting them, 29.9 after the set | 659, 356, 2 683 / 190, 150, 1 154 |
-| full suite, 20 `yes` processes | same set as the row above | 1 684, 2 715, 2 196 / 427, 545, 465 |
+| Set | Run | Host one-minute load average (10 cores) | conservation / exact-return, ms, three runs |
+|---|---|---|---|
+| 1 | single file (`vitest run lib/allowance`), no added load | 4.5, then 3.9 after (other jobs) | 161, 160, 172 / 48, 57, 88 |
+| 1 | full suite, no added load | same set as the row above | 323, 356, 315 / 118, 155, 118 |
+| 1 | single file, 20 `yes > /dev/null` processes | 3.2 three seconds after starting them, 29.9 after the set | 659, 356, 2 683 / 190, 150, 1 154 |
+| 1 | full suite, 20 `yes` processes | same set as the row above | 1 684, 2 715, 2 196 / 427, 545, 465 |
+| 2 | single file, no added load | 20.4, then 19.4 after (other jobs) | 400, 243, 332 / 164, 106, 160 |
+| 2 | full suite, no added load | same set as the row above | 2 104, 1 490, 1 393 / 620, 359, 259 |
+| 2 | single file, 20 `yes` processes | 20.5 three seconds after starting them, 30.0 after the set | 909, 890, 1 717 / 384, 248, 551 |
+| 2 | full suite, 20 `yes` processes | same set as the row above | 1 979, 2 104, 2 088 / 631, 587, 507 |
 
-The machine was never idle: other jobs were running, and the one-minute load average was between 1.6 and 29.9 at the
-moments I read it, so the "no added load" rows are a busy machine and the 20-process rows a very busy one. The tests
-of the table ran one set after the other, not in a controlled order. All 20 `yes` processes were
-killed after each run (`pgrep -x yes` printed 0). The slowest, 2 715 ms in a full-suite run, is 54% of vitest's 5 s default; the quiet conservation rows times 2.5 (an assumed slowdown for
-GitHub's runner; the measurement is below) are 8% to 18% of it. That is why the named constant exists: under the heaviest
-load measured the default would leave less than a factor of 2.
+The machine was never idle: other jobs were running, and the one-minute load average was between 1.6 and 30.0 at the
+moments I read it. Set 1's "no added load" rows were taken at a load average of about 4 and set 2's at about 20, so set 2's
+are the slower of the two for the same tests and the 20-process rows of both are a very busy machine. The tests of each
+table ran one set after the other, not in a controlled order. All 20 `yes` processes were
+killed after each run (`pgrep -x yes` printed 0). The slowest of set 1, 2 715 ms in a full-suite run, is 54% of vitest's 5 s
+default, and the slowest of set 2, 2 104 ms in a full-suite run, is 42% of it and 7% of the named 30 s; the quiet
+conservation rows of set 1 times 2.5 (an assumed slowdown for GitHub's runner; the measurement is below) are 8% to 18% of
+the default. That is why the named constant exists: under the heaviest load measured the default would leave less than a
+factor of 2.
 
 On GitHub's runner (the CI run for the pushed branch at `e5447fe`, run 40131944360, full suite) the slowest test of
 `conservation.test.ts` took 646 ms (the file 1 175 ms) and `exact-return.test.ts` took 253 ms as a file: 13% of the 5 s
@@ -237,12 +251,13 @@ pool-of-5 closure test at its 60 s limit, M1's `proof-harness`, `standing` and `
 those runs the files' durations were about 300 s each, while the same files took 1.4 to 3.8 s in runs that were not
 interrupted; between two of my commands the host's clock moved on by about 2 h 45 min. I did not establish the
 cause. They happened in full-suite runs without any sabotage and without the 20 processes too (1, 3, 4 and 1 tests failed
-in four such runs), and none of those failures was in `lib/allowance`: in the 12 runs of the table, none was.
+in four such runs), and none of those failures was in `lib/allowance`: in the 24 runs of the two sets none was, and in
+set 2 no test failed anywhere (84 tests in the single-file runs, 712 in the full-suite runs).
 
 ## Falsifiability log
 
 Each row is ONE edit to one file, then `tsc -p tsconfig.lib.json --noEmit` (the lib half of `npm run typecheck`) and the
-FULL `vitest run --reporter=json` against it, then `git checkout -- <file>` and an empty `git status --porcelain`: 23 runs,
+FULL `vitest run --reporter=json` against it, then `git checkout -- <file>` and an empty `git status --porcelain`: 36 runs,
 all restored clean. Measured by a script that applied the edit, ran both commands and parsed the result. The script is
 not committed; each edit is described here so it can be repeated by hand. Several tests can go red from one edit; the
 files are named so the layer that caught it is visible. "Typecheck" says what `npm run typecheck`'s lib half reported:
@@ -252,34 +267,53 @@ files are named so the layer that caught it is visible. "Typecheck" says what `n
 
 | # | Edit | Typecheck | `npm test` | Red in |
 |---|---|---|---|---|
-| P1 | revoked child charges 0 (forgive spent) | passes | 19 failed | accounting 14, conservation 2, exact-return 3 |
-| P2 | revoked child keeps its full reservation | passes | 18 failed | accounting 16, exact-return 2 |
-| P3 | skip the headroom check at reservation (checkHeadroom is ok for any live grant) | passes | 18 failed (1 of them the coverage-floor test) | accounting 9, conservation 8, exact-return 1 |
-| P4 | [driver edit] revoking an already-dead grant re-sets revokedAt (the dead-target refusal is removed) | passes | 4 failed (1 of them the coverage-floor test) | conservation 2, exact-return 2 |
+| P1 | revoked child charges 0 (forgive spent) | passes | 25 failed | accounting 20, conservation 2, exact-return 3 |
+| P2 | revoked child keeps its full reservation | passes | 24 failed | accounting 22, exact-return 2 |
+| P3 | skip the headroom check at reservation (checkHeadroom is ok for any live grant) | passes | 18 failed (1 is the coverage-floor test) | accounting 9, conservation 8, exact-return 1 |
+| P4 | [driver edit] revoking an already-dead grant re-sets revokedAt (the dead-target refusal is removed) | passes | 4 failed (1 is the coverage-floor test) | conservation 2, exact-return 2 |
 
 **Beyond the plan:**
 
 | # | Edit | Typecheck | `npm test` | Red in |
 |---|---|---|---|---|
-| X1 | a dead grant reports limit - used instead of 0 | passes | 15 failed | accounting 10, conservation 5 |
+| X1 | a dead grant reports limit - used instead of 0 | passes | 16 failed | accounting 11, conservation 5 |
 | X2 | usedOf of an unknown id is 0 | passes | 5 failed | accounting 4, conservation 1 |
 | X3 | headroomOf of an unknown id is 0 | passes | 5 failed | accounting 4, conservation 1 |
 | X4 | absorbedBy of an unknown id is 0 | passes | 5 failed | accounting 4, conservation 1 |
-| X5 | off by one at the boundary: requested < headroom | passes | 10 failed (1 of them the coverage-floor test) | accounting 7, conservation 3 |
-| X6 | off by one the other way: requested <= headroom + 1 | passes | 15 failed (1 of them the coverage-floor test) | accounting 6, conservation 8, exact-return 1 |
-| X7 | wrong subtree aggregation: subtreeOwn does not descend past the root's own children | passes | 8 failed | accounting 4, conservation 1, exact-return 3 |
-| X8 | a revoked child costs its OWN spend only (descendants' spend dropped) | passes | 11 failed | accounting 6, conservation 2, exact-return 3 |
-| X9 | absorbedBy returns what was returned (limit - subtreeOwn) instead of what was absorbed | passes | 11 failed | accounting 10, exact-return 1 |
+| X5 | off by one at the boundary: requested < headroom | passes | 10 failed (1 is the coverage-floor test) | accounting 7, conservation 3 |
+| X6 | off by one the other way: requested <= headroom + 1 | passes | 15 failed (1 is the coverage-floor test) | accounting 6, conservation 8, exact-return 1 |
+| X7 | wrong subtree aggregation: subtreeOwn does not descend past the root's own children | passes | 11 failed | accounting 7, conservation 1, exact-return 3 |
+| X8 | a revoked child costs its OWN spend only (descendants' spend dropped) | passes | 13 failed | accounting 8, conservation 2, exact-return 3 |
+| X9 | absorbedBy returns what was returned (limit - subtreeOwn) instead of what was absorbed | passes | 18 failed | accounting 17, exact-return 1 |
 | X10 | absorbedBy gives a number for a grant with no recorded revocation | passes | 2 failed | accounting 1, conservation 1 |
 | X11 | liveness looks only at the grant's own revocation, not its ancestors' | TS6133 | 12 failed | accounting 6, conservation 6 |
 | X12 | a dead or unknown grant is allowed a request of 0 (the lenient reading of the plan) | passes | 6 failed | accounting 4, conservation 2 |
 | X13 | the shortfall reports the requested amount as the headroom | passes | 9 failed | accounting 7, conservation 2 |
-| X14 | used ignores the grant's own charges | passes | 24 failed (1 of them the coverage-floor test) | accounting 18, conservation 5, exact-return 1 |
+| X14 | used ignores the grant's own charges | passes | 28 failed (1 is the coverage-floor test) | accounting 22, conservation 5, exact-return 1 |
 | X15 | NaN fails open: `requested <= headroom` written as `!(requested > headroom)` | passes | 1 failed | accounting 1 |
 | X16 | the child index is keyed by grant.id, not by the map key | passes | 1 failed | accounting 1 |
-| X17 | the book is memoised by tree identity (state kept between calls) | passes | 11 failed (1 of them the coverage-floor test) | accounting 5, conservation 2, exact-return 4 |
+| X17 | the book is memoised by tree identity (state kept between calls) | passes | 12 failed (1 is the coverage-floor test) | accounting 6, conservation 2, exact-return 4 |
 | X18 | headroomOf clamps a live grant's headroom at 0 | passes | 1 failed | accounting 1 |
 | X19 | [driver edit] a charge is drawn from [0, headroom + 1] (the driver overshoots by one) | passes | 7 failed | conservation 6, exact-return 1 |
+
+**Added after the independent review of `acbd7e9`** (cuts of `subtreeOwn` and `used` at depths the seeded traces do not
+reach, and three kinds of edit the review found green):
+
+| # | Edit | Typecheck | `npm test` | Red in |
+|---|---|---|---|---|
+| X20 | subtreeOwn descends only 2 levels below the root of the sum (control: the old tests do see this) | passes | 8 failed | accounting 5, exact-return 3 |
+| X21 | subtreeOwn descends only 3 levels below the root of the sum | passes | 3 failed | accounting 3 |
+| X22 | subtreeOwn descends only 4 levels | passes | 2 failed | accounting 2 |
+| X23 | subtreeOwn descends only 5 levels | passes | 2 failed | accounting 2 |
+| X24 | subtreeOwn descends only 6 levels | passes | 1 failed | accounting 1 |
+| X25 | used ignores the grant's own charges when its chain has 4 or more grants (control) | passes | 8 failed | accounting 4, conservation 3, exact-return 1 |
+| X26 | used ignores the grant's own charges when its chain has 6 or more grants | passes | 3 failed | accounting 3 |
+| X27 | used ignores the grant's own charges when its chain has 7 or more grants | passes | 2 failed | accounting 2 |
+| X28 | used ignores the grant's own charges when its chain has 8 grants (the deepest M3 admits) | passes | 1 failed | accounting 1 |
+| X29 | absorbedBy caches its first answer per (tree object, id) | passes | 1 failed | accounting 1 |
+| X30 | isRevoked by truthiness: a recorded revocation of seq 0 is ignored | passes | 1 failed | accounting 1 |
+| X31 | a revoked child's cost is clamped at its limit | passes | 1 failed | accounting 1 |
+| X32 | absorbedBy is clamped at the grant's limit | passes | 1 failed | accounting 1 |
 
 **Read these with care.**
 
@@ -292,7 +326,7 @@ files are named so the layer that caught it is visible. "Typecheck" says what `n
   makes the driver draw a charge of up to `headroom + 1`.
 - **P2 is caught by the exact-return property and by no safety property, as the plan says, but not "only" by it.**
   `conservation.test.ts`, the safety properties, has 0 failed; `exact-return.test.ts` has 2 failed (the equality and
-  `usedOf` moving only at the parent); `accounting.test.ts`, the worked examples with absolute numbers, has 16 failed.
+  `usedOf` moving only at the parent); `accounting.test.ts`, the worked examples with absolute numbers, has 22 failed.
   The plan's sentence is about properties.
 - **P1 trips "root over-spent"** (`every root grant has subtreeOwn <= its limit`) in `conservation.test.ts`, as the plan
   says, together with the `absorbed` property and three tests in `exact-return.test.ts`.
@@ -300,14 +334,23 @@ files are named so the layer that caught it is visible. "Typecheck" says what `n
 - **Coverage-floor failures** are counted in the totals where a row has one, because an edit that shifts the trace can
   stop it reaching a floor; P4 is the case where that is the point (no refusal of a dead target, so the "refused as
   already dead" floor is missed). Each such row also fails a property or a worked example.
-- **X15, X16 and X18 are caught only by `accounting.test.ts`.** The NaN comparison, a child index keyed by `grant.id`,
-  and a clamp: no property sees them. X16 was first NOT caught by anything; the test with a grant stored under a key
+- **X15, X16, X18, X21 to X24 and X26 to X32 are caught only by `accounting.test.ts`.** The NaN comparison, a child index
+  keyed by `grant.id`, and a clamp: no property sees them. X21 to X24 and X26 to X28 cut `subtreeOwn` and `used` on lines
+  the seeded traces do not reach, X29 keeps `absorbedBy` between calls, X30 ignores a recorded seq of 0, X31 and X32 clamp
+  on the revoked side. X16 was first NOT caught by anything; the test with a grant stored under a key
   different from its `id` field then charged and revoked nothing, so it could not tell the two keyings apart. It now
   does both (Decision 6).
+- **X20 to X32 came from the review of `acbd7e9`, and the "before" is measured.** On a scratch export of `acbd7e9`, full
+  suite, X20 and X25 (the controls: a cut at 2 levels, `used` dropping own charges from 4 grants deep) were red with 5
+  failed each, and X21 to X24, X26 to X28 and X29 to X32 were 0 failed. The eight-link line (`MAX_ROOT_DEPTH + 1` grants,
+  the longest M3 admits) turned X21 to X24 red with 3, 2, 2 and 1 failed and X26 to X28 with 3, 2 and 1; the purity,
+  seq-0 and revoked-side-clamp blocks turned X29 to X32 red with 1 failed each. The cause, on seeds 1 to 40: no charge
+  above 0 lands on a line longer than five grants (by line length 1:395 2:294 3:122 4:26 5:5), and the deepest spend below
+  a revoked grant is three levels below it, once.
 - **X12 is the lenient reading** of "unknown/dead => shortfall" (a request of 0 is allowed for a dead or unknown
   grant): caught, in `accounting.test.ts` and by the dead-grant boundary property.
-- **Seeds.** The two tables above were run at 40 seeds. On a scratch export of `842f0b0`, with the coverage-floor tests not
-  counted, every one of the 23 edits still failed at least one test at 20 seeds and at 10 seeds. At 10 seeds some edits
+- **Seeds.** The tables above were run at 40 seeds. On a scratch export of `842f0b0` (before the review round, so the first 23
+  rows only), with the coverage-floor tests not counted, every one of those 23 edits still failed at least one test at 20 seeds and at 10 seeds. At 10 seeds some edits
   stop failing in `conservation.test.ts` and are caught in another file (X7: only in `accounting.test.ts` and
   `exact-return.test.ts`).
 - **Outside `lib/allowance`.** In two earlier runs of the X19 row, tests in M1 and M3 timed out (the host stalls described
