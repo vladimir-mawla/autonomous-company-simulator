@@ -10,7 +10,9 @@ import { describe, expect, it } from "vitest";
  *
  * It is compared whole, with `toEqual`, so an added key (`framework`, `outputDirectory`, a
  * `functions` block, a `devCommand`) fails as surely as a changed one. Parsed from disk, not matched
- * as text, so reformatting the file does not matter and a duplicated or malformed key does.
+ * as text, so reformatting or reordering the file does not matter and a malformed file fails. A duplicated key
+ * is not caught as such: `JSON.parse` keeps the last value, so `"buildCommand": "next build"` followed by
+ * `"buildCommand": "npm run build"` still passes; a duplicate whose last value differs fails.
  *
  * What this does NOT show: that Vercel honours the file. That is checked by the deploy itself, whose
  * served runtime chunk must contain no `turbopack` string (ADR 0002).
