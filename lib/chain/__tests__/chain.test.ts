@@ -119,7 +119,7 @@ describe("firstDeadLink: the revoked link nearest the root", () => {
     expect(firstDeadLink(canonAfterRevokingG2(), [])).toBeUndefined();
   });
 
-  it("a revocation at seq 1 is still a revocation (the seq is compared with undefined, not truthiness)", () => {
+  it("a revocation at seq 1, the smallest Seq, is a revocation", () => {
     expect(firstDeadLink(treeOf(Object.values(CANON), { G2: 1 }), chain)).toEqual({ grantId: g("G2"), atSeq: 1 });
   });
 });

@@ -127,8 +127,9 @@ oracle does not share `chainOf`'s loop. In the sabotage run, removing the bound 
   `parent`, of at most `MAX_ROOT_DEPTH + 1` entries, so an out-of-order list, a skipped grant, a grant from
   another branch, a repeat or an empty list (from a cast) cannot produce a trail no delegation made.
 - **`firstDeadLink`** returns the revoked link NEAREST THE ROOT, not the first revoked in time (plan D7: the
-  heir is the grantor of that link, and it climbs as higher links are cut). A revocation at seq 1 counts: it
-  is compared with `undefined`, not tested for truthiness.
+  heir is the grantor of that link, and it climbs as higher links are cut). A revocation at seq 1, the smallest
+  `Seq`, counts. The lookup compares with `undefined`; no test tells that from a truthiness test, because the two
+  differ only for a falsy `revokedAt` value such as 0, and 0 is not a `Seq`.
 - **`liveAuthorityAbove`** returns, root first, the grantor of each link of the chain up to and including the
   first dead link (or every link if none is dead): the grantor of the dead link is the heir and its own
   authority runs through links that are all live; grantors below it are excluded. It never includes the
