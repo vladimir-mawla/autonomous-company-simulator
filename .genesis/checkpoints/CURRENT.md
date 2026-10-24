@@ -112,13 +112,18 @@ pair is needed for them.
 
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
-- `.genesis/decisions/` holds one decision record, `0001-contracts.md`, written by M1 (an ADR is written
-  by the milestone that made the decisions it records). M2 to M9 have none yet.
+- `.genesis/decisions/` holds two decision records, `0001-contracts.md` (M1) and `0002-deploy.md` (M2),
+  each written by the milestone that made the decisions it records. M3 to M9 have none yet. Both records'
+  Status line still reads `proposed`, and ADR 0002's Decision 7 still says production serves a branch head
+  deployed by the CLI and that the post-merge redeploy "has not happened yet". Each was true when written;
+  neither record was edited here (this PR touches only `DONE.html` and this file). "What M2 adds" above
+  has the state after the merge.
 - This checkpoint has no `model:` field. Which model did this work is not recoverable from the repository
   alone. The `Co-Authored-By` trailer on every commit is a fixed string required by the account's commit
   rule, written regardless of which model did the work, and must not be read as authorship evidence.
-- No live URL exists yet. The account's standing rule applies: deploy at milestone 2, never last. M2
-  deploys a live skeleton second, not last, so this project does not repeat the previous project's gap.
+- The live URL (M2, above) serves a skeleton: `/` is the genesis placeholder and `/api/health` self-checks
+  `lib/contracts` only. The interactive demo is M8 and is `todo`. The account's standing rule was deploy at
+  milestone 2, never last; M2 did that.
 - **Dependency versions were copied unchanged from adaptive-agent `origin/main` (`7b7ef2d`) and had known
   advisories; `next` has since been upgraded and the rest remain.** At genesis `npm audit` reported 6
   findings (1 critical, 3 high, 2 moderate): the critical one was `next@16.3.5` (11 advisories, two of
