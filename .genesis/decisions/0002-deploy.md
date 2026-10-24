@@ -86,7 +86,7 @@ What that test does not show is that Vercel honours the file; see Decision 6.
   `git rev-parse HEAD` of that clone. Observed: at `7929e94` and at `827ff30` the live `commit` equalled the
   clone's HEAD, `status` was `ok` and `checks.contracts.pass` was `true`.
 
-## Decision 6 — webpack was confirmed from the served chunks, with no Turbopack control
+## Decision 6 — webpack was confirmed from the served chunks; the Turbopack control is under "Not shown"
 
 The build log is not reproducible without the CLI, so the check is on what is served. The home page references
 five scripts, of which the runtime chunk is `/_next/static/chunks/webpack-<hash>.js`. All five were fetched
@@ -121,9 +121,14 @@ the unique deployment URLs, is public; use the alias.
 
 - **A green `/api/health` is not a statement about the engine.** The engine does not exist yet; the check
   covers `lib/contracts` only, and only for presence-shaped faults.
-- **The no-`turbopack` check is one-sided.** No Turbopack build was made to confirm the string would appear in
-  one (it cannot be made here: Turbopack does not resolve `lib/`'s `.js` imports). It shows the five fetched
-  chunks lack the string, not that Turbopack's output would contain it.
+- **The no-`turbopack` check was one-sided when this ADR was first written.** No Turbopack build had been made
+  to confirm the string would appear in one. A control was run afterwards in scratch copies of this branch
+  (2026-10-24). `next build --turbopack` and plain `next build` (what the plan says the preset runs) both fail on
+  this tree with `Module not found: Can't resolve '../../../lib/contracts/index.js'` at
+  `app/api/health/route.ts:1:1`; that was run locally, not on Vercel. The same tree with `app/api` deleted builds
+  under `next build --turbopack` (`▲ Next.js 16.4.3 (Turbopack)`), writes a `turbopack-<hash>.js` chunk, and the
+  string appears in five files under `.next/static`; so the grep can come out positive, and the five served
+  chunks lacking it means something.
 - **The SHA comparison shows the deployed commit, not an unchanged tree.** It matches because each deploy was
   from a clean clone whose `git status --short` was empty. It would not catch a dirty deploy by itself, and
   the empty-SHA behaviour of a `git worktree` deploy, which an earlier project recorded, was not reproduced
