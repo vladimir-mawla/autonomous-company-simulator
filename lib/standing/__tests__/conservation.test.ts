@@ -22,6 +22,8 @@ import {
   report,
   revokeEvent,
   runWorld,
+  CHUNKS,
+  isExhaustiveSeed,
 } from "./fixtures.js";
 
 /**
@@ -41,8 +43,6 @@ import {
  *   4. `subtreeOwn` of each root never decreases from one cut point to the next.
  */
 
-const CHUNKS = 10;
-const EXHAUSTIVE_SEEDS = 150;
 
 interface Scan {
   readonly failures: string[];
@@ -78,7 +78,7 @@ const scans = chunked(SEEDS, CHUNKS, (first, last): Scan => {
     const { charter, log } = world;
     const lastRootTotals = new Map<GrantId, number>();
 
-    for (const k of cutsOf(log, seed <= EXHAUSTIVE_SEEDS)) {
+    for (const k of cutsOf(log, isExhaustiveSeed(seed))) {
       const folded = mustFold(charter, log.slice(0, k));
       const view = { tree: folded.tree, charges: folded.charges };
       cuts += 1;

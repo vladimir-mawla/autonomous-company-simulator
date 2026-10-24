@@ -653,6 +653,20 @@ export function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+/**
+ * Every whole-system property runs its seeds in this many chunks, each its own test (`chunked`): 100 seeds a chunk. The slowest
+ * test of a file is its first chunk, which also pays for the world-building the later ones share, so a smaller chunk is a
+ * shorter worst case.
+ */
+export const CHUNKS = 15;
+
+/**
+ * The seeds whose EVERY prefix is checked by the files that sample cut points (`cutsOf`): every tenth, 150 of the 1 500. Spread
+ * over the seed range, so that every chunk carries the same weight; the first 150 seeds in one chunk made that chunk several
+ * times heavier than the others, and it was the slowest test in the suite.
+ */
+export const isExhaustiveSeed = (seed: number): boolean => seed % 10 === 0;
+
 /** The profile a seed runs under: every fifth seed is `deep`. Fixed here so every file agrees on which seeds are deep. */
 export const profileOf = (seed: number): "default" | "deep" => (seed % 5 === 0 ? "deep" : "default");
 

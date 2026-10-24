@@ -20,6 +20,7 @@ import {
   report,
   revokeEvent,
   runWorld,
+  CHUNKS,
 } from "./fixtures.js";
 import type { Cap } from "./fixtures.js";
 
@@ -45,7 +46,6 @@ import type { Cap } from "./fixtures.js";
  * `subtree(b)` is read from the raw grant events, not from M3.
  */
 
-const CHUNKS = 10;
 
 /** `b` and every grant below it, by repeated passes over the raw grant events until a pass adds nothing. */
 function subtreeOf(log: Log<Cap>, root: GrantId): Set<GrantId> {

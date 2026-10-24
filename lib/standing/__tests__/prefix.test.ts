@@ -20,6 +20,8 @@ import {
   SEEDS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
+  CHUNKS,
+  isExhaustiveSeed,
 } from "./fixtures.js";
 import type { Cap } from "./fixtures.js";
 
@@ -32,15 +34,15 @@ import type { Cap } from "./fixtures.js";
  * each catches a different way of leaking the future into a verdict:
  *
  *   A. THE PREFIXES. For every seed, at a set of cut points, the verdict, the `seq` and the commitment of each commit that
- *      prefix holds are identical to the same commit's record in the full log. The cut points are EVERY prefix for the first
- *      `EXHAUSTIVE_SEEDS` seeds, and for the rest the last prefix, every revoke and the event before it (the points where
- *      the tree changes), and eight evenly spaced ones. That is a sample, chosen for where a verdict could be disturbed; it
+ *      prefix holds are identical to the same commit's record in the full log. The cut points are EVERY prefix for every
+ *      tenth seed (`isExhaustiveSeed`, 150 seeds), and for the rest the last prefix, every revoke and the event before it
+ *      (the points where the tree changes), and eight evenly spaced ones. That is a sample, chosen for where a verdict could be disturbed; it
  *      is not every prefix of every seed, and the ADR says so.
  *   B. AT ITS OWN MOMENT. For a commit, `mayCommit` asked against the log as it stood just BEFORE the commit (so against
  *      exactly the information the verdict may use) returns the verdict the full log holds. This is the recomputation the
- *      plan names, done with the pre-check, and it shares nothing with `fold`'s own bookkeeping. Every commit of the first
- *      `EXHAUSTIVE_SEEDS` seeds; for the rest, every commit whose chain was cut later (the ones hindsight could change) and
- *      every fifth of the others.
+ *      plan names, done with the pre-check, and it shares nothing with `fold`'s own bookkeeping. Every commit of every
+ *      tenth seed; for the rest, every commit whose chain was cut later (the ones hindsight could change) and every fifth
+ *      of the others.
  *   C. THE LOG GROWS, IT IS NEVER REWRITTEN. Going from one cut point to the next no grant, revocation, charge or commit that
  *      was there changes, and each revocation keeps the `seq` it was written at (a revocation is recorded once: `revokedAt`
  *      is write-once because `already-dead` refuses a second revoke, not because the map is frozen).
@@ -59,9 +61,6 @@ import type { Cap } from "./fixtures.js";
  * property would fail for an engine that looked ahead. And a hand-worked pair below shows the mechanism on three events.
  */
 
-const CHUNKS = 10;
-/** Seeds whose every prefix is checked (and every commit recomputed); the others are checked at sampled cut points. */
-const EXHAUSTIVE_SEEDS = 150;
 
 interface Scan {
   readonly hindsight: string[];
@@ -112,7 +111,7 @@ const scans = chunked(SEEDS, CHUNKS, (first, last): Scan => {
   let chargesGrew = 0;
 
   for (let seed = first; seed <= last; seed++) {
-    const exhaustive = seed <= EXHAUSTIVE_SEEDS;
+    const exhaustive = isExhaustiveSeed(seed);
     const world = runWorld({ seed, steps: STEPS, profile: profileOf(seed) });
     const { charter, log } = world;
     const full = mustFold(charter, log);

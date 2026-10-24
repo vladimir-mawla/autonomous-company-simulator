@@ -21,6 +21,7 @@ import {
   revokeEvent,
   runWorld,
   snapshotOf,
+  CHUNKS,
 } from "./fixtures.js";
 import type { Cap } from "./fixtures.js";
 
@@ -41,7 +42,6 @@ import type { Cap } from "./fixtures.js";
  *   4. `append` GIVES BACK NEW OBJECTS: the returned log shares nothing mutable with what the caller passed in.
  */
 
-const CHUNKS = 10;
 
 interface Scan {
   readonly determinism: string[];

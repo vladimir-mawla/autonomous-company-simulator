@@ -20,6 +20,7 @@ import {
   report,
   revokeEvent,
   runWorld,
+  CHUNKS,
 } from "./fixtures.js";
 import type { Cap } from "./fixtures.js";
 
@@ -39,7 +40,6 @@ import type { Cap } from "./fixtures.js";
  * a first read.
  */
 
-const CHUNKS = 10;
 
 /** A raw event as it would arrive in a log, for the table; `seq` is where the table says it is. */
 const rawGrant = (seq: number, overrides: Record<string, unknown> = {}): unknown => ({

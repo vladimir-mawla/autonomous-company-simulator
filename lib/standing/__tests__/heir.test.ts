@@ -28,6 +28,8 @@ import {
   revokeEvent,
   revokeSeqs,
   runWorld,
+  CHUNKS,
+  isExhaustiveSeed,
 } from "./fixtures.js";
 import type { Cap } from "./fixtures.js";
 
@@ -54,8 +56,6 @@ import type { Cap } from "./fixtures.js";
  * anyone below the break. That the heir's own authority is live (every link above the break is uncut) is checked too.
  */
 
-const CHUNKS = 10;
-const EXHAUSTIVE_SEEDS = 150;
 
 const inheritedOf = (log: Log<Cap>): InheritedStanding[] => {
   const result = standings(CHARTER, log);
@@ -249,7 +249,7 @@ const scans = chunked(SEEDS, CHUNKS, (first, last): Scan => {
     const firstIndex = new Map<CommitId, number>();
     const lowest = new Map<CommitId, number>();
 
-    for (const k of cutsOf(log, seed <= EXHAUSTIVE_SEEDS)) {
+    for (const k of cutsOf(log, isExhaustiveSeed(seed))) {
       const prefix = log.slice(0, k);
       for (const standing of allStandings(charter, prefix)) {
         if (standing.kind !== "inherited") continue;

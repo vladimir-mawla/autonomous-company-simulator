@@ -17,6 +17,7 @@ import {
   report,
   revokeEvent,
   runWorld,
+  CHUNKS,
 } from "./fixtures.js";
 import type { Cap } from "./fixtures.js";
 
@@ -35,7 +36,6 @@ import type { Cap } from "./fixtures.js";
  * `MAX_LOG_EVENTS`), where `mayCommit` must give the failure `append` gives.
  */
 
-const CHUNKS = 10;
 
 interface Scan {
   readonly disagreements: string[];

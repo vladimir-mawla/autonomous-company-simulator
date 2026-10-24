@@ -23,6 +23,8 @@ import {
   SEEDS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
+  CHUNKS,
+  isExhaustiveSeed,
 } from "./fixtures.js";
 
 /**
@@ -39,7 +41,7 @@ import {
  *
  * and a commit is born `binding` or `void`, never `inherited` (no link of its chain can have been cut when it is made).
  *
- * Over the cut points of `cutsOf` (every prefix for the first `EXHAUSTIVE_SEEDS` seeds, a sample of where the tree changes
+ * Over the cut points of `cutsOf` (every prefix for every tenth seed, `isExhaustiveSeed`, and a sample of where the tree changes
  * for the rest), for every pair of consecutive cut points, for every commit in both. The relation is transitive, so a sample
  * of cut points constrains every pair between them. What else is checked: that the kind of each standing agrees with an
  * independent reading of the log (a breached verdict is `void`; a warranted one is `inherited` exactly when a link of its
@@ -49,8 +51,6 @@ import {
  * The longest chain gets a hand-worked ladder below: eight commits, one per link, the links cut from the leaf up.
  */
 
-const CHUNKS = 10;
-const EXHAUSTIVE_SEEDS = 150;
 
 type Kind = Standing["kind"];
 
@@ -78,7 +78,7 @@ const scans = chunked(SEEDS, CHUNKS, (first, last): Scan => {
   let kindsChecked = 0;
 
   for (let seed = first; seed <= last; seed++) {
-    const exhaustive = seed <= EXHAUSTIVE_SEEDS;
+    const exhaustive = isExhaustiveSeed(seed);
     const world = runWorld({ seed, steps: STEPS, profile: profileOf(seed) });
     const { charter, log } = world;
 
@@ -300,4 +300,3 @@ describe("void is absorbing on the longest chain: no later revoke at any level t
     ]);
   });
 });
-

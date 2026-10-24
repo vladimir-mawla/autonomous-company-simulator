@@ -29,6 +29,7 @@ import {
   SEEDS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
+  CHUNKS,
 } from "./fixtures.js";
 import type { Cap } from "./fixtures.js";
 
@@ -262,7 +263,6 @@ describe("who may revoke, at every depth of the longest chain", () => {
 // The property over generated logs
 // ---------------------------------------------------------------------------------------------------
 
-const CHUNKS = 10;
 
 /** How an independent reading of the log (events only; none of M3's or M4's functions) says a revoke should be decided. */
 function oracleRevoke(prefix: Log<Cap>, grantId: GrantId, by: string): "unknown-grant" | "already-dead-self" | "already-dead-ancestor" | "revoker-not-authorised" | "admitted" {
