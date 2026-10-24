@@ -114,6 +114,64 @@ with `gh pr view`), so no pair is needed for them.
   The guard checks presence only (ADR 0001, ADR 0002): a field that is present but of the wrong kind, or
   two fields that contradict each other, pass it.
 
+## What M3 adds, and what was run to check it
+
+- **What it is:** `lib/chain/**` (`intake.ts`, `chain.ts`, `structure.ts`, `index.ts`), seven test files under
+  `lib/chain/__tests__/` and ADR 0003. Nothing outside `lib/chain` imports it yet: on this branch the only
+  matches for `lib/chain` elsewhere are a comment in `app/api/health/route.ts` and string fixtures in
+  `lib/contracts/__tests__/architecture.test.ts`, found by `grep`. So no route, page or deploy runs it.
+- **Intake reads each field once.** `intake.ts` reads each property of untrusted input once, through one
+  helper, and the rest of intake looks only at that read; a read that throws is a typed `hostile` result
+  for an event (an invalid charter, for a charter), not an exception. `hostile-input.test.ts` counts reads
+  with accessors and with a Proxy `get` trap. ADR 0003
+  Decision 1 says which fields have a flipping-getter test in both directions and which in one. This is
+  intake only: Decision 4 records that `checkGrantStructure` and the walkers trust the values they are
+  given, and two tests labelled HONEST LIMIT show what that means.
+- **The nine structural rejections.** `checkGrantStructure` refuses a grant for the first of nine rules it
+  breaks, in the order of `lib/chain/structure.ts`: `duplicate-id`; for a root grant `not-a-root`; for a
+  child `unknown-parent`, `parent-dead`, `grantor-not-holder`, `capability-widening`, `depth-exhausted` and
+  `depth-not-narrowed`; then `principal-cycle` for either. It never reads a grant's `limit`:
+  `over-allocation` is M5's. Intake adds two more kinds M3 owns (`invalid-event-shape` and
+  `unknown-capability`). `unknown-parent` also covers a parent whose ancestry cannot be completed, which the
+  plan has no kind for (Decision 6).
+- **Three test layers** (Decision 7). (1) A table, `structure.test.ts`, in which each rejection's fixture
+  violates only its own rule: every row has a `violating` scenario that must be refused and a `repaired` one
+  that must be accepted, with one stated exception (the `depth-exhausted` fixture also breaks
+  `depth-not-narrowed`). (2) An attenuation-closure property, `attenuation-closure.test.ts`, over a seeded
+  generator: 1000 seeds of 100 steps. (3) N and N+1 for every constant the layer enforces,
+  `boundaries.test.ts`. `intake.test.ts`, `hostile-input.test.ts`, `chain.test.ts` and `architecture.test.ts`
+  cover the rest.
+- **The 60 s timeout.** Two tests in `attenuation-closure.test.ts`, the pool-of-5 closure test and the
+  pool-of-12 longest-chain test, carry an explicit 60 s per-test timeout (`SEED_LOOP_TIMEOUT_MS`) in place
+  of vitest's 5 s default, because they timed out under CPU load. The measurements, why their work was not
+  cut instead, and what the timeout does and does not protect against are in ADR 0003 Decision 7 ("Timeout,
+  and why the work was not cut"); this file does not restate them.
+- **Tests:** `npm ci && npm test` printed `Test Files  22 passed (22)` and `Tests  628 passed (628)`: 7
+  files and 483 tests under `lib/chain/__tests__/`, 12 and 128 under `lib/contracts/__tests__/`, 2 and 14
+  under `app/api/health/__tests__/`, and `tests/smoke.test.ts` (3). `npm test -- lib/chain`, M3's demo
+  command, printed `Test Files  7 passed (7)` and `Tests  483 passed (483)`. `npm run typecheck` and
+  `npm run build` also exited 0. Those runs were on the mark-done branch, which differs from `aebd77e` only
+  in the two `.genesis/` files this PR edits.
+- **What the PR changed after its ADR was written.** Read from PR #6's commit list and diff: after `cba90ef`,
+  the commit that added ADR 0003, the PR has eight more commits. `dc4ebf6` gave the two seed-loop tests the
+  60 s timeout, and seven `docs(chain)` commits renamed one test and changed comments and ADR text. No
+  non-comment line of the four `lib/chain` source files changed in them: `git diff cba90ef 1db70f5 --
+  lib/chain/intake.ts lib/chain/chain.ts lib/chain/structure.ts lib/chain/index.ts` shows only comment lines
+  (`1db70f5` is the head of the PR's ref; neither it nor `cba90ef` is on `main`, because the PR was
+  squash-merged). That is the PR's commit list, not a statement of which commits the verifier's one fix round
+  consisted of.
+- **Observed 2026-10-24 at 14:37 UTC, before this PR:** `curl https://autonomous-company-simulator.vercel.app/api/health`
+  answered HTTP 200 with `"status":"ok"` and a `commit` of `aebd77ec49f8037ec882b89590ed152fe3c31e35`: the
+  current `main` (`git ls-remote origin refs/heads/main` returned the same SHA at 14:37:05 UTC), which is
+  M3's own merge commit. `checks.contracts.pass` was true with all three assertions at `"pass":true`.
+- **What this does not show.** The route checks `lib/contracts` only and does not import `lib/chain`, so the
+  curl shows which commit Vercel built and that those three self-checks passed then, and nothing about the
+  chain layer. The tests pin what they pin: the closure property is over what its seeded generator produces,
+  not every grant tree, and the architecture test is about imports, not purity; ADR 0003's "What M3 does
+  not claim" has the full list. The ADR's falsifiability log (33 one-edit sabotages, each recorded there as
+  failing) is the builder's measurement and was not re-run for this PR. `lib/allowance` and `lib/standing` do
+  not exist, so nothing here shows conservation, a verdict or a standing.
+
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
 - `.genesis/decisions/` holds three decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2) and
