@@ -45,7 +45,8 @@ import { basename, dirname, join, resolve } from "node:path";
  *
  * WHAT THIS DOES NOT DO: it does not prove a proof file's routes are the right
  * routes, or that a route list is complete. It checks that each route that IS
- * written fails for the stated reason under both configs.
+ * written fails with the stated code and message fragment under both configs. It does not check WHY a
+ * property is refused: `warrant?: string` in place of `warrant?: never` leaves the proofs matched.
  */
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..", "..", "..");

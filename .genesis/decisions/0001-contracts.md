@@ -64,8 +64,11 @@ whose code differed from the directive's own, so a line with two `TS2322` errors
 message, was accepted. It now reports every diagnostic on a proof line other than the one that matched.
 `proof-harness.test.ts` has a self-test for it (two `TS2322` on one line).
 
-**What this does not do.** It checks that each route that is written fails for the stated reason
-under both configs. It does not show the set of routes is complete, and the message fragments are
+**What this does not do.** It checks that each route that is written fails with the stated code and a
+message naming the stated property or type, under both configs. It does not check WHY the property is
+refused: replacing `warrant?: never` on `VoidStanding` with `warrant?: string` leaves all 104 `standing-*`
+directives matched, and only the `Assert<Equal<...>>` tie (TS2344 in `standing.ts`) goes red. It does not
+show the set of routes is complete, and the message fragments are
 tied to TypeScript's wording, so a TypeScript upgrade can require editing them (the version is
 pinned at `7.0.2`).
 

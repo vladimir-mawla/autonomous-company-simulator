@@ -7,7 +7,7 @@ import { checkProofFile } from "./support/proof-harness.js";
  * Runs the proof harness over every file in `proofs/`. A proof file is
  * type-only (it is also compiled by `npm run typecheck`, where each directive
  * must still have an error to suppress); this test is what checks each one
- * fails for the stated reason under both tsconfigs.
+ * fails with the stated code and message fragment under both tsconfigs.
  *
  * EXPECTED_DIRECTIVES pins how many proof lines each file has, so deleting a
  * route, or a whole proof file, turns this red instead of silently shrinking
@@ -29,7 +29,7 @@ const EXPECTED_DIRECTIVES: Readonly<Record<string, number>> = {
   "tree-and-warrant.proofs.ts": 6,
 };
 
-describe("every proof file fails to compile for exactly the stated reasons", () => {
+describe("every proof file fails to compile with exactly the stated codes and message fragments", () => {
   const onDisk = readdirSync(PROOFS_DIR).filter((name) => name.endsWith(".ts")).sort();
 
   it("the proofs directory holds exactly the proof files this test knows about", () => {
