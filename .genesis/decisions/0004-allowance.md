@@ -212,14 +212,14 @@ Measured on 2026-10-24, `--reporter=json`, the slowest test of each file (`conse
 The machine was never idle: other jobs were running, and the one-minute load average was between 1.6 and 29.9 at the
 moments I read it, so the "no added load" rows are a busy machine and the 20-process rows a very busy one. The tests
 of the table ran one set after the other, not in a controlled order. All 20 `yes` processes were
-killed after each run (`pgrep -x yes` printed 0). The slowest, 2 715 ms in a full-suite run, is 54% of vitest's 5 s default; the quiet rows times 2.5 (GitHub's runner is
-about that much slower than a local idle run) are 8% to 18% of it. That is why the named constant exists: under the heaviest
+killed after each run (`pgrep -x yes` printed 0). The slowest, 2 715 ms in a full-suite run, is 54% of vitest's 5 s default; the quiet conservation rows times 2.5 (an assumed slowdown for
+GitHub's runner; the measurement is below) are 8% to 18% of it. That is why the named constant exists: under the heaviest
 load measured the default would leave less than a factor of 2.
 
 On GitHub's runner (the CI run for the pushed branch at `e5447fe`, run 40131944360, full suite) the slowest test of
 `conservation.test.ts` took 646 ms (the file 1 175 ms) and `exact-return.test.ts` took 253 ms as a file: 13% of the 5 s
 default and 2% of the named 30 s, and about twice what the same test took in the quiet local full-suite runs (315 to 356 ms),
-a little under the 2.5 used above.
+a little under the 2.5 assumed above.
 
 **It could be cut, and was not cut further.** With the coverage-floor tests not counted, every edit in the ledger is still
 caught at 20 seeds and at 10 (checked on a scratch export of `842f0b0`; see "Seeds" below), and the floors hold,
