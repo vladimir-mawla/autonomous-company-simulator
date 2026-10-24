@@ -121,9 +121,10 @@ export type StandingIntegrity =
 
 /**
  * The per-variant field tables the guard reads. They are the run-time mirror of the `?: never` and
- * required declarations above, and the three `Assert` lines below make `npm run typecheck` fail if
- * the two drift: a table that omits a forbidden or required field, lists one the type does not
- * declare so, or a common field added to `StandingBase` that the guard was not told about.
+ * required declarations above, and the seven `Assert` lines below make `npm run typecheck` fail if
+ * the two drift: a table that omits a forbidden or required field among the five in `VariantField`,
+ * lists one the type does not declare so, or a common field added to `StandingBase` that the guard was
+ * not told about. A new field outside those five is not seen (ADR 0001, Decision 10).
  */
 const BASE_REQUIRED = ["commitId", "committedAt"] as const;
 const SHAPE = {
