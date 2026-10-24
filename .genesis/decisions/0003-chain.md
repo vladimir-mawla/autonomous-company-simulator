@@ -297,9 +297,12 @@ files are named so the layer that caught it is visible.
 **Read these with care.**
 - Every sabotage went red, including the six the plan lists for the table. The plan says deleting
   `parent-dead` is caught ONLY by the table test (on its throwaway model, whose whole-system properties did
-  not notice). Here it is also caught by `attenuation-closure.test.ts` (4 failed), because that layer asserts
-  "no link on the chain was revoked at admission", a clause the plan's list of closure properties does not
-  contain. That is a difference in what was built, not a finding about the plan's model.
+  not notice). Here it is also caught by `attenuation-closure.test.ts` (4 failed). Two of the four are the closure
+  tests, which fail on "no link on the chain was revoked at admission", a clause the plan's list of closure
+  properties does not contain. The other two are the coverage test (`parent-dead` is never produced) and the
+  walkers-agree test (it compares `liveAuthorityAbove` with every grantor on the chain of each accepted grant).
+  With that clause removed from the test, deleting `parent-dead` still fails those two (8 failed in all). That is
+  a difference in what was built, not a finding about the plan's model.
 - X10 and X16 ran to completion and failed on `RangeError: Invalid array length`; they were set up to be
   killed after 60 s and were not. The 16 s and 18 s in Decision 3 are the durations vitest recorded for the two
   `2 ** 32 - 1` tests in the X16 run.
