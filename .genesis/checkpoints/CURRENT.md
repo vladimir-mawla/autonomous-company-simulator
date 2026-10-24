@@ -36,7 +36,8 @@ health route, and no deploy.
 - **The one smoke test** (`tests/smoke.test.ts`) pins that the `dev`/`build` scripts really pass
   `--webpack` and that `next.config.ts` really declares `experimental.extensionAlias` (it imports the
   config and reads the exported object rather than matching source text). It does **not** prove that a
-  `.js`-suffixed import resolves in a build: that needs `lib/` and is covered by `npm run build` from M1.
+  `.js`-suffixed import resolves in a build: that needs a file under `app/` to import `lib/`. Until one does,
+  `npm run build` does not exercise `lib/` (checked once, with a temporary import, during M1's verification).
 - **Does not prove anything about the engine.** There is none. Every plan claim is a design, not a result.
 
 ## Known gaps in this repository's own record, stated up front rather than discovered later
