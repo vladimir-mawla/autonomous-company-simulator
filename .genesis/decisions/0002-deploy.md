@@ -149,7 +149,7 @@ the unique deployment URLs, is public; use the alias.
   `git checkout -- lib/contracts/standing.ts` in the scratch clone the same server returned `200` and
   `"status":"ok"`. The dev server was killed and port 3457 checked free. The same sabotage also turned
   `npm run typecheck` red (`TS2344` at `standing.ts(156,10)`, the `Assert<Equal<...>>` that ties the table to the
-  types) and `npm test` red (13 failed, 131 passed, in `route.test.ts`, `integrity.test.ts`, `standing.test.ts`
+  types) and `npm test` red (13 failed, 132 passed of 145, in `route.test.ts`, `integrity.test.ts`, `standing.test.ts`
   and `type-proofs.test.ts`), so the heir field is guarded by several layers, not only by this route.
   The sabotage was never made in the checkout this branch lives in; `git diff main -- lib` is empty.
 - **Mutations of `route.ts`** (each reverted with `git checkout`): always-200, a guessed fallback SHA, no
