@@ -4,10 +4,11 @@
 - **Status:** proposed — written by the builder, not yet verified by an independent L4 pass
 - **Phase / milestone:** M3 (BUILD) — `lib/chain/**` (`intake.ts chain.ts structure.ts index.ts`, `__tests__/`)
 
-Decisions are in the order of the commits that made them. The falsifiability log near the end is
-measured on the tree of commit `1d7ae12` (every source and test file of this milestone; the commit
-that adds this ADR changes nothing else). No number below is a count of passing tests: those go stale
-whenever a test is added, and the log quotes only "N failed" for a sabotage.
+Decisions are in the order of the commits that made them. The falsifiability log near the end was measured
+on the tree of commit `1d7ae12` and again on `60fb7e3`, after a review round that changed comments, the name of
+one test and the timeout of two tests; all 33 rows gave the same typecheck result, failed count and files both
+times. The commits after `60fb7e3` change only comments and this ADR. No number below is a count of passing
+tests: those go stale whenever a test is added, and the log quotes only "N failed" for a sabotage.
 
 ## Context
 
@@ -80,16 +81,17 @@ no plan rule asks for them to be refused.
 ## Decision 3 — `MAX_CHARTER_ENTRIES`: one bound the plan does not name, added because a list's length is input
 
 A Proxy can report `length` as `2 ** 32 - 1` and answer every index. Without a bound, intake would not give a
-typed answer: in the sabotage run below it ran for roughly 16 to 18 s and then threw `RangeError: Invalid array
-length` from `Array.prototype.push`. `intake.ts` therefore exports `MAX_CHARTER_ENTRIES` (invented, not derived; its value is
+typed answer: in the sabotage run below it ran for between about 16 s and 23 s per test and then threw
+`RangeError: Invalid array length` from `Array.prototype.push`. `intake.ts` therefore exports `MAX_CHARTER_ENTRIES` (invented, not derived; its value is
 in `intake.ts`, and the tests are written in terms of the constant, so nothing pins the literal) and uses
 it three times: a charter's `roots`, a charter's `capabilities`, and an event's `capabilities`. A list
 outside `[1, MAX_CHARTER_ENTRIES]`, or one whose `length` is not a safe integer, is refused with no element
 read (a test counts element reads on a lying Proxy: zero).
 
 **What the bound does, measured.** In the sabotage run below, removing it made the two tests that give a
-list a claimed length of `2 ** 32 - 1` take about 16 s and about 18 s each and then fail with
-`RangeError: Invalid array length` from `Array.prototype.push`; with it they finish in milliseconds. It
+list a claimed length of `2 ** 32 - 1` take between about 16 s and 23 s each (three runs: 16.1 s and 18.6 s,
+17.6 s and 17.1 s, 23.0 s and 19.0 s) and then fail with `RangeError: Invalid array length` from
+`Array.prototype.push`; with it they finish in milliseconds. It
 loses no valid event for a charter that went through `readCharter` (an event's capability list must be a
 duplicate-free subset of a vocabulary that is itself capped), but a typed charter that did not go through
 `readCharter` and has a larger vocabulary could have a valid event refused. `boundaries.test.ts` pins N and
@@ -250,7 +252,7 @@ Not checked: that the code is pure (a closed graph says where code comes from, n
 Each row is ONE edit to one shipped source file in `lib/chain/`, then the FULL `npm run typecheck` and the
 FULL `vitest run` against it, then `git checkout -- <file>` and an empty `git status --porcelain`: 33 runs,
 all restored clean. Measured by a script that applied the edit, ran both commands (vitest with `--reporter=json`)
-and parsed the result, on the tree of commit `1d7ae12`. The script is not committed; each edit is described
+and parsed the result, on the trees of commits `1d7ae12` and `60fb7e3` (see the top). The script is not committed; each edit is described
 here so it can be repeated by hand. "Typecheck" says what `npm run typecheck` reported: rows that show `TS6133`
 are an unused variable left by the edit, not part of the property. Several tests can go red from one edit; the
 files are named so the layer that caught it is visible.
@@ -308,8 +310,8 @@ files are named so the layer that caught it is visible.
   With that clause removed from the test, deleting `parent-dead` still fails those two (8 failed in all). That is
   a difference in what was built, not a finding about the plan's model.
 - X10 and X16 ran to completion and failed on `RangeError: Invalid array length`; they were set up to be
-  killed after 60 s and were not. The 16 s and 18 s in Decision 3 are the durations vitest recorded for the two
-  `2 ** 32 - 1` tests in the X16 run.
+  killed after 60 s and were not. The durations in Decision 3 are what vitest recorded for the two
+  `2 ** 32 - 1` tests in three X16 runs.
 - A deleted intake rule is usually caught by many tests (X13: 26), so the count says how widely a rule is used,
   not how well it is pinned. P1's four, for example, are two table rows and two property tests.
 - P7a to P7f, the edits the mutating-getter tests exist for, are caught by `hostile-input.test.ts` (plus one

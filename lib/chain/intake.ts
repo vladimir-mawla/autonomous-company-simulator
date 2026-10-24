@@ -47,7 +47,7 @@ import type {
  * event's `capabilities`. INVENTED, not derived, and not in the plan: the four bounds in
  * `lib/contracts/limits.ts` are M1's and are not edited here, so this one lives in this layer. It exists because a
  * list's `length` is itself input. A Proxy can claim `2 ** 32 - 1` elements and answer every index, and an
- * unbounded loop over that, measured in ADR 0003 (sabotage row X16), ran for about 16 to 18 s and then threw
+ * unbounded loop over that, measured in ADR 0003 (sabotage row X16), ran for between about 16 s and 23 s and then threw
  * `RangeError: Invalid array length` from `push`: an exception out of intake instead of a typed refusal. For a charter that went through
  * `readCharter`, an event's capability list longer than this cannot be a duplicate-free subset of its
  * vocabulary (the vocabulary is itself capped here), so refusing the list unread loses no valid event.
