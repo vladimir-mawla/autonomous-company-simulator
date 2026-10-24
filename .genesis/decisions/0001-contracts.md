@@ -489,6 +489,12 @@ working tree that the commit adding each bullet leaves, not on `9d2404a`.
   through it, `module-graph.ts`). With the rule deleted AND that import
   prepended, "has no violation" passes: the earlier scan accepted a library source file importing a test file.
   Both edits restored; 130 passed.
+- **Harness, optional L4 item: the "tsc printed something that is not a diagnostic" check.** `checkProofSource` takes an
+  optional `tsc` script (default: this repo's) so a test can hand it a stub that prints `error TS5110: stub, no location`
+  and exits 1; the report for a file with no directives must contain that line. Replacing the `problems.push(...)` for
+  that case with `void line;`: `npm run typecheck` passes; `npm test`: 1 failed, 130 passed (131), only the new test.
+  Without the check, a zero-directive proof file (`standing-residuals.proofs.ts`) would pass when the compiler cannot run.
+  Restored; 131 passed.
 
 ## What M1 does not claim
 

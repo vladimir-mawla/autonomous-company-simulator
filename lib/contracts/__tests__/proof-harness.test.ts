@@ -121,6 +121,21 @@ describe("proof harness: the two configs really differ, and both are consulted",
   });
 });
 
+describe("proof harness: tsc output that is not a diagnostic is a problem, not silence", () => {
+  it("a compiler that prints a location-less error (here a stub) is reported for a file with no directives", () => {
+    const dir = mkdtempSync(join(tmpdir(), "act-proof-harness-stub-"));
+    try {
+      const stub = join(dir, "stub-tsc.js");
+      writeFileSync(stub, 'console.log("error TS5110: stub, no location");\nprocess.exit(1);\n');
+      const report = checkProofSource("export {};\n", HERE, stub);
+      expect(report.directives).toBe(0);
+      expect(report.problems.join("\n")).toMatch(/tsc printed something that is not a diagnostic: error TS5110/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("proof harness: a contract source that stops compiling is reported under its own file, not as a broken proof", () => {
   it("names the imported file and does not blame a proof line", () => {
     const dir = mkdtempSync(join(tmpdir(), "act-proof-harness-import-"));

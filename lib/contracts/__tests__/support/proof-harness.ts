@@ -121,7 +121,7 @@ function parseTscOutput(output: string): { diags: Diag[]; unparsed: string[] } {
   return { diags, unparsed };
 }
 
-function compile(config: string, scratch: string): { diags: Diag[]; unparsed: string[] } {
+function compile(config: string, scratch: string, tsc: string): { diags: Diag[]; unparsed: string[] } {
   const project = join(scratch, `${config.replace(/\.json$/, "")}.project.json`);
   writeFileSync(
     project,
@@ -134,7 +134,7 @@ function compile(config: string, scratch: string): { diags: Diag[]; unparsed: st
   );
   let output = "";
   try {
-    output = execFileSync(process.execPath, [TSC, "-p", project, "--pretty", "false"], {
+    output = execFileSync(process.execPath, [tsc, "-p", project, "--pretty", "false"], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -150,9 +150,10 @@ function compile(config: string, scratch: string): { diags: Diag[]; unparsed: st
  * Check one proof file's text. `baseDir` is the directory its RELATIVE imports
  * are written against; they are rewritten to absolute paths because the
  * stripped copy is compiled from a scratch directory (this repo's tests do not
- * write scratch files inside `lib/`).
+ * write scratch files inside `lib/`). `tsc` is the compiler script to run; it defaults to this repo's
+ * and exists so a test can hand in a stub that prints something that is not a diagnostic.
  */
-export function checkProofSource(source: string, baseDir: string): ProofReport {
+export function checkProofSource(source: string, baseDir: string, tsc: string = TSC): ProofReport {
   const problems: string[] = [];
   const lines = source.split("\n");
   const directives = parseDirectives(lines, problems);
@@ -169,7 +170,7 @@ export function checkProofSource(source: string, baseDir: string): ProofReport {
   try {
     writeFileSync(join(scratch, PROOF_FILE), stripped);
     for (const config of PROOF_CONFIGS) {
-      const { diags, unparsed } = compile(config, scratch);
+      const { diags, unparsed } = compile(config, scratch, tsc);
       for (const line of unparsed) {
         problems.push(`[${config}] tsc printed something that is not a diagnostic: ${line}`);
       }
