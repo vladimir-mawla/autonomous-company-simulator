@@ -639,6 +639,20 @@ export function cutsOf(log: Log<Cap>, exhaustive: boolean): number[] {
   return [...cuts].filter((k) => k >= 1 && k <= n).sort((a, b) => a - b);
 }
 
+/** Freeze `value` and everything reachable through plain objects and arrays, so a function that writes to an input throws. */
+export function deepFreeze<T>(value: T): T {
+  if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const inner of Object.values(value)) deepFreeze(inner);
+  }
+  return value;
+}
+
+/** A structural copy through JSON: plain data only, none of the original's objects. */
+export function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 /** The profile a seed runs under: every fifth seed is `deep`. Fixed here so every file agrees on which seeds are deep. */
 export const profileOf = (seed: number): "default" | "deep" => (seed % 5 === 0 ? "deep" : "default");
 
