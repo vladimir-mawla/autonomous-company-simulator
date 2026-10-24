@@ -130,12 +130,12 @@ pair is needed for them.
   them unauthenticated remote code execution), the rest were `vitest@5.0.1`, `vite`, `sharp` and
   `source-map-js`. They were not addressed at genesis because plan §12 says to copy the lockfile rather
   than regenerate it, and a version bump is a stack decision for the coordinator, not for genesis.
-  `next` is now `16.4.3` (branch `security/next-16.4.3`). `sharp` moved with it, because `next@16.4.3`
-  requires `sharp ^0.35.5`, so that finding is gone too. `npm audit` now reports 4 findings (2 high, 2
-  moderate), none of them addressed: `source-map-js` (high; reachable through `next` -> `postcss`, so it
-  is in the production tree), `vite` (high) and `vitest`/`@vitest/mocker` (moderate), the last two
-  dev-only. No assessment was made of whether any advisory is exploitable against this scaffold or
-  against Vercel's runtime.
+  `next` is now `16.4.3` (merged as PR #1, `ab14763` on `main`; `package.json` pins `"next": "16.4.3"`).
+  `sharp` moved with it, because `next@16.4.3` requires `sharp ^0.35.5`, so that finding is gone too.
+  `npm audit` now reports 4 findings (2 high, 2 moderate), none of them addressed: `source-map-js`
+  (high; reachable through `next` -> `postcss`, so it is in the production tree), `vite` (high) and
+  `vitest`/`@vitest/mocker` (moderate), the last two dev-only. No assessment was made of whether any
+  advisory is exploitable against this scaffold or against Vercel's runtime.
 - **The lockfile must not be rewritten with this machine's npm 11.5.1.** Measured on copies of this
   lockfile, `npm install` under npm 11.5.1 removed 27 entries (all 15 `@rolldown/binding-*`, `fsevents`
   and all 11 `lightningcss-*`), after which `npm ci` still exited 0 and `npm test` failed with "Cannot
