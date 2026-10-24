@@ -14,7 +14,9 @@ import type { Cap, GrantSpec } from "./fixtures.js";
  * a different rule instead of passing. Every row therefore carries two scenarios: `violating`, which must be
  * refused with exactly `expected`, and `repaired`, which differs from it by the ONE change that fixes that rule
  * and must be accepted. If `violating` also broke a later rule, `repaired` would be refused by it and the row
- * would fail. A row passing is the proof that its fixture violates only its own rule.
+ * would fail. A row passing is the proof that its fixture violates only its own rule, except `depth-exhausted`: a
+ * parent of depth 0 makes every child depth 'not narrowed' too, so that fixture breaks both, and its repair (the
+ * parent's depth raised to 1) fixes both.
  *
  * (The plan's note that `parent-dead` needs `limit: 0` is about M5: a dead grant's headroom is 0, so a positive
  * `limit` would be reported there as `over-allocation` before `parent-dead`. `checkGrantStructure` never reads

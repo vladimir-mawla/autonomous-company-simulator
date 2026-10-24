@@ -166,7 +166,9 @@ the parent's.
 **Layer 1, the table (`structure.test.ts`).** Every row carries two scenarios: `violating`, which must be
 refused with exactly the expected rejection, and `repaired`, which differs by the ONE change that fixes that
 rule and must be accepted. If the violating fixture also broke a later rule, the repaired one would be
-refused by it and the row would fail, so a passing row shows its fixture breaks only its own rule. There
+refused by it and the row would fail, so a passing row shows its fixture breaks only its own rule, with one
+exception: a parent of depth 0 makes every child depth 'not narrowed' too, so the `depth-exhausted` fixture breaks
+both rules, and its repair (the parent's depth raised to 1) fixes both. The pair table names this. There
 are rows for all nine kinds (the key list is tied to `StructureRejection["kind"]` with `satisfies`, so a tenth
 kind fails `npm run typecheck`), including five `parent-dead` shapes and two hand-built hostile-tree cases
 (a looping ancestry, an over-long one) for `unknown-parent`. A second table pairs each rule with the next one it can hide and shows the second
