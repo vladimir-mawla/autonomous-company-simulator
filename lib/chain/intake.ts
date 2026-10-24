@@ -43,12 +43,13 @@ import type {
 
 /**
  * The most entries intake will read from one list: a charter's `roots`, a charter's `capabilities`, and an
- * event's `capabilities`. INVENTED, not derived (like the bounds in `lib/contracts/limits.ts`, which this
- * file's author may not edit), and not in the plan: it exists because a list's `length` is itself input. A
- * Proxy can claim `2 ** 32 - 1` elements and answer every index, and an unbounded loop over that does not
- * fail, it just does not come back. An event's capability list longer than this cannot be a duplicate-free
- * subset of any vocabulary intake accepts (a charter's vocabulary is itself capped here), so refusing it
- * unread loses no valid event. `__tests__/boundaries.test.ts` pins N and N + 1 for all three uses.
+ * event's `capabilities`. INVENTED, not derived, and not in the plan: the four bounds in
+ * `lib/contracts/limits.ts` are M1's and are not edited here, so this one lives in this layer. It exists because a
+ * list's `length` is itself input. A Proxy can claim `2 ** 32 - 1` elements and answer every index, and an
+ * unbounded loop over that does not fail, it just does not come back. For a charter that went through
+ * `readCharter`, an event's capability list longer than this cannot be a duplicate-free subset of its
+ * vocabulary (the vocabulary is itself capped here), so refusing the list unread loses no valid event.
+ * `__tests__/boundaries.test.ts` pins N and N + 1 for all three uses.
  */
 export const MAX_CHARTER_ENTRIES = 1000;
 
