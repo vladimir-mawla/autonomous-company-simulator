@@ -23,9 +23,12 @@ must return, written as `ok` or `<error.kind>/<variant>/<field>`:
 | 2 | a `void` carrying a `warrant` | `as unknown as VoidStanding` | `unexpected-field/void/warrant` |
 | 3 | an `inherited` with no `heir` | `as unknown as InheritedStanding` | `missing-field/inherited/heir` |
 
-Two of the three are cast-built on purpose. The M1 types refuse both at compile time (ADR 0001), so they can
-only reach the guard through a cast, an implicit `any` or parsed JSON, which is the case the run-time guard is
-for; a running server can probe the guard but not the types. Matching on the full name, not on `ok: false`,
+Two of the three are cast-built on purpose. The M1 types refuse both at compile time for a value whose static
+type still shows the fault (ADR 0001), but that is not every route: a cast, an implicit `any` or parsed JSON gets
+a contaminated value past them, and so does a route with no cast and no `any` (widening the static type to a
+supertype first, `lib/contracts/__tests__/proofs/standing-residuals.proofs.ts` routes 4 to 7; or writing to the
+object through a writable-optional alias type after it was built, `lib/contracts/standing.ts`, "WHAT THIS DOES NOT
+CLOSE"). That is the case the run-time guard is for; a running server can probe the guard but not the types. Matching on the full name, not on `ok: false`,
 means a guard that starts failing for the wrong reason (right verdict, wrong field) is also reported.
 
 **Scope is `lib/contracts` only**, the one layer that exists at M2. Nothing here exercises `lib/chain`,
