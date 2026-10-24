@@ -145,10 +145,13 @@ last); a charge's amount is drawn inside `[0, headroomOf(grant)]` and never comp
 `firstDeadLink` finds a dead link on the target's chain, and then written once. Three checks, none of which is a claim
 about intent:
 
-1. **Every comparison in the driver was listed and read** (`runWorld`, by `grep` for `<`, `<=`, `>=`, `===`, `!==`).
-   They are the loop bound; seeded random draws; `.ok` and `=== undefined` on results of the published functions;
-   `options.snapshots === true`; and four filters that choose where to PROPOSE (`headroomOf(..) > 0`, `depth >= 1`, and
-   two on a parent pointer that is not `null`). No line compares a `limit` or an `amount` with a headroom or a limit.
+1. **Every comparison in the driver was listed and read** (`runWorld`, by `grep` for `<`, `<=`, `>`, `>=`, `===`, `!==`).
+   They are the loop bound; seeded random draws; `.ok` and `=== undefined` on results of the published functions and on
+   local lookups; `options.snapshots === true`; the `fate.kind` comparisons in one log label; `proposal.parent === null`
+   (a root grant has no parent to ask `checkHeadroom` of); emptiness guards on the lists a proposal picks from
+   (`ids.length === 0` makes the first grant a root, `.length > 0` before each pick); and four filters that choose where
+   to PROPOSE (`headroomOf(..) > 0`, `depth >= 1`, and two on a parent pointer that is not `null`). No line compares a
+   `limit` or an `amount` with a headroom or a limit.
 2. **Stand-ins change the trace exactly as far as they allow** (`conservation.test.ts`, "the driver re-implements no
    predicate"). With `checkHeadroom` replaced by "always ok", no grant is refused for headroom and grants are admitted
    with `limit` above the parent's headroom; with `checkGrantStructure` replaced by "always ok", none is refused for
