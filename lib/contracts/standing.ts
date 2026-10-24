@@ -44,6 +44,12 @@ import type { Warrant } from "./warrant.js";
  *    (`warrant?: never` then accepts `warrant: undefined`; `tsconfig.lib.json` rejects it; pinned in
  *    `__tests__/standing.test.ts`). No other value gets through, and a reader cannot tell `undefined`
  *    from absent.
+ *  - A standing mutated after it was built. `readonly` is not enforced by assignability, so
+ *    `Object.assign(clean, { warrant })`, `Object.defineProperty(clean, "warrant", { value })` and a write
+ *    through an alias type that declares the field writable compile with no cast and no `any`; the object's
+ *    static type still says it has no warrant. Not pinned by a directive-free line.
+ *  - A user-defined type guard (`x is Standing`) applied to a contaminated value narrows it to `Standing`
+ *    with no assertion written.
  * The plan pairs these types with a run-time check, `assertStandingWellFormed` (below, plan §4.2, §5).
  * It sees a contaminated value however it got there, but only the fields it is told about: its own
  * comment states what it does and does not catch.

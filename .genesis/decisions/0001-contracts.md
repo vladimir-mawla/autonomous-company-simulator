@@ -282,6 +282,14 @@ Two observations from writing them, stated because they are not what one expects
    expect the error under both configs and requiring that its only complaint is that `tsconfig.json` has
    none). `app/` and `components/` compile under that config. No value other than `undefined` gets
    through, and `undefined` is indistinguishable from absent to a reader and to JSON.
+6. A standing mutated after it was built. `readonly` is not enforced by assignability, so
+   `Object.assign(clean, { warrant })`, `Object.defineProperty(clean, "warrant", { value })` and a write through an
+   alias type that declares the field writable (`const alias: { warrant?: Warrant } = clean; alias.warrant = w`)
+   compile under both configs with no cast and no `any`; the object's static type still says it has no
+   warrant. `assertStandingWellFormed` reports it (`unexpected-field`). Not pinned by a directive-free line in
+   `proofs/standing-residuals.proofs.ts`.
+7. A user-defined type guard (`function isStanding(x: unknown): x is Standing`) applied to a contaminated
+   value narrows it to `Standing` with no assertion written. Same class as item 2; not pinned either.
 
 Items 1 (four routes), 2 (`as unknown as`), 3 and 4 are seven directive-free lines in
 `proofs/standing-residuals.proofs.ts` (zero directives, checked by the harness to compile under both configs).
@@ -297,7 +305,8 @@ onto a clean object, a spread inside a literal, `.flat()`), plus `structuredClon
 (the `lib` of `tsconfig.lib.json` has no `structuredClone`, so it did not exercise that route there). An
 assertion is not an assignment and is item 2. For an `inherited` standing missing a required field the
 refusal is the same, because an absent field cannot be hidden by a supertype. For a `void` or `binding`
-standing carrying a forbidden field whose static type has been widened, or that arrives by cast or `any`,
+standing carrying a forbidden field whose static type has been widened, that was mutated after it was built,
+or that arrives by cast, `any` or a type guard,
 nothing in the types refuses it, and `assertStandingWellFormed` (Decision 10) is the check that does. The
 probe list is not a proof of completeness.
 
@@ -509,9 +518,14 @@ working tree that the commit adding each bullet leaves, not on `9d2404a`.
   `lib/allowance` and `lib/standing` do not exist. Every comment that names M3, M4 or M5 is the plan's
   assignment, not a statement about code.
 - That the eight routes per field are all the routes. They are the eight the series' history names; sixteen
-  more were probed once; one further class (a widened static type) was found by probing and is disclosed.
-- That a `Standing` carrying a forbidden field cannot exist. It can, by a cast, an `any`, or a widened static
-  type; `assertStandingWellFormed` reports it only if something calls it, and nothing does yet.
+  more were probed once; one further class (a widened static type) was found by probing and is disclosed;
+  a second (mutation after construction) and a third (a user-defined type guard) were found by independent
+  L4 review and are disclosed as items 6 and 7 of Decision 9.
+- That a `Standing` carrying a forbidden field cannot exist. It can, by a cast, an `any`, a widened static
+  type, or a mutation after construction (`Object.assign(clean, { warrant })`, `Object.defineProperty`, or a
+  write through an alias type that declares the field writable: `readonly` is not enforced by assignability,
+  and none of these needs a cast or an `any`); `assertStandingWellFormed` reports it only if something calls
+  it, and nothing does yet.
 - That ids, amounts, `seq` or `depth` are valid, or that a caller cannot choose `seq`: those are M3's intake and
   M5's `append`, and they do not exist.
 - That the library is pure. The closed module graph is about imports, not ambient globals.
