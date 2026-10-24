@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { assertStandingWellFormed } from "../../../../lib/contracts/index.js";
+import { assertStandingWellFormed, commitId } from "../../../../lib/contracts/index.js";
 import * as route from "../route";
 
 /**
@@ -9,10 +9,16 @@ import * as route from "../route";
  */
 vi.mock("../../../../lib/contracts/index.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../../lib/contracts/index.js")>();
-  return { ...actual, assertStandingWellFormed: vi.fn(actual.assertStandingWellFormed) };
+  return {
+    ...actual,
+    assertStandingWellFormed: vi.fn(actual.assertStandingWellFormed),
+    // Also a spy, so one test can make building a check's input throw (every build calls it).
+    commitId: vi.fn(actual.commitId),
+  };
 });
 
 const guard = vi.mocked(assertStandingWellFormed);
+const mint = vi.mocked(commitId);
 let realGuard: typeof assertStandingWellFormed;
 
 interface Report {
@@ -33,10 +39,12 @@ async function call(): Promise<{ readonly status: number; readonly body: Report 
 }
 
 beforeEach(async () => {
-  realGuard = (await vi.importActual<typeof import("../../../../lib/contracts/index.js")>("../../../../lib/contracts/index.js"))
-    .assertStandingWellFormed;
+  const actual = await vi.importActual<typeof import("../../../../lib/contracts/index.js")>("../../../../lib/contracts/index.js");
+  realGuard = actual.assertStandingWellFormed;
   guard.mockReset();
   guard.mockImplementation(realGuard);
+  mint.mockReset();
+  mint.mockImplementation(actual.commitId);
 });
 
 afterEach(() => {
@@ -146,6 +154,23 @@ describe("GET /api/health: any failed check is 503 degraded, never a 200", () =>
       "threw: guard exploded",
       "threw: guard exploded",
     ]);
+  });
+});
+
+describe("GET /api/health: a throw while building a check's input is also a failed check", () => {
+  it("is 503 degraded, not an uncaught throw out of GET, and the guard is never reached", async () => {
+    mint.mockImplementation(() => {
+      throw new Error("mint exploded");
+    });
+    const { status, body } = await call();
+    expect(status).toBe(503);
+    expect(body.status).toBe("degraded");
+    expect(body.checks.contracts.assertions.map((a) => [a.actual, a.pass])).toEqual([
+      ["threw: mint exploded", false],
+      ["threw: mint exploded", false],
+      ["threw: mint exploded", false],
+    ]);
+    expect(guard).not.toHaveBeenCalled();
   });
 });
 
