@@ -1,20 +1,22 @@
 # CURRENT
 
-- **active_loop:** none recorded. M1 (contracts, `lib/contracts/**`) is `done`; M2 to M9 are `todo` in
-  this revision. Each milestone is separate, with its own branch, its own PR, and its own independent
-  (L4) verifier. `app/page.tsx` is still the genesis placeholder.
+- **active_loop:** none recorded. M1 (contracts, `lib/contracts/**`) and M2 (deploy skeleton,
+  `app/api/health/**`) are `done`; M3 to M9 are `todo` in this revision. Each milestone is separate, with
+  its own branch, its own PR, and its own independent (L4) verifier. `app/page.tsx` is still the genesis
+  placeholder.
 
-- **last updated:** 2026-10-24, in the `chore(genesis): mark M1 done` bookkeeping PR, after M1 passed
-  independent L4 verification and merged (PR #2). The previous revision was written immediately after
-  genesis, before any milestone build had begun. Recorded honestly rather than implying progress that
-  does not exist: a checkpoint that overstates status is worse than no checkpoint at all.
+- **last updated:** 2026-10-24, in the `chore(genesis): mark M2 done` bookkeeping PR, after M2 passed
+  independent L4 verification and merged (PR #4). The previous revision was the `mark M1 done` PR's, and
+  the one before it was written immediately after genesis, before any milestone build had begun. Recorded
+  honestly rather than implying progress that does not exist: a checkpoint that overstates status is worse
+  than no checkpoint at all.
 
 ## Milestone state, as of this revision
 
 | | Status | Where |
 |---|---|---|
 | M1 contracts | `done` | PR #2 → `fc7b4ac` (squash-merged); independent L4 APPROVE in round 3, after three fix rounds |
-| M2 deploy | `todo` | designed only |
+| M2 deploy | `done` | PR #4 → `167e4e7` (squash-merged); independent L4 APPROVE in round 3, after two fix rounds; live, see "What M2 adds" below |
 | M3 chain: intake and structure | `todo` | designed only |
 | M4 allowance: conservation | `todo` | designed only |
 | M5 standing: fold, verdict, heir | `todo` | designed only |
@@ -24,8 +26,10 @@
 | M9 deliverables | `todo` | designed only |
 
 `main` is the genesis base (the plan, tooling config, app shell, a CI workflow, the README and the
-`.genesis/` ritual) plus two merged PRs: #1 (the `next` 16.4.3 security upgrade) and #2 (M1:
-`lib/contracts/**` and its tests). There is no `domains/`, no health route, and no deploy.
+`.genesis/` ritual) plus four merged PRs: #1 (the `next` 16.4.3 security upgrade), #2 (M1:
+`lib/contracts/**` and its tests), #3 (`mark M1 done`, which edited only the two `.genesis/` files) and
+#4 (M2: `app/api/health/**` with its tests, ADR 0002 and the README's `Live:` line). There is no
+`domains/`, and `lib/` holds only `lib/contracts`.
 
 ## `main` history was rewritten on 2026-10-24 (SHAs you may see on PR pages)
 
