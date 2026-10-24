@@ -30,10 +30,11 @@ import type {
  * TWO WAYS TO FAIL, kept apart on purpose:
  *  - `invalid`: the data was read and is the wrong shape. ALL offending fields are reported, deduplicated and
  *    sorted, so a caller fixing an event sees every problem in one round.
- *  - `hostile`: a read THREW (a throwing getter, a Proxy trap, a revoked Proxy). Every field is still read
- *    in order even after an earlier field was found invalid, so a throw anywhere is always seen and
- *    `hostile` always outranks `invalid`. The message names the field (`reading grant.limit threw`) and never
- *    includes the thrown value, which is itself untrusted.
+ *  - `hostile`: a read THREW (a throwing getter, a Proxy trap, a revoked Proxy). Once the event's `kind` is
+ *    known, every field of that kind's payload is read in order even after an earlier field was found invalid,
+ *    so `hostile` outranks `invalid` for every field intake reads. (An unknown `kind`, or a payload that is not
+ *    an object, leaves no fields to read; the others are not touched.) The message names the field
+ *    (`reading grant.limit threw`) and never includes the thrown value, which is itself untrusted.
  * Only a `HostileRead` made by this file is caught. Any other exception is a bug in this file and propagates.
  *
  * WHAT THIS FILE DOES NOT DO: it does not compare an event with a grant tree (that is `structure.ts`), with
