@@ -112,6 +112,10 @@ export function append<C extends string>(charter: Charter<C>, log: Log<C>, input
  * What `append` would record for this commit, without recording it (plan D9: prevention is the caller's choice, and
  * this is the pre-check). The verdict it returns is the verdict `append` would store; where `append` would refuse the
  * commit (a malformed one, a duplicate id, a faulty log, a full log) it answers `ok: false` with the same failure.
+ *
+ * `ok: true` does NOT mean the commit is allowed. It means the log and the commit could be judged, and the answer is
+ * `verdict.kind`: a commit that breaches a rule comes back `ok: true` with a `breached` verdict, because `append` would
+ * record it as exactly that (plan D4: acts are facts). A caller that wants prevention checks for `warranted`.
  */
 export function mayCommit<C extends string>(charter: Charter<C>, log: Log<C>, commit: Commitment<C>): MayCommitResult {
   const prepared = prepare(charter, log, { kind: "commit", commit });
