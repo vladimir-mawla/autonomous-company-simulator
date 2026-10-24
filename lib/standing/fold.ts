@@ -165,7 +165,7 @@ export function decide<C extends string>(charter: Charter<C>, ledger: Ledger<C>,
 /**
  * Write an admitted event into the ledger at `seq`. A revocation is recorded once: `decide` refuses a revoke of a grant
  * that is dead, so no key of `revokedAt` is ever written twice. Only a WARRANTED commit charges its grant; a `void`
- * one is recorded and charges nothing (plan §4.2: `void` "refuses to charge any allowance").
+ * one is recorded and charges nothing (plan §4.2, the `void` row of its table, "What it refuses": "to charge any allowance").
  */
 export function apply<C extends string>(ledger: Ledger<C>, event: EventInput<C>, effect: Effect<C>, seq: Seq): LogEvent<C> {
   switch (effect.kind) {

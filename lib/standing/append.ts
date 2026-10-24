@@ -9,7 +9,7 @@ import type { Effect, Ledger } from "./fold.js";
  *
  * BOTH REPLAY THE LOG FIRST. The log is the only state (D3): neither function is handed a tree or a charge list, each
  * replays the log it is given through `fold.ts`'s `replay`, and a log that cannot be replayed is `faulty-log` whichever
- * function asked. Then both run the SAME `prepare`: one read of the input through M3's intake, one `decide` (the
+ * function asked. Then both run the SAME `admitInput`: one read of the input through M3's intake, one `decide` (the
  * admission path `fold` also uses), one capacity check. They cannot drift (D9); `may-commit-equivalence.test.ts`
  * compares them over generated logs.
  *
@@ -37,7 +37,7 @@ export type MayCommitResult =
   | { readonly ok: true; readonly verdict: Verdict }
   | { readonly ok: false; readonly failure: AppendFailure };
 
-type Prepared<C extends string> =
+export type Prepared<C extends string> =
   | {
       readonly ok: true;
       readonly ledger: Ledger<C>;
@@ -55,15 +55,14 @@ function rejected(rejection: Rejection): { readonly ok: false; readonly failure:
   return { ok: false, failure: { kind: "rejected", rejection } };
 }
 
-/** The shared front half of `append` and `mayCommit`: everything up to, and not including, writing anything. */
-function prepare<C extends string>(charter: Charter<C>, log: Log<C>, input: unknown): Prepared<C> {
-  const read = readCharter(charter);
-  if (!read.ok) return faultyLog({ kind: "invalid-charter", fields: read.fields });
-
-  const replayed = replay(read.charter, log);
-  if (!replayed.ok) return faultyLog(replayed.fault);
-
-  const intake = readEventInput(read.charter, input);
+/**
+ * Everything after the replay, shared by `append` and `mayCommit`: one read of the input through M3's intake, one `decide`
+ * against the ledger, one capacity check. `charter` is an already read copy and `ledger` is the replay of the log the
+ * event is offered to. Exported inside the layer (not from `index.ts`) so that a test generator can extend one ledger a
+ * step at a time instead of replaying the whole log for every event; the public functions below always replay.
+ */
+export function admitInput<C extends string>(charter: Charter<C>, ledger: Ledger<C>, input: unknown): Prepared<C> {
+  const intake = readEventInput(charter, input);
   if (!intake.ok) {
     // A throwing read on the INPUT has no `Rejection` (the plan has none); the only typed place for "a read threw" is
     // the fault below, so the log is reported faulty although the log itself was fine. The message says which input.
@@ -71,12 +70,23 @@ function prepare<C extends string>(charter: Charter<C>, log: Log<C>, input: unkn
     return rejected(intake.failure.rejection);
   }
 
-  const decision = decide(read.charter, replayed.ledger, intake.event);
+  const decision = decide(charter, ledger, intake.event);
   if (!decision.ok) return rejected(decision.rejection);
 
-  const seq = replayed.ledger.events.length + 1;
+  const seq = ledger.events.length + 1;
   if (seq > MAX_LOG_EVENTS) return faultyLog({ kind: "log-too-long", length: seq, max: MAX_LOG_EVENTS });
-  return { ok: true, ledger: replayed.ledger, event: intake.event, effect: decision.effect, seq };
+  return { ok: true, ledger, event: intake.event, effect: decision.effect, seq };
+}
+
+/** The shared front half of `append` and `mayCommit`: the charter and the log are read and replayed, then `admitInput`. */
+function prepare<C extends string>(charter: Charter<C>, log: Log<C>, input: unknown): Prepared<C> {
+  const read = readCharter(charter);
+  if (!read.ok) return faultyLog({ kind: "invalid-charter", fields: read.fields });
+
+  const replayed = replay(read.charter, log);
+  if (!replayed.ok) return faultyLog(replayed.fault);
+
+  return admitInput(read.charter, replayed.ledger, input);
 }
 
 /**
