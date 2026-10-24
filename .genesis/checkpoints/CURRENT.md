@@ -46,6 +46,9 @@ GitHub's PR pages still show the pre-rewrite merge SHAs. To match one against `g
 | #1 `next` 16.4.3 security upgrade | `fc17afd` | `ab14763` |
 | #2 M1 contracts | `6302394` | `fc7b4ac` |
 
+PR #3 and PR #4 show the same merge SHAs as `main` (`2cca53b` and `167e4e7`; read with `gh pr view`), so no
+pair is needed for them.
+
 ## What the scaffold does and does not prove
 
 - **Proves:** a clean clone restores with `npm ci` (all 15 `@rolldown/binding-*` platform bindings are
@@ -67,6 +70,41 @@ GitHub's PR pages still show the pre-rewrite merge SHAs. To match one against `g
   differs from `fc7b4ac` only in the two `.genesis/` files that PR edits.
 - That is the whole claim. M1 is the contracts only; M3 to M5 are `todo`, so everything about folding
   the log, conserving authority and ruling a verdict is still a design, not a result.
+
+## What M2 adds, and what was run to check it
+
+- **A live deployment:** https://autonomous-company-simulator.vercel.app. `/` is still the genesis
+  placeholder; `GET /api/health` is the only endpoint doing real work.
+- **`/api/health` runs real self-checks against `lib/contracts`; it is not a liveness ping.** On every
+  request it calls the real `assertStandingWellFormed` three times and compares each answer by name: a
+  well-formed `inherited` standing must be accepted, and a cast-built `void` carrying a `warrant` and a
+  cast-built `inherited` missing its `heir` must each be caught (`unexpected-field/void/warrant` and
+  `missing-field/inherited/heir`). All three matching gives HTTP 200 and `"status":"ok"`; any mismatch, or
+  a throw, gives HTTP 503 and `"status":"degraded"`. `commit` is `VERCEL_GIT_COMMIT_SHA` as Vercel sets it,
+  or the literal `unknown (local dev)`.
+- **`main` auto-deploys** to production through Vercel's GitHub integration. So the commit the live
+  endpoint reports is the current `main`, and merging any PR, this one included, redeploys it. To check,
+  compare `commit` in the response with `git rev-parse origin/main`.
+- **Observed 2026-10-24 at 12:48 UTC, before this PR:** `curl https://autonomous-company-simulator.vercel.app/api/health`
+  answered HTTP 200 with `"status":"ok"`, a `commit` equal to the tip of `main` at that moment (`167e4e7`,
+  M2's own merge commit), and `checks.contracts.pass` true with all three assertions at `"pass":true`.
+- **Tests:** `npm ci && npm test` printed `Test Files  15 passed (15)` and `Tests  145 passed (145)`: 12
+  files under `lib/contracts/__tests__/`, 2 under `app/api/health/__tests__/` (`route.test.ts` and
+  `vercel-config.test.ts`) and `tests/smoke.test.ts`. `npm run typecheck` and `npm run build` also exited
+  0. That run was on the mark-done branch, which differs from `167e4e7` only in the two `.genesis/` files
+  this PR edits.
+- **What the fix rounds changed.** Read from PR #4's commit list: the first five commits are the route, its
+  tests, the `vercel.json` pin, the README line and ADR 0002. The seven after them (fixes D1 to D6 and one
+  test commit) changed ADR text, comments in `route.ts` and in a test file, and one test title, and added
+  one test (a throw while building a check's input is a failed check, not an uncaught error). The
+  executable lines of `route.ts` are the same as in the PR's first commit: `git diff 373dee3 167e4e7 --
+  app/api/health/route.ts` shows only comment lines (`373dee3` is on the PR's head ref, `refs/pull/4/head`,
+  not on `main`, because the PR was squash-merged).
+- **What this does not show.** One `curl` is one request at one time: it shows which commit Vercel built
+  and that the three self-checks passed then, not that the deployment is unchanged since. `lib/chain`,
+  `lib/allowance` and `lib/standing` do not exist yet, so a green `/api/health` says nothing about them.
+  The guard checks presence only (ADR 0001, ADR 0002): a field that is present but of the wrong kind, or
+  two fields that contradict each other, pass it.
 
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
