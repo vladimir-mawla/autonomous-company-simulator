@@ -45,6 +45,15 @@ import type { Cap } from "./fixtures.js";
  *      was there changes, and each revocation keeps the `seq` it was written at (a revocation is recorded once: `revokedAt`
  *      is write-once because `already-dead` refuses a second revoke, not because the map is frozen).
  *
+ *   D. THE FIRST FOUR RULES AGREE WITH AN INDEPENDENT READING. For every commit of every seed, read straight from the raw
+ *      events that came BEFORE it (none of M3's walkers): the grant acted under, its holder, and the first link of its chain
+ *      that already had a revoke. A warranted verdict must have none of the three problems; `no-such-grant`, `wrong-actor` and
+ *      `link-dead` must each name what the reading finds; and a commit under an existing grant, by its holder, with a link
+ *      already cut must be `link-dead` and no other verdict. The same for `capability-not-granted`. This is the one property
+ *      over the generated logs that can see a `judgeCommit` that looks at too few links: without it, the hand-worked 8-link
+ *      chain in `verdict-table.test.ts` was the only thing that did (ADR 0005, falsifiability log, rows P2 and V2 to V7),
+ *      because M4's `checkHeadroom` refuses a dead grant and so a commit that missed a dead link still came out `void`.
+ *
  * THE DOMAIN IS NOT EMPTY, shown rather than assumed: the coverage test counts the commits for which judging against the
  * FINAL tree (which is what hindsight would do) gives a different verdict from the one recorded at the commit, so the
  * property would fail for an engine that looked ahead. And a hand-worked pair below shows the mechanism on three events.
@@ -58,6 +67,7 @@ interface Scan {
   readonly hindsight: string[];
   readonly atOwnMoment: string[];
   readonly growth: string[];
+  readonly liveness: string[];
   readonly counts: {
     readonly seeds: number;
     readonly prefixes: number;
@@ -69,6 +79,10 @@ interface Scan {
     readonly inheritedAtEnd: number;
     readonly revokesChecked: number;
     readonly chargesGrew: number;
+    /** link-dead verdicts by the index, along the chain, of the link named. */
+    readonly linkDeadAtIndex: Record<number, number>;
+    readonly linkDeadByChainLength: Record<number, number>;
+    readonly independentChecked: number;
   };
 }
 
@@ -84,6 +98,10 @@ const scans = chunked(SEEDS, CHUNKS, (first, last): Scan => {
   const hindsight: string[] = [];
   const atOwnMoment: string[] = [];
   const growth: string[] = [];
+  const liveness: string[] = [];
+  const linkDeadAtIndex: Record<number, number> = {};
+  const linkDeadByChainLength: Record<number, number> = {};
+  let independentChecked = 0;
   const lateByKind: Record<string, number> = {};
   let prefixes = 0;
   let recordsCompared = 0;
@@ -158,6 +176,56 @@ const scans = chunked(SEEDS, CHUNKS, (first, last): Scan => {
       }
     }
 
+    // D: the first four rules, against an independent reading of the events before each commit.
+    const grantsSoFar = new Map<string, { parent: string | null; grantee: string; capabilities: readonly string[] }>();
+    const cutsSoFar = new Map<string, number>();
+    for (const event of log) {
+      if (event.kind === "grant") grantsSoFar.set(event.grant.id, { parent: event.grant.parent, grantee: event.grant.grantee, capabilities: event.grant.capabilities });
+      else if (event.kind === "revoke") {
+        if (!cutsSoFar.has(event.grantId)) cutsSoFar.set(event.grantId, event.seq);
+      } else {
+        independentChecked += 1;
+        const record = full.commits.get(event.commit.id);
+        const verdict = record?.verdict;
+        const c = event.commit;
+        const where = `seed ${seed} commit ${c.id} at seq ${event.seq}`;
+        const grant = grantsSoFar.get(c.actedUnder);
+        const chain: string[] = [];
+        for (let at: string | null = c.actedUnder, hops = 0; at !== null && hops < 64; hops++) {
+          const link = grantsSoFar.get(at);
+          if (link === undefined) break;
+          chain.unshift(at);
+          at = link.parent;
+        }
+        const deadIndex = chain.findIndex((id) => cutsSoFar.has(id));
+        const dead = deadIndex < 0 ? undefined : { grantId: chain[deadIndex], atSeq: cutsSoFar.get(chain[deadIndex] ?? "") };
+        const isHolder = grant !== undefined && grant.grantee === c.actor;
+        let expected: string;
+        if (grant === undefined) expected = "no-such-grant";
+        else if (!isHolder) expected = "wrong-actor";
+        else if (dead !== undefined) expected = `link-dead ${dead.grantId} ${dead.atSeq}`;
+        else if (!grant.capabilities.includes(c.capability)) expected = "capability-not-granted";
+        else expected = "later";
+        const actual =
+          verdict === undefined
+            ? "missing"
+            : verdict.kind === "warranted"
+              ? "later"
+              : verdict.breach.kind === "link-dead"
+                ? `link-dead ${verdict.breach.grantId} ${verdict.breach.atSeq}`
+                : ["no-such-grant", "wrong-actor", "capability-not-granted"].includes(verdict.breach.kind)
+                  ? verdict.breach.kind
+                  : "later";
+        // `over-limit` is the fifth rule and depends on M4's accounting, so it is a "later" verdict here: the first four must
+        // each have passed for it, and a warranted verdict is "later" as well.
+        if (actual !== expected) liveness.push(`${where}: an independent reading of the log before it says ${expected}, the verdict is ${JSON.stringify(verdict)}`);
+        if (expected.startsWith("link-dead") && deadIndex >= 0) {
+          linkDeadAtIndex[deadIndex] = (linkDeadAtIndex[deadIndex] ?? 0) + 1;
+          linkDeadByChainLength[chain.length] = (linkDeadByChainLength[chain.length] ?? 0) + 1;
+        }
+      }
+    }
+
     // The domain: how many commits would hindsight rule differently?
     for (const record of full.commits.values()) {
       const late = judgeCommit(full.tree, full.charges, record.commit);
@@ -174,7 +242,8 @@ const scans = chunked(SEEDS, CHUNKS, (first, last): Scan => {
     hindsight,
     atOwnMoment,
     growth,
-    counts: { seeds: last - first + 1, prefixes, recordsCompared, commitsRecomputed, lateJudgementDiffers, lateJudgementDiffersByKind: lateByKind, inheritedAtEnd, revokesChecked, chargesGrew },
+    liveness,
+    counts: { seeds: last - first + 1, prefixes, recordsCompared, commitsRecomputed, lateJudgementDiffers, lateJudgementDiffersByKind: lateByKind, inheritedAtEnd, revokesChecked, chargesGrew, linkDeadAtIndex, linkDeadByChainLength, independentChecked },
   };
 });
 
@@ -226,19 +295,30 @@ describe(`prefix hindsight-invariance over ${SEEDS} generated logs of ${STEPS} e
       },
       SEED_LOOP_TIMEOUT_MS,
     );
+    it(
+      `seeds ${first} to ${last}: D, no-such-grant, wrong-actor, link-dead and capability-not-granted are what an independent reading of the events before each commit says`,
+      () => {
+        expect(scans.get(index).liveness).toStrictEqual([]);
+      },
+      SEED_LOOP_TIMEOUT_MS,
+    );
   }
 
   it(
     "coverage: the property was not run over an empty domain, and hindsight would have been caught",
     () => {
-      const sum = { seeds: 0, prefixes: 0, recordsCompared: 0, commitsRecomputed: 0, lateJudgementDiffers: 0, inheritedAtEnd: 0, revokesChecked: 0, chargesGrew: 0 };
+      const sum = { seeds: 0, prefixes: 0, recordsCompared: 0, commitsRecomputed: 0, lateJudgementDiffers: 0, inheritedAtEnd: 0, revokesChecked: 0, chargesGrew: 0, independentChecked: 0 };
       const byKind: Record<string, number> = {};
+      const deadAtIndex: Record<number, number> = {};
+      const deadByLength: Record<number, number> = {};
       for (let index = 0; index < CHUNKS; index++) {
         const counts = scans.get(index).counts;
         for (const key of Object.keys(sum) as (keyof typeof sum)[]) sum[key] += counts[key];
         for (const [label, value] of Object.entries(counts.lateJudgementDiffersByKind)) byKind[label] = (byKind[label] ?? 0) + value;
+        for (const [key, value] of Object.entries(counts.linkDeadAtIndex)) deadAtIndex[Number(key)] = (deadAtIndex[Number(key)] ?? 0) + value;
+        for (const [key, value] of Object.entries(counts.linkDeadByChainLength)) deadByLength[Number(key)] = (deadByLength[Number(key)] ?? 0) + value;
       }
-      report("prefix", { ...sum, byKind });
+      report("prefix", { ...sum, byKind, deadAtIndex, deadByLength });
       expect(sum.seeds).toBe(SEEDS);
       expect(sum.prefixes).toBeGreaterThanOrEqual(10_000);
       expect(sum.recordsCompared).toBeGreaterThanOrEqual(280_000);
@@ -250,6 +330,12 @@ describe(`prefix hindsight-invariance over ${SEEDS} generated logs of ${STEPS} e
       expect(sum.lateJudgementDiffers).toBeGreaterThanOrEqual(10_000);
       expect(sum.inheritedAtEnd).toBeGreaterThanOrEqual(6_000);
       expect(byKind["warranted -> breached:link-dead"] ?? 0).toBeGreaterThanOrEqual(6_000);
+      // D was run over every commit, and the link-dead verdicts it checked named a link at every position of a chain and sat on
+      // chains of every length, down to the longest the bound allows.
+      expect(sum.independentChecked).toBeGreaterThanOrEqual(26_000);
+      // (The leaf, index 7, is the rare one: 3 in the whole run. The hand-worked chain in verdict-table.test.ts pins it exactly.)
+      for (let position = 0; position < 8; position++) expect(deadAtIndex[position] ?? 0, `link-dead naming the link at index ${position}`).toBeGreaterThanOrEqual(position === 7 ? 1 : 7);
+      for (let length = 1; length <= 8; length++) expect(deadByLength[length] ?? 0, `link-dead on a chain of ${length}`).toBeGreaterThanOrEqual(19);
     },
     SEED_LOOP_TIMEOUT_MS,
   );
