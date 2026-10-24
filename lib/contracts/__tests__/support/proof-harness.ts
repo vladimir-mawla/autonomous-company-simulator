@@ -194,7 +194,7 @@ export function checkProofSource(source: string, baseDir: string): ProofReport {
           );
         }
         for (const extra of here) {
-          if (extra !== matching && !directive.codes.includes(extra.code)) {
+          if (extra !== matching) {
             problems.push(
               `[${config}] line ${target}: unexpected extra diagnostic TS${extra.code} ` +
                 "(a proof line must fail for exactly the stated reason, and a variable it declares must be used elsewhere)",

@@ -59,6 +59,11 @@ reports a diagnostic in any file other than the proof under that file's name ("i
 imports, not in the proof"), and `proof-harness.test.ts` pins that. The blast radius is unchanged
 (a broken contract source still turns the proof tests red, which is correct) but the cause is named.
 
+**Revised after the independent L4 round (D1).** The same-line check first reported only a second diagnostic
+whose code differed from the directive's own, so a line with two `TS2322` errors, one of them carrying the stated
+message, was accepted. It now reports every diagnostic on a proof line other than the one that matched.
+`proof-harness.test.ts` has a self-test for it (two `TS2322` on one line).
+
 **What this does not do.** It checks that each route that is written fails for the stated reason
 under both configs. It does not show the set of routes is complete, and the message fragments are
 tied to TypeScript's wording, so a TypeScript upgrade can require editing them (the version is
@@ -467,6 +472,15 @@ comparison); the "message matches but code does not" self-test was added for tha
 **A finding about this ADR's own earlier text.** Sabotaging `Breach` and `Rejection` showed `npm test` does not
 notice a deleted variant through `closed-unions.test.ts` at all (Decision 7 was corrected), and probing beyond
 the seven routes found the supertype residual (Decision 9 was corrected).
+
+### Addendum: runs after the independent L4 round
+
+Same method as above (one edit, the full typecheck, the full suite, restore, clean `git status`), measured on the
+working tree that the commit adding each bullet leaves, not on `9d2404a`.
+
+- **D1, harness: revert only the `if (extra !== matching) {` line to its old form
+  (`... && !directive.codes.includes(extra.code)`).** `npm run typecheck` passes; `npm test`: 1 failed, 129 passed
+  (130): "a real error PLUS a second error with the SAME code on the same line", and no other test.
 
 ## What M1 does not claim
 

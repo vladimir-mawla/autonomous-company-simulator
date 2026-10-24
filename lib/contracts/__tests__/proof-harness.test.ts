@@ -54,6 +54,18 @@ describe("proof harness: rejects each way a @ts-expect-error can be satisfied fo
     expect(report.problems.join("\n")).toMatch(/unexpected extra diagnostic TS6133/);
   });
 
+  it("a real error PLUS a second error with the SAME code on the same line", () => {
+    // Both diagnostics are TS2322, and the first carries the stated message. A check that only looks at
+    // codes different from the directive's own would accept this line.
+    const report = check(
+      [
+        "// @ts-expect-error TS2322 Type 'string' is not assignable to type 'number'",
+        'export const a: number = "x", b: boolean = 1;',
+      ].join("\n"),
+    );
+    expect(report.problems.join("\n")).toMatch(/unexpected extra diagnostic TS2322/);
+  });
+
   it("a fresh-literal excess-property error where the proof claims an assignability error", () => {
     const report = check(
       [
