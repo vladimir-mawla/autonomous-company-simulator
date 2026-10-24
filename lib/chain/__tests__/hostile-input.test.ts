@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { MAX_CHARTER_ENTRIES, readCharter, readEventInput, readLogEvent } from "../index.js";
-import { CHARTER, rawCommit, rawCommitEvent, rawGrant, rawGrantEvent, rawRevokeEvent } from "./fixtures.js";
+import { MAX_ROOT_DEPTH } from "../../contracts/index.js";
+import type { Grant, GrantId, GrantTree } from "../../contracts/index.js";
+import { MAX_CHARTER_ENTRIES, chainOf, liveAuthorityAbove, readCharter, readEventInput, readLogEvent, trailOf } from "../index.js";
+import { CHARTER, g, grant, mulberry32, rawCommit, rawCommitEvent, rawGrant, rawGrantEvent, rawRevokeEvent, treeOf } from "./fixtures.js";
+import type { Cap } from "./fixtures.js";
 
 /**
  * Input that fights back: getters that throw or change their answer, Proxies, revoked Proxies, lists that
- * lie about their length. The contract (plan §6 M3, `lib/chain/intake.ts`): every property is read exactly
- * once; a read that throws is `hostile`, never an exception out of intake; a charter that cannot be read is
- * an invalid charter.
+ * lie about their length, and a hand-built `GrantTree` whose parent pointers loop. The contract (plan §6 M3,
+ * `lib/chain/intake.ts`, `lib/chain/chain.ts`): every property is read exactly once; a read that throws is
+ * `hostile`, never an exception out of intake; a charter that cannot be read is an invalid charter; and a
+ * walk over a hostile tree returns `undefined` after at most `MAX_ROOT_DEPTH + 1` lookups instead of looping.
  *
  * Reads are counted by accessors and by a Proxy's `get` trap. Every count test also asserts the exact SET of
  * keys that were read, so a test that read nothing (and so counted nothing wrong) cannot pass.
@@ -440,5 +444,167 @@ describe("a charter that cannot be read is an invalid charter, never an exceptio
 
     const elementThrows = new Proxy(["purchase"], { get: (t, k, r) => (k === "0" ? ((): never => { throw new Error("element"); })() : Reflect.get(t, k, r)) });
     expect(readCharter({ roots: ["dana"], capabilities: elementThrows } as never)).toEqual({ ok: false, fields: ["capabilities"] });
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// Hostile GrantTree: parent pointers that loop, dangle, or run too long
+// ---------------------------------------------------------------------------------------------------
+
+/** A `Map` that counts how many times `get` was called, so "never loops" is a measured bound and not the absence of a hang. */
+class CountingMap<K, V> extends Map<K, V> {
+  gets = 0;
+  override get(key: K): V | undefined {
+    this.gets += 1;
+    return super.get(key);
+  }
+}
+
+function countingTree(grants: readonly Grant<Cap>[]): { tree: GrantTree<Cap>; grants: CountingMap<GrantId, Grant<Cap>> } {
+  const map = new CountingMap<GrantId, Grant<Cap>>(grants.map((entry) => [entry.id, entry]));
+  return { tree: { grants: map, revokedAt: new Map() }, grants: map };
+}
+
+describe("a hand-built cyclic GrantTree makes chainOf return undefined and never loop", () => {
+  const a = (parent: string) => grant({ id: "A", parent, grantor: "x", grantee: "y", depth: 3 });
+  const b = (parent: string) => grant({ id: "B", parent, grantor: "y", grantee: "z", depth: 2 });
+  const c = (parent: string) => grant({ id: "C", parent, grantor: "z", grantee: "w", depth: 1 });
+
+  it("a grant that is its own parent", () => {
+    expect(chainOf(treeOf([a("A")]), g("A"))).toBeUndefined();
+  });
+
+  it("two grants that are each other's parent: from either end", () => {
+    const tree = treeOf([a("B"), b("A")]);
+    expect(chainOf(tree, g("A"))).toBeUndefined();
+    expect(chainOf(tree, g("B"))).toBeUndefined();
+  });
+
+  it("a three-cycle, and a leaf hanging off it", () => {
+    const tree = treeOf([a("C"), b("A"), c("B"), grant({ id: "leaf", parent: "A", grantor: "x", grantee: "q" })]);
+    for (const id of ["A", "B", "C", "leaf"]) expect(chainOf(tree, g(id)), id).toBeUndefined();
+  });
+
+  it("the walk stops after MAX_ROOT_DEPTH + 1 lookups, whatever the length of the cycle (a measured bound)", () => {
+    const { tree, grants } = countingTree([a("B"), b("A")]);
+    expect(chainOf(tree, g("A"))).toBeUndefined();
+    expect(grants.gets).toBe(MAX_ROOT_DEPTH + 1);
+
+    const selfLoop = countingTree([a("A")]);
+    expect(chainOf(selfLoop.tree, g("A"))).toBeUndefined();
+    expect(selfLoop.grants.gets).toBe(MAX_ROOT_DEPTH + 1);
+  });
+
+  it("a parent that is not in the tree (an orphan) is undefined, and so is a parent that is not an id at all", () => {
+    expect(chainOf(treeOf([a("missing")]), g("A"))).toBeUndefined();
+    const garbage = { ...a("x"), parent: undefined as unknown as GrantId };
+    expect(chainOf(treeOf([garbage]), g("A"))).toBeUndefined();
+    const numeric = { ...a("x"), parent: 7 as unknown as GrantId };
+    expect(chainOf(treeOf([numeric]), g("A"))).toBeUndefined();
+  });
+
+  it("a cycle that does not contain the grant asked about still fails closed for it", () => {
+    const tree = treeOf([grant({ id: "root", grantor: "x", grantee: "y", depth: 3 }), a("B"), b("A"), grant({ id: "ok", parent: "root", grantor: "y", grantee: "k" })]);
+    expect(chainOf(tree, g("ok"))).toEqual([g("root"), g("ok")]);
+    expect(chainOf(tree, g("A"))).toBeUndefined();
+  });
+
+  it("each visited grant's `parent` is read once per call", () => {
+    const reads = new Map<string, number>();
+    const spied = (entry: Grant<Cap>): Grant<Cap> => {
+      const copy = { ...entry };
+      let parent = entry.parent;
+      Object.defineProperty(copy, "parent", {
+        enumerable: true,
+        get() {
+          reads.set(entry.id, (reads.get(entry.id) ?? 0) + 1);
+          return parent;
+        },
+      });
+      return copy;
+    };
+    const tree = treeOf([spied(grant({ id: "R", grantor: "x", grantee: "y", depth: 2 })), spied(grant({ id: "M", parent: "R", grantor: "y", grantee: "z", depth: 1 })), spied(grant({ id: "L", parent: "M", grantor: "z", grantee: "w" }))]);
+    expect(chainOf(tree, g("L"))).toEqual([g("R"), g("M"), g("L")]);
+    expect([...reads.entries()].sort()).toEqual([["L", 1], ["M", 1], ["R", 1]]);
+  });
+
+  it("trailOf refuses a chain that goes round a cycle, and liveAuthorityAbove gives nobody for a grant in one", () => {
+    const tree = treeOf([a("B"), b("A")]);
+    expect(trailOf(tree, [g("A"), g("B")])).toBeUndefined();
+    expect(trailOf(tree, [g("A"), g("B"), g("A"), g("B")])).toBeUndefined();
+    expect(liveAuthorityAbove(tree, g("A"))).toEqual([]);
+    expect(liveAuthorityAbove(tree, g("B"))).toEqual([]);
+  });
+
+  it("trailOf is bounded by the length of the list it is given, and refuses one longer than a chain can be", () => {
+    const tree = treeOf([grant({ id: "A", grantor: "x", grantee: "y" })]);
+    const long = Array.from({ length: MAX_ROOT_DEPTH + 2 }, () => g("A"));
+    expect(trailOf(tree, long as unknown as readonly [GrantId, ...GrantId[]])).toBeUndefined();
+  });
+});
+
+describe("over random hostile graphs: chainOf always terminates, and agrees with an independent bottom-up computation", () => {
+  const SEEDS = 600;
+  const NAMES = Array.from({ length: 12 }, (_, index) => `n${index}`);
+
+  /**
+   * An independent oracle: the length of each grant's chain computed from the roots UP (a grant with `parent: null`
+   * has length 1; a grant whose parent has a known length has that plus one), repeated until nothing changes.
+   * `chainOf` walks the other way, from the leaf, so the two do not share a loop. A length above
+   * `MAX_ROOT_DEPTH + 1` is not allowed.
+   */
+  function lengths(tree: GrantTree<Cap>): Map<GrantId, number> {
+    const known = new Map<GrantId, number>();
+    for (let round = 0; round <= MAX_ROOT_DEPTH + 1; round++) {
+      for (const [id, entry] of tree.grants) {
+        if (known.has(id)) continue;
+        if (entry.parent === null) known.set(id, 1);
+        else {
+          const above = known.get(entry.parent);
+          if (above !== undefined && above + 1 <= MAX_ROOT_DEPTH + 1) known.set(id, above + 1);
+        }
+      }
+    }
+    return known;
+  }
+
+  it(`${SEEDS} seeded graphs of up to 12 grants, with roots, self-parents, cycles, orphans and long runs`, () => {
+    let defined = 0;
+    let undefinedCount = 0;
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const random = mulberry32(seed);
+      const size = 1 + Math.floor(random() * NAMES.length);
+      const names = NAMES.slice(0, size);
+      const grants = names.map((name) => {
+        const roll = random();
+        const parent = roll < 0.2 ? null : roll < 0.25 ? "ghost" : (names[Math.floor(random() * names.length)] ?? "ghost");
+        return grant({ id: name, parent, grantor: `p${Math.floor(random() * 5)}`, grantee: `p${Math.floor(random() * 5)}`, depth: 1 });
+      });
+      const tree = treeOf(grants);
+      const expected = lengths(tree);
+
+      for (const name of names) {
+        const chain = chainOf(tree, g(name));
+        const length = expected.get(g(name));
+        if (length === undefined) {
+          expect(chain, `seed ${seed} ${name}`).toBeUndefined();
+          expect(liveAuthorityAbove(tree, g(name)), `seed ${seed} ${name}`).toEqual([]);
+          undefinedCount += 1;
+          continue;
+        }
+        defined += 1;
+        expect(chain, `seed ${seed} ${name}`).toHaveLength(length);
+        const found = chain as NonNullable<typeof chain>;
+        expect(found[found.length - 1], `seed ${seed} ${name}`).toBe(g(name));
+        expect(tree.grants.get(found[0] as GrantId)?.parent, `seed ${seed} ${name}`).toBeNull();
+        for (let index = 1; index < found.length; index++) {
+          expect(tree.grants.get(found[index] as GrantId)?.parent, `seed ${seed} ${name}`).toBe(found[index - 1]);
+        }
+        expect(trailOf(tree, found), `seed ${seed} ${name}`).toHaveLength(length + 1);
+      }
+    }
+    // Non-vacuous: the graphs really did contain both kinds of grant.
+    expect(defined).toBeGreaterThan(200);
+    expect(undefinedCount).toBeGreaterThan(200);
   });
 });
