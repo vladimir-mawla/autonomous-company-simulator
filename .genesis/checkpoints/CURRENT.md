@@ -1,15 +1,17 @@
 # CURRENT
 
 - **active_loop:** none recorded. M1 (contracts, `lib/contracts/**`), M2 (deploy skeleton,
-  `app/api/health/**`) and M3 (chain: intake and structure, `lib/chain/**`) are `done`; M4 to M9 are `todo`
-  in this revision. Each milestone is separate, with its own branch, its own PR, and its own independent
-  (L4) verifier. `app/page.tsx` is still the genesis placeholder.
+  `app/api/health/**`), M3 (chain: intake and structure, `lib/chain/**`) and M4 (allowance: conservation,
+  `lib/allowance/**`) are `done`; M5 to M9 are `todo` in this revision. Each milestone is separate, with its
+  own branch, its own PR, and its own independent (L4) verifier. `app/page.tsx` is still the genesis
+  placeholder.
 
-- **last updated:** 2026-10-24, in the `chore(genesis): mark M3 done` bookkeeping PR, after M3 passed
-  independent L4 verification and merged (PR #6). The previous revision was the `mark M2 done` PR's (#5),
-  the one before it was the `mark M1 done` PR's, and the one before that was written immediately after
-  genesis, before any milestone build had begun. Recorded honestly rather than implying progress that does
-  not exist: a checkpoint that overstates status is worse than no checkpoint at all.
+- **last updated:** 2026-10-24 (UTC, as in every timestamp below), in the `chore(genesis): mark M4 done`
+  bookkeeping PR, after M4 passed independent L4 verification and merged (PR #8). The previous revision was
+  the `mark M3 done` PR's (#7), the one before it was the `mark M2 done` PR's (#5), the one before that was
+  the `mark M1 done` PR's, and the one before that was written immediately after genesis, before any
+  milestone build had begun. Recorded honestly rather than implying progress that does not exist: a
+  checkpoint that overstates status is worse than no checkpoint at all.
 
 ## Milestone state, as of this revision
 
@@ -18,7 +20,7 @@
 | M1 contracts | `done` | PR #2 → `fc7b4ac` (squash-merged); independent L4 APPROVE in round 3, after three fix rounds |
 | M2 deploy | `done` | PR #4 → `167e4e7` (squash-merged); independent L4 APPROVE in round 3, after two fix rounds; live, see "What M2 adds" below |
 | M3 chain: intake and structure | `done` | PR #6 → `aebd77e` (squash-merged); independent L4 APPROVE in round 2, after one fix round; see "What M3 adds" below |
-| M4 allowance: conservation | `todo` | designed only |
+| M4 allowance: conservation | `done` | PR #8 → `d06b848` (squash-merged); independent L4 APPROVE in round 2, after one fix round; see "What M4 adds" below |
 | M5 standing: fold, verdict, heir | `todo` | designed only |
 | M6 domain (Meridian Supply Co.) | `todo` | designed only |
 | M7 failure suite | `todo` | designed only |
@@ -26,11 +28,12 @@
 | M9 deliverables | `todo` | designed only |
 
 `main` is the genesis base (the plan, tooling config, app shell, a CI workflow, the README and the
-`.genesis/` ritual) plus six merged PRs: #1 (the `next` 16.4.3 security upgrade), #2 (M1:
+`.genesis/` ritual) plus eight merged PRs: #1 (the `next` 16.4.3 security upgrade), #2 (M1:
 `lib/contracts/**` and its tests), #3 (`mark M1 done`, which edited only the two `.genesis/` files), #4
 (M2: `app/api/health/**` with its tests, ADR 0002 and the README's `Live:` line), #5 (`mark M2 done`, which
-edited only the same two `.genesis/` files) and #6 (M3: `lib/chain/**` with its tests, and ADR 0003). There
-is no `domains/`, and `lib/` holds `lib/contracts` and `lib/chain` only: there is no `lib/allowance` and no
+edited only the same two `.genesis/` files), #6 (M3: `lib/chain/**` with its tests, and ADR 0003), #7
+(`mark M3 done`, again only those two files) and #8 (M4: `lib/allowance/**` with its tests, and ADR 0004).
+There is no `domains/`, and `lib/` holds `lib/contracts`, `lib/chain` and `lib/allowance` only: there is no
 `lib/standing`.
 
 ## `main` history was rewritten on 2026-10-24 (SHAs you may see on PR pages)
@@ -48,14 +51,15 @@ GitHub's PR pages still show the pre-rewrite merge SHAs. To match one against `g
 | #1 `next` 16.4.3 security upgrade | `fc17afd` | `ab14763` |
 | #2 M1 contracts | `6302394` | `fc7b4ac` |
 
-PR #3, #4, #5 and #6 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53` and `aebd77e`; read
-with `gh pr view`), so no pair is needed for them.
+PR #3 to #8 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`, `aebd77e`, `318e4e1` and
+`d06b848`; read with `gh pr view`), so no pair is needed for them.
 
 ## What the scaffold does and does not prove
 
 - **Proves:** a clean clone restores with `npm ci` (all 15 `@rolldown/binding-*` platform bindings are
   in the lockfile), `npm run typecheck` is clean, `npm test` runs the scaffold's one smoke test (M1
-  added 12 more test files, M2 added 2 and M3 added 7, below), and `npm run build` succeeds under webpack.
+  added 12 more test files, M2 added 2, M3 added 7 and M4 added 4, below), and `npm run build` succeeds under
+  webpack.
 - **The one smoke test** (`tests/smoke.test.ts`) pins that the `dev`/`build` scripts really pass
   `--webpack` and that `next.config.ts` really declares `experimental.extensionAlias` (it imports the
   config and reads the exported object rather than matching source text). It does **not** prove that a
@@ -66,8 +70,8 @@ with `gh pr view`), so no pair is needed for them.
   `app/api/health/route.ts`; with the block in place it exited 0. The same removal on a warm `.next` cache
   built without error, so run that check with `.next` removed first.
 - **Does not prove anything about the engine.** The scaffold has none. The engine code that exists is M1's
-  contracts, the health route that self-checks them (M2) and M3's `lib/chain`, each covered next.
-  `lib/allowance`, `lib/standing` and `domains/` do not exist.
+  contracts, the health route that self-checks them (M2), M3's `lib/chain` and M4's `lib/allowance`, each
+  covered next. `lib/standing` and `domains/` do not exist.
 
 ## What M1 adds, and what was run to check it
 
@@ -75,8 +79,9 @@ with `gh pr view`), so no pair is needed for them.
   `Tests  131 passed (131)`: 12 files under `lib/contracts/__tests__/` plus `tests/smoke.test.ts`.
   `npm run typecheck` and `npm run build` also exited 0. That run was on the mark-done branch, which
   differs from `fc7b4ac` only in the two `.genesis/` files that PR edits.
-- That is the whole claim for M1. M1 is the contracts only. Folding the log, conserving authority and
-  ruling a verdict (M4 and M5, both `todo`) are still a design, not a result.
+- That is the whole claim for M1. M1 is the contracts only. Folding the log and ruling a verdict (M5,
+  `todo`) are still a design, not a result; what M4 added toward conserving authority is under "What M4
+  adds" below.
 
 ## What M2 adds, and what was run to check it
 
@@ -109,17 +114,19 @@ with `gh pr view`), so no pair is needed for them.
   not on `main`, because the PR was squash-merged).
 - **What this does not show.** One `curl` is one request at one time: it shows which commit Vercel built
   and that the three self-checks passed then, not that the deployment is unchanged since. `lib/chain`
-  exists since M3 but `/api/health` does not import it, and `lib/allowance` and `lib/standing` do not
-  exist yet, so a green `/api/health` says nothing about any of them.
+  exists since M3 and `lib/allowance` since M4, but `/api/health` imports neither, and `lib/standing` does
+  not exist yet, so a green `/api/health` says nothing about any of the three.
   The guard checks presence only (ADR 0001, ADR 0002): a field that is present but of the wrong kind, or
   two fields that contradict each other, pass it.
 
 ## What M3 adds, and what was run to check it
 
 - **What it is:** `lib/chain/**` (`intake.ts`, `chain.ts`, `structure.ts`, `index.ts`), seven test files under
-  `lib/chain/__tests__/` and ADR 0003. Nothing outside `lib/chain` imports it yet: on this branch the only
-  matches for `lib/chain` elsewhere are a comment in `app/api/health/route.ts` and string fixtures in
-  `lib/contracts/__tests__/architecture.test.ts`, found by `grep`. So no route, page or deploy runs it.
+  `lib/chain/__tests__/` and ADR 0003. Nothing outside `lib/chain` imported it when M3 was marked done: on
+  that branch the only matches for `lib/chain` elsewhere were a comment in `app/api/health/route.ts` and
+  string fixtures in `lib/contracts/__tests__/architecture.test.ts`, found by `grep`. Since M4,
+  `lib/allowance/accounting.ts` imports `chainOf` and `firstDeadLink` from `lib/chain/index.js` and M4's
+  tests import it too; on this branch no file under `app/` does, found by `grep`, so no route or page runs it.
 - **Intake reads each field once.** `intake.ts` reads each property of untrusted input once, through one
   helper, and the rest of intake looks only at that read; a read that throws is a typed `hostile` result
   for an event (an invalid charter, for a charter), not an exception. `hostile-input.test.ts` counts reads
@@ -169,20 +176,89 @@ with `gh pr view`), so no pair is needed for them.
   chain layer. The tests pin what they pin: the closure property is over what its seeded generator produces,
   not every grant tree, and the architecture test is about imports, not purity; ADR 0003's "What M3 does
   not claim" has the full list. The ADR's falsifiability log (33 one-edit sabotages, each recorded there as
-  failing) is the builder's measurement and was not re-run for this PR. `lib/allowance` and `lib/standing` do
-  not exist, so nothing here shows conservation, a verdict or a standing.
+  failing) is the builder's measurement and was not re-run for this PR. Conservation accounting is
+  `lib/allowance`'s (M4, below) and a verdict and a standing are `lib/standing`'s (M5, `todo`), so nothing in
+  this section shows any of them.
+
+## What M4 adds, and what was run to check it
+
+- **What it is:** `lib/allowance/**` (`accounting.ts`, `index.ts`), four test files under
+  `lib/allowance/__tests__/` (`accounting`, `conservation`, `exact-return` and `architecture`, beside
+  `fixtures.ts`, the shared driver and oracle, which is not a test file) and ADR 0004. `git diff --stat
+  d06b848^ d06b848` lists those eight files and no others. It reaches `lib/contracts` and `lib/chain` through
+  their `index.ts` barrels only. Nothing outside `lib/allowance` imports it yet. On this branch `grep` finds the
+  word under `app/` only in a comment in `app/api/health/route.ts` that still says `lib/allowance` is not
+  built, and in `lib/contracts` and `lib/chain` only in layer-table entries and string fixtures of their
+  architecture tests. So no route or page runs it.
+- **The four functions** (the barrel exports these four and two types, `HeadroomCheck` and `Shortfall`):
+  `usedOf`, `headroomOf`, `absorbedBy` and `checkHeadroom`, each a function of a grant tree and its charges.
+  What each does at the edges (for example: `headroomOf` is `limit - used` and is not clamped, a revoked child
+  costs its parent what was spent in it, an id the tree does not hold gets `undefined` and a refusal) is ADR
+  0004, Decisions 1 to 4, which are the reference; this file does not restate the rest.
+- **Conservation at every prefix.** `conservation.test.ts` checks nine properties after each step of each
+  seeded trace, 40 seeds of 80 steps (ADR 0004 Decision 7 lists them). That is every prefix of the traces this
+  seeded driver builds, not of every log; ADR 0004's "What M4 does not claim" says so, and its Coverage table
+  counts what the traces reached.
+- **The exact return at every revoke.** `exact-return.test.ts` checks, at every revoke the driver applies to a
+  grant that has a parent, that the parent's headroom rose by exactly `limit(h) - subtreeOwn(h)`, with
+  `subtreeOwn(h)` taken from the raw charges by an oracle that does not call the library. Four more relations
+  are checked at every applied revoke, a root's included: the amount returned is never negative, `absorbedBy`
+  equals `subtreeOwn`, `usedOf` changes for no grant but the parent, and no other live grant's headroom moves.
+  The driver revokes only a grant that is live, so a revoke of an already-dead grant is not a step of any of
+  them; ADR 0004 says its library-side counterpart is M5's `already-dead`.
+- **How deep the traces go, and what pins the rest.** In seeds 1 to 40 no charge above 0 lands on a line
+  longer than five grants, while `lib/chain` admits lines of eight (`MAX_ROOT_DEPTH + 1`). ADR 0004 gives the
+  count by line length (1: 395, 2: 294, 3: 122, 4: 26, 5: 5); a scratch script run on this branch and not
+  committed reproduced those five numbers. The sums at the depths the traces do not reach are pinned by one
+  hand-worked eight-link block in `accounting.test.ts`, with a different power of two spent on every grant,
+  and not by any property.
+- **The 30 s timeout.** The tests in `conservation.test.ts` and `exact-return.test.ts` that read the shared
+  seeded pass carry an explicit per-test timeout, the named constant `SHARED_PASS_TIMEOUT_MS` (30 000 ms), in
+  place of vitest's 5 s default. The measurements and the reason are in ADR 0004 Decision 8; this file does
+  not restate them.
+- **What the fix round changed.** ADR 0004 dates the independent review to `acbd7e9`. Read from PR #8's commit
+  list and diff, six commits follow it. `fe17ed2` and `674ec7c` added tests to `accounting.test.ts`: the
+  eight-link block, a check that `absorbedBy` and `usedOf` are read again at every call (no answer kept
+  between calls), a recorded revocation with `seq` 0, and a revoked grant that overspent not being clamped.
+  `fe17ed2` also reworded the describe and test titles of the coverage test in each property file (two lines
+  per file). The other four commits (`2fd4fd4`, `98e79ed`, `1302a66`, `e14907b`) changed ADR 0004 only, and
+  the first two touched it as well. `git diff acbd7e9 e14907b -- lib/allowance/accounting.ts lib/allowance/index.ts` is empty: the
+  library source did not change in the round. That is the PR's commit list, not the verifier's report, which
+  was not re-read for this PR. Neither `acbd7e9` nor `e14907b` (the head of the PR's ref) is on `main`,
+  because the PR was squash-merged.
+- **Tests:** `npm ci && npm test` printed `Test Files  26 passed (26)` and `Tests  712 passed (712)`: 4 files
+  and 84 tests under `lib/allowance/__tests__/` on top of M3's 22 files and 628 tests. `npm test --
+  lib/allowance`, M4's demo command, printed `Test Files  4 passed (4)` and `Tests  84 passed (84)`.
+  `npm run typecheck` and `npm run build` also exited 0 (`build` with `.next` removed first). Those runs were
+  on the mark-done branch, which differs from `d06b848` only in the two `.genesis/` files this PR edits.
+- **Observed 2026-10-24 at 22:21 UTC, before this PR:** `curl https://autonomous-company-simulator.vercel.app/api/health`
+  answered HTTP 200 with `"status":"ok"` and a `commit` of `d06b8487756b859334fa3e32817320833c9a95cb`: the
+  current `main` (`git ls-remote origin refs/heads/main` returned the same SHA at 22:21:09 UTC), which is M4's
+  own merge commit (`gh pr view 8` gives `mergedAt` 22:12:35 UTC). `checks.contracts.pass` was true with all
+  three assertions at `"pass":true`.
+- **What this does not show.** The route checks `lib/contracts` only and imports neither `lib/chain` nor
+  `lib/allowance`, so the curl shows which commit Vercel built and that those three self-checks passed then,
+  and nothing about the allowance layer. The tests pin what they pin: the properties are over the seeded
+  traces and the coverage table's branches, the architecture test is about imports and not purity, and a
+  negative, fractional or non-finite amount is not refused at this layer; ADR 0004's "What M4 does not claim"
+  has the full list. The ADR's falsifiability log (36 one-edit sabotages, each recorded there as failing) is
+  the builder's measurement and was not re-run for this PR. `lib/standing` does not exist, so nothing here
+  shows a verdict, a standing or an heir.
 
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
-- `.genesis/decisions/` holds three decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2) and
-  `0003-chain.md` (M3), each written by the milestone that made the decisions it records. M4 to M9 have
-  none yet. All three records' Status line still reads `proposed — written by the builder, not yet verified
-  by an independent L4 pass`; M1, M2 and M3 have each since passed L4 (table above), so that line is out of
-  date. ADR 0003 also says its falsifiability log was measured on `1d7ae12` and `60fb7e3`, which are on PR
-  #6's head ref (`refs/pull/6/head`) and not on `main`, because the PR was squash-merged. ADR 0002's
-  Decision 7 still says production serves a branch head deployed by the CLI and that the post-merge
-  redeploy "has not happened yet". Each was true when written; no record was edited here (this PR touches
-  only `DONE.html` and this file). "What M2 adds" and "What M3 adds" have the state after each merge.
+- `.genesis/decisions/` holds four decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2),
+  `0003-chain.md` (M3) and `0004-allowance.md` (M4), each written by the milestone that made the decisions
+  it records. M5 to M9 have none yet. All four records' Status line still reads `proposed — written by the
+  builder, not yet verified by an independent L4 pass`; M1 to M4 have each since passed L4 (table above), so
+  that line is out of date. ADR 0003 also says its falsifiability log was measured on `1d7ae12` and
+  `60fb7e3`, which are on PR #6's head ref (`refs/pull/6/head`) and not on `main`, because the PR was
+  squash-merged. ADR 0004 likewise names `842f0b0`, `03c85a4`, `acbd7e9`, `1302a66` and `e5447fe`: checked
+  with `git merge-base --is-ancestor`, all five are on PR #8's head ref (`refs/pull/8/head`) and none is an
+  ancestor of `main`. ADR 0002's Decision 7 still says production serves a branch head deployed by the CLI
+  and that the post-merge redeploy "has not happened yet". Each was true when written; no record was edited
+  here (this PR touches only `DONE.html` and this file). "What M2 adds", "What M3 adds" and "What M4 adds"
+  have the state after each merge.
 - This checkpoint has no `model:` field. Which model did this work is not recoverable from the repository
   alone. The `Co-Authored-By` trailer on every commit is a fixed string required by the account's commit
   rule, written regardless of which model did the work, and must not be read as authorship evidence.
