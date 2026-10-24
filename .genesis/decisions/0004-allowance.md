@@ -30,7 +30,9 @@ HONEST LIMIT test (a hand-built overspent grant gives -30).
 
 What this does and does not show. Sabotage X18 below clamps the number, and only that HONEST LIMIT test fails; the
 properties in `conservation.test.ts` and `exact-return.test.ts` stay green, because nothing in a correct trace is ever
-negative. So a clamp is pinned by one worked example and not by any property.
+negative. So a clamp is pinned by one worked example and not by any property. The same clamp on the revoked side (a revoked
+child's cost, or `absorbedBy`, held at the grant's limit) is pinned by a second one: a revoked child that spent 90 against
+a limit of 60 costs its parent 90.
 
 ## Decision 2 — a revoked child costs its parent what was spent in it; `absorbedBy` is that number
 
@@ -43,7 +45,7 @@ sums, and `headroom(p)` rises by exactly `limit(h) - subtreeOwn(h)`. Two wrong a
   ancestor was revoked still costs its full `limit` until it is revoked too; what the ancestor's revocation releases is
   accounted one level up, in the ancestor's `subtreeOwn`, which includes everything charged anywhere below it.
 - "Recorded" is `revokedAt.get(id) !== undefined`, the comparison `firstDeadLink` uses, so the two layers agree for any
-  map they are handed. Only WHETHER a revocation is recorded matters, never its `seq`: `accounting.test.ts` records a
+  map they are handed (a recorded `seq` of 0 counts as recorded, one test pins that; the plan's `Seq` is 1-based, so M5 cannot produce it). Only WHETHER a revocation is recorded matters, never its `seq`: `accounting.test.ts` records a
   revocation again with a different `seq` and no number changes.
 - `absorbedBy(id)` is `subtreeOwn(id)` for a grant that is in the tree and has a recorded revocation of its own, and
   `undefined` otherwise (a live grant, a grant dead only through an ancestor, an unknown id).
@@ -312,8 +314,8 @@ files are named so the layer that caught it is visible. "Typecheck" says what `n
 
 - That a negative, fractional or non-finite amount is refused (Decision 5), or that the sums are exact beyond
   `MAX_AMOUNT`.
-- That `lib/allowance` is pure. The architecture test is about imports; purity is exercised by calling with edited
-  arguments (`accounting.test.ts`), not proved.
+- That `lib/allowance` is pure. The architecture test is about imports; purity is exercised by calling each of the four
+  functions again after the tree or the charges were edited (`accounting.test.ts`), not proved.
 - That the four properties of a trace hold for every tree: they hold at every prefix of the traces this seeded driver
   builds, in the branches the coverage table lists, and the worked examples hold on the trees they name.
 - That the seeded traces reach deep lines. In the 40 seeds the longest line that carries a charge above 0 has five

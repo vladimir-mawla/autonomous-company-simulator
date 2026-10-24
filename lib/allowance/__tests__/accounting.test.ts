@@ -506,3 +506,37 @@ describe("an eight-link line (MAX_ROOT_DEPTH + 1 grants, the longest chain M3 ad
     expect(headroomOf(tree, charges, g("L2"))).toBe(548);
   });
 });
+
+const pinRoot = grant({ id: "R", grantor: "dana", grantee: "a", limit: 100, depth: 1 });
+const pinChild = grant({ id: "C", parent: "R", grantor: "a", grantee: "b", limit: 60 });
+
+describe("absorbedBy and usedOf are read again at every call (no answer is kept between calls)", () => {
+  it("a charge added below a revoked grant after the first call changes absorbedBy and the parent's numbers at the next call", () => {
+    const tree = mutableTree([pinRoot, pinChild], { C: 2 });
+    const charges: Charge[] = [charge("C", 10)];
+    expect(absorbedBy(tree, charges, g("C"))).toBe(10);
+    expect(usedOf(tree, charges, g("R"))).toBe(10);
+    charges.push(charge("C", 5));
+    expect(absorbedBy(tree, charges, g("C"))).toBe(15);
+    expect(usedOf(tree, charges, g("R"))).toBe(15);
+    expect(headroomOf(tree, charges, g("R"))).toBe(85);
+  });
+});
+
+describe("a recorded revocation is any value that is not undefined, 0 included", () => {
+  it("revokedAt of 0 is a revocation: the grant is dead, absorbedBy answers, the parent is charged what was spent", () => {
+    const tree = mutableTree([pinRoot, pinChild], { C: 0 });
+    expect(headroomOf(tree, [charge("C", 50)], g("C"))).toBe(0);
+    expect(absorbedBy(tree, [charge("C", 50)], g("C"))).toBe(50);
+    expect(headroomOf(tree, [charge("C", 50)], g("R"))).toBe(50);
+  });
+});
+
+describe("nothing is clamped where a hand-built state overspends a revoked grant either", () => {
+  it("a revoked child that spent 90 against a limit of 60 costs its parent 90 and absorbedBy says 90", () => {
+    const tree = mutableTree([pinRoot, pinChild], { C: 2 });
+    expect(absorbedBy(tree, [charge("C", 90)], g("C"))).toBe(90);
+    expect(usedOf(tree, [charge("C", 90)], g("R"))).toBe(90);
+    expect(headroomOf(tree, [charge("C", 90)], g("R"))).toBe(10);
+  });
+});
