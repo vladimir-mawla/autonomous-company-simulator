@@ -116,12 +116,15 @@ with `gh pr view`), so no pair is needed for them.
 
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
-- `.genesis/decisions/` holds two decision records, `0001-contracts.md` (M1) and `0002-deploy.md` (M2),
-  each written by the milestone that made the decisions it records. M3 to M9 have none yet. Both records'
-  Status line still reads `proposed`, and ADR 0002's Decision 7 still says production serves a branch head
-  deployed by the CLI and that the post-merge redeploy "has not happened yet". Each was true when written;
-  neither record was edited here (this PR touches only `DONE.html` and this file). "What M2 adds" above
-  has the state after the merge.
+- `.genesis/decisions/` holds three decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2) and
+  `0003-chain.md` (M3), each written by the milestone that made the decisions it records. M4 to M9 have
+  none yet. All three records' Status line still reads `proposed — written by the builder, not yet verified
+  by an independent L4 pass`; M1, M2 and M3 have each since passed L4 (table above), so that line is out of
+  date. ADR 0003 also says its falsifiability log was measured on `1d7ae12` and `60fb7e3`, which are on PR
+  #6's head ref (`refs/pull/6/head`) and not on `main`, because the PR was squash-merged. ADR 0002's
+  Decision 7 still says production serves a branch head deployed by the CLI and that the post-merge
+  redeploy "has not happened yet". Each was true when written; no record was edited here (this PR touches
+  only `DONE.html` and this file). "What M2 adds" and "What M3 adds" have the state after each merge.
 - This checkpoint has no `model:` field. Which model did this work is not recoverable from the repository
   alone. The `Co-Authored-By` trailer on every commit is a fixed string required by the account's commit
   rule, written regardless of which model did the work, and must not be read as authorship evidence.
