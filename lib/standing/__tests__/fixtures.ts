@@ -1,7 +1,7 @@
 import { headroomOf } from "../../allowance/index.js";
 import { CAPABILITIES, CHARTER, g, grant, mulberry32, p, treeOf } from "../../chain/__tests__/fixtures.js";
 import type { Cap, GrantSpec } from "../../chain/__tests__/fixtures.js";
-import { chainOf, firstDeadLink, liveAuthorityAbove, trailOf } from "../../chain/index.js";
+import { chainOf, firstDeadLink, liveAuthorityAbove, readCharter, trailOf } from "../../chain/index.js";
 import { MAX_ROOT_DEPTH, commitId, grantId, principalId } from "../../contracts/index.js";
 import type {
   Charge,
@@ -17,6 +17,8 @@ import type {
   Seq,
   Verdict,
 } from "../../contracts/index.js";
+import { admitInput } from "../append.js";
+import { apply, emptyLedger } from "../fold.js";
 import { append, fold, mayCommit } from "../index.js";
 import type { AppendFailure, Folded } from "../index.js";
 
@@ -229,6 +231,13 @@ export interface WorldOptions {
   readonly seed: number;
   readonly steps: number;
   readonly profile?: "default" | "deep";
+  /**
+   * How a proposal is offered to the engine. `"incremental"` (the default) keeps ONE ledger and offers each proposal to
+   * `admitInput`, the admission step `append` runs after it has replayed the log, so building a world costs a pass and not a
+   * replay per event. `"append"` calls the public `append` with the whole log every time. The two must give the same world
+   * for every seed, and `replay.test.ts` asserts that for all of them; every other file uses the cheaper one.
+   */
+  readonly engine?: "incremental" | "append";
 }
 
 function pick<T>(random: () => number, items: readonly T[]): T | undefined {
@@ -254,6 +263,11 @@ export function runWorld(options: WorldOptions): World {
   const deep = profile === "deep";
   const random = mulberry32(seed * 7919 + (deep ? 13 : 1));
   const charter = charterFor(seed);
+
+  const engine = options.engine ?? "incremental";
+  const read = readCharter(charter);
+  if (!read.ok) throw new Error(`runWorld: the charter for seed ${seed} was refused: ${JSON.stringify(read.fields)}`);
+  const ledger = emptyLedger<Cap>();
 
   const mirror: Mirror = { grants: new Map(), revokedAt: new Map(), charges: [] };
   const tree = { grants: mirror.grants, revokedAt: mirror.revokedAt };
@@ -460,28 +474,37 @@ export function runWorld(options: WorldOptions): World {
       input = proposeCommit();
     }
 
-    const logLength = log.length;
-    const result = append(charter, log, input as EventInput<Cap>);
+    const logLength = engine === "append" ? log.length : ledger.events.length;
     let outcome: Outcome;
-    if (result.ok) {
-      outcome = { ok: true, event: result.event, verdict: result.verdict };
-      log = result.log;
-      const event = result.event;
+    if (engine === "append") {
+      const result = append(charter, log, input as EventInput<Cap>);
+      if (result.ok) log = result.log;
+      outcome = result.ok ? { ok: true, event: result.event, verdict: result.verdict } : { ok: false, failure: result.failure };
+    } else {
+      const prepared = admitInput(read.charter, ledger, input);
+      if (prepared.ok) {
+        const event = apply(ledger, prepared.event, prepared.effect, prepared.seq);
+        outcome = { ok: true, event, verdict: prepared.effect.kind === "commit" ? prepared.effect.verdict : null };
+      } else {
+        outcome = { ok: false, failure: prepared.failure };
+      }
+    }
+
+    if (outcome.ok) {
+      const event = outcome.event;
       if (event.kind === "grant") mirror.grants.set(event.grant.id, event.grant);
       else if (event.kind === "revoke") {
         mirror.revokedAt.set(event.grantId, event.seq);
         lastRevoked = event.grantId;
       } else {
         everCommitIds.push(event.commit.id);
-        if (result.verdict?.kind === "warranted") mirror.charges.push({ grantId: event.commit.actedUnder, amount: event.commit.amount });
+        if (outcome.verdict?.kind === "warranted") mirror.charges.push({ grantId: event.commit.actedUnder, amount: event.commit.amount });
       }
-    } else {
-      outcome = { ok: false, failure: result.failure };
     }
     attempts.push({ step, kind, input, logLength, outcome });
   }
 
-  return { seed, charter, profile, log, attempts, mirror };
+  return { seed, charter, profile, log: engine === "append" ? log : [...ledger.events], attempts, mirror };
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -589,6 +612,17 @@ export function chunked<T>(
 export function report(name: string, counts: unknown): void {
   if (process.env["ACS_REPORT"] === "1") console.log(`ACS_REPORT ${name} ${JSON.stringify(counts)}`);
 }
+
+/** Seeds and events per seed of every whole-system property (plan section 6 M5: "at least 1 500 seeds x 100 events"). */
+export const SEEDS = 1500;
+export const STEPS = 100;
+/**
+ * The per-test timeout of every test that reads a generated chunk, one named constant for all of them. The work is
+ * synchronous, so a timeout is a failure threshold and not a guard against a hang. It is far above what a chunk takes (the
+ * slowest is about a second on a quiet machine) so that a slow runner does not turn a correct run red; ADR 0005 gives the
+ * measured durations, the load they were measured under, and why the chunks are not cut further.
+ */
+export const SEED_LOOP_TIMEOUT_MS = 20_000;
 
 /** The profile a seed runs under: every fifth seed is `deep`. Fixed here so every file agrees on which seeds are deep. */
 export const profileOf = (seed: number): "default" | "deep" => (seed % 5 === 0 ? "deep" : "default");
