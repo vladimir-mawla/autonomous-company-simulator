@@ -1,20 +1,19 @@
 # CURRENT
 
-- **active_loop:** none. This is the G3 genesis repo only: **genesis only, no engine code.**
-  `.genesis/PLAN.md` (G0-G2) is in place, the tooling skeleton is in place, and `app/page.tsx` is a
-  placeholder. No engine code exists: M1 (`lib/contracts/**`) has not started. M1 is a separate
-  milestone with its own branch, its own PR, and its own independent (L4) verifier.
+- **active_loop:** none recorded. M1 (contracts, `lib/contracts/**`) is `done`; M2 to M9 are `todo` in
+  this revision. Each milestone is separate, with its own branch, its own PR, and its own independent
+  (L4) verifier. `app/page.tsx` is still the genesis placeholder.
 
-- **last updated:** 2026-10-24, immediately after genesis (repo scaffold, `.genesis/` ritual, README,
-  smoke test, CI workflow), before any milestone build has begun. Recorded now, honestly, rather than
-  implying progress that does not exist: a checkpoint that overstates status is worse than no
-  checkpoint at all.
+- **last updated:** 2026-10-24, in the `chore(genesis): mark M1 done` bookkeeping PR, after M1 passed
+  independent L4 verification and merged (PR #2). The previous revision was written immediately after
+  genesis, before any milestone build had begun. Recorded honestly rather than implying progress that
+  does not exist: a checkpoint that overstates status is worse than no checkpoint at all.
 
 ## Milestone state, as of this revision
 
 | | Status | Where |
 |---|---|---|
-| M1 contracts | `todo` | designed only (`.genesis/PLAN.md` §4, §6): no branch, no code |
+| M1 contracts | `done` | PR #2 → `fc7b4ac` (squash-merged); independent L4 APPROVE in round 3, after three fix rounds |
 | M2 deploy | `todo` | designed only |
 | M3 chain: intake and structure | `todo` | designed only |
 | M4 allowance: conservation | `todo` | designed only |
@@ -24,25 +23,51 @@
 | M8 interactive demo | `todo` | designed only |
 | M9 deliverables | `todo` | designed only |
 
-`main` is the single base history produced by genesis: the plan, tooling config, app shell, one smoke
-test, a CI workflow, the README and the `.genesis/` ritual. There is no `lib/`, no `domains/`, no
-health route, and no deploy.
+`main` is the genesis base (the plan, tooling config, app shell, a CI workflow, the README and the
+`.genesis/` ritual) plus two merged PRs: #1 (the `next` 16.4.3 security upgrade) and #2 (M1:
+`lib/contracts/**` and its tests). There is no `domains/`, no health route, and no deploy.
+
+## `main` history was rewritten on 2026-10-24 (SHAs you may see on PR pages)
+
+`main` was rewritten once to correct commit attribution: the earlier commits used an author email that
+GitHub attributes to a different account, and every commit now carries
+`105279249+vladimir-mawla@users.noreply.github.com` (two squash commits' `Co-authored-by` lines were
+corrected the same way). Only commit metadata changed, so the SHAs changed and the content did not:
+each of the two merge commits below has the same tree before and after.
+
+GitHub's PR pages still show the pre-rewrite merge SHAs. To match one against `git log`:
+
+| PR | Merge SHA shown on the PR page (pre-rewrite) | SHA on `main` now |
+|---|---|---|
+| #1 `next` 16.4.3 security upgrade | `fc17afd` | `ab14763` |
+| #2 M1 contracts | `6302394` | `fc7b4ac` |
 
 ## What the scaffold does and does not prove
 
 - **Proves:** a clean clone restores with `npm ci` (all 15 `@rolldown/binding-*` platform bindings are
-  in the lockfile), `npm run typecheck` is clean, `npm test` runs one smoke test, and `npm run build`
-  succeeds under webpack.
+  in the lockfile), `npm run typecheck` is clean, `npm test` runs the scaffold's one smoke test (M1
+  added 12 more test files, below), and `npm run build` succeeds under webpack.
 - **The one smoke test** (`tests/smoke.test.ts`) pins that the `dev`/`build` scripts really pass
   `--webpack` and that `next.config.ts` really declares `experimental.extensionAlias` (it imports the
   config and reads the exported object rather than matching source text). It does **not** prove that a
-  `.js`-suffixed import resolves in a build: that needs `lib/` and is covered by `npm run build` from M1.
-- **Does not prove anything about the engine.** There is none. Every plan claim is a design, not a result.
+  `.js`-suffixed import resolves in a build: that needs a file under `app/` to import `lib/`. Until one does,
+  `npm run build` does not exercise `lib/` (checked once, with a temporary import, during M1's verification).
+- **Does not prove anything about the engine.** The scaffold has none. The only engine code is M1's
+  contracts, covered next.
+
+## What M1 adds, and what was run to check it
+
+- When M1 was marked done, `npm ci && npm test` printed `Test Files  13 passed (13)` and
+  `Tests  131 passed (131)`: 12 files under `lib/contracts/__tests__/` plus `tests/smoke.test.ts`.
+  `npm run typecheck` and `npm run build` also exited 0. That run was on the mark-done branch, which
+  differs from `fc7b4ac` only in the two `.genesis/` files that PR edits.
+- That is the whole claim. M1 is the contracts only; M3 to M5 are `todo`, so everything about folding
+  the log, conserving authority and ruling a verdict is still a design, not a result.
 
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
-- No decision record exists yet in `.genesis/decisions/`. The first one (`0001-contracts.md`) is M1's
-  own artifact, not genesis's: an ADR is written by the milestone that made the decisions it records.
+- `.genesis/decisions/` holds one decision record, `0001-contracts.md`, written by M1 (an ADR is written
+  by the milestone that made the decisions it records). M2 to M9 have none yet.
 - This checkpoint has no `model:` field. Which model did this work is not recoverable from the repository
   alone. The `Co-Authored-By` trailer on every commit is a fixed string required by the account's commit
   rule, written regardless of which model did the work, and must not be read as authorship evidence.
