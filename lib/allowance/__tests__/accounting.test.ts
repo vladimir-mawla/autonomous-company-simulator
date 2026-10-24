@@ -459,3 +459,50 @@ describe("what is NOT checked here (HONEST LIMIT): shape of a requested amount, 
     expect(checkHeadroom(tree, [], g("R"), -1)).toEqual({ ok: true });
   });
 });
+
+describe("an eight-link line (MAX_ROOT_DEPTH + 1 grants, the longest chain M3 admits) with a different charge on every grant: the sums are right at every depth", () => {
+  const LIMITS = [1000, 900, 800, 700, 600, 500, 400, 300];
+  const SPENT = [1, 2, 4, 8, 16, 32, 64, 128]; // distinct powers of two, so a term left out of any sum shows in the total
+  const line = LIMITS.map((limit, index) =>
+    grant({ id: `L${index}`, parent: index === 0 ? null : `L${index - 1}`, grantor: index === 0 ? "dana" : `q${index - 1}`, grantee: `q${index}`, limit, depth: Math.max(MAX_ROOT_DEPTH - index, 0) }),
+  );
+  const charges: Charge[] = SPENT.map((amount, index) => charge(`L${index}`, amount));
+  const ids = LIMITS.map((_, index) => `L${index}`);
+  const used = (revoked: Record<string, number>) => ids.map((id) => usedOf(treeOf(line, revoked), charges, g(id)));
+  const room = (revoked: Record<string, number>) => ids.map((id) => headroomOf(treeOf(line, revoked), charges, g(id)));
+
+  it("is MAX_ROOT_DEPTH + 1 grants long", () => {
+    expect(line).toHaveLength(MAX_ROOT_DEPTH + 1);
+  });
+
+  it("nothing revoked: used is the grant's own spend plus the next grant's whole limit, at all eight depths", () => {
+    expect(used({})).toEqual([901, 802, 704, 608, 516, 432, 364, 128]);
+    expect(room({})).toEqual([99, 98, 96, 92, 84, 68, 36, 172]);
+  });
+
+  it("revoking the second grant absorbs the spend of the seven grants from it down (2 + 4 + ... + 128 = 254), and the root's headroom is 1000 - (1 + 254)", () => {
+    const tree = treeOf(line, { L1: 2 });
+    expect(absorbedBy(tree, charges, g("L1"))).toBe(254);
+    expect(usedOf(tree, charges, g("L0"))).toBe(255);
+    expect(headroomOf(tree, charges, g("L0"))).toBe(745);
+  });
+
+  it("revoking the root absorbs all eight (1 + 2 + ... + 128 = 255)", () => {
+    expect(absorbedBy(treeOf(line, { L0: 2 }), charges, g("L0"))).toBe(255);
+  });
+
+  it("revoking only the deepest grant: its parent's headroom is 400 - (64 + 128)", () => {
+    const tree = treeOf(line, { L7: 2 });
+    expect(absorbedBy(tree, charges, g("L7"))).toBe(128);
+    expect(headroomOf(tree, charges, g("L6"))).toBe(208);
+  });
+
+  it("revoking from the bottom up, and a deeper grant before a shallower one: each parent's headroom is its limit less its own spend and what was spent below", () => {
+    expect(absorbedBy(treeOf(line, { L7: 2, L6: 3 }), charges, g("L6"))).toBe(192);
+    expect(headroomOf(treeOf(line, { L7: 2, L6: 3 }), charges, g("L5"))).toBe(276);
+    const tree = treeOf(line, { L5: 2, L3: 3 });
+    expect(absorbedBy(tree, charges, g("L3"))).toBe(248);
+    expect(absorbedBy(tree, charges, g("L5"))).toBe(224);
+    expect(headroomOf(tree, charges, g("L2"))).toBe(548);
+  });
+});

@@ -315,6 +315,9 @@ files are named so the layer that caught it is visible. "Typecheck" says what `n
   arguments (`accounting.test.ts`), not proved.
 - That the four properties of a trace hold for every tree: they hold at every prefix of the traces this seeded driver
   builds, in the branches the coverage table lists, and the worked examples hold on the trees they name.
+- That the seeded traces reach deep lines. In the 40 seeds the longest line that carries a charge above 0 has five
+  grants (the chain limit is eight), and the deepest spend below a revoked grant is three levels below it, once. The
+  eight-link line in `accounting.test.ts` is what pins the sums at the depths the traces do not reach.
 - That the theorem's clause "`subtreeOwn` never decreases" is checked on the library: it is checked on the raw charges
   for root grants (Decision 7).
 - Anything about `standing`, verdicts or the heir: that is M5's. `over-allocation` and `over-limit` are M5's, from this

@@ -185,8 +185,8 @@ describe(`exact return: ${header}`, () => {
   it("the headroom of every grant that is still live after the revoke, other than the parent, is unchanged", () => holds("live-elsewhere-unchanged"), SHARED_PASS_TIMEOUT_MS);
 });
 
-describe(`COVERAGE: the revokes reach every branch the equality needs (${header})`, () => {
-  it("each count is at least its floor, so the equality was not checked only where it is trivial", () => {
+describe(`COVERAGE: the revokes reach each shape named in COVERAGE_FLOORS at least that many times (${header})`, () => {
+  it("each count is at least its floor, so the equality was checked at the revokes the floors name and not only where it is trivial", () => {
     const { tally } = results();
     const short = Object.entries(COVERAGE_FLOORS)
       .filter(([key, floor]) => (tally.get(key) ?? 0) < floor)

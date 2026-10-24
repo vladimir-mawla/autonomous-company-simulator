@@ -321,8 +321,8 @@ describe(`conservation: ${header}`, () => {
   it("the oracle's idea of live agrees with lib/chain's at every grant of every prefix", () => holds("oracle-agrees-with-chain"), SHARED_PASS_TIMEOUT_MS);
 });
 
-describe(`COVERAGE: the traces reach every branch the properties above need (${header})`, () => {
-  it("each count is at least its floor, so no property above passed over an empty domain", () => {
+describe(`COVERAGE: the traces reach each shape named in COVERAGE_FLOORS at least that many times (${header})`, () => {
+  it("each count is at least its floor, so each property above was evaluated over many prefixes, at the edges the floors name", () => {
     const { tally } = results();
     const short = Object.entries(COVERAGE_FLOORS)
       .filter(([key, floor]) => (tally.get(key) ?? 0) < floor)
