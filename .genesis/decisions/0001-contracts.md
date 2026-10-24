@@ -330,11 +330,15 @@ missing field of the variant, then a forbidden field.
   reported but an explicit `undefined` is not: it is the same as absent to every reader and to JSON, and
   `tsconfig.json` already treats the two alike (Decision 9). Because the field is read by name, an
   inherited, non-enumerable or accessor-defined property is seen as well.
-- **The tables cannot drift from the types unnoticed.** The guard's per-variant tables are mirrored by seven
-  `Assert<Equal<...>>` lines that derive the required and forbidden fields from the `?: never` and
-  required declarations of the real interfaces (a field a variant does not declare at all does not count as
-  forbidden) and the common fields from `StandingBase`. A table that omits a field, lists one the type does
-  not declare, or a new common field the guard was not told about, fails `npm run typecheck`.
+- **The tables are tied to the types for the five variant fields, and only those.** The guard's per-variant
+  tables are mirrored by seven `Assert<Equal<...>>` lines that derive the required and forbidden fields from
+  the `?: never` and required declarations of the real interfaces (a field a variant does not declare at all
+  does not count as forbidden) and the common fields from `StandingBase`. A table that omits one of the five
+  names in `VariantField`, lists one the type does not declare, or a new common field the guard was not told
+  about, fails `npm run typecheck`. A new field outside those five is not seen: adding `readonly verdict?: never`
+  to `BindingStanding` or `readonly note?: string` to `InheritedStanding` leaves typecheck and all 131 tests
+  green. Nor is a new variant (the guard's three literal `kind` checks are not derived from `Standing["kind"]`);
+  a fourth variant is caught only by the exhaustive consumers.
 - **What it catches and what it does not, at full strength** (the same text is on the function):
   it catches a contaminated value however it arrived, including `as unknown as` and an implicit `any`
   (`integrity.test.ts` builds the same contaminated value both ways and the guard reports it both times).
