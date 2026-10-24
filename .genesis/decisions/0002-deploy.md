@@ -41,9 +41,13 @@ two fields that contradict each other, passes it, so a green `/api/health` says 
 Any assertion that does not match, and any assertion that throws (in the guard or while building its input),
 gives HTTP 503 and `status: "degraded"`; the response names which assertion failed and what it got. 200 and
 `status: "ok"` happen only when all three match. There is no code path that answers 200 without running the
-three checks. `export const dynamic = "force-dynamic"` is set so Next cannot prerender one response at build
-time (which would run the checks once during the build and freeze `commit`); `route.test.ts` asserts the
-exported value, and `next build` lists `/api/health` as `ƒ (Dynamic)`.
+three checks. `export const dynamic = "force-dynamic"` is set because plan §6 M2 requires it, so that Next cannot prerender
+one response at build time (which would run the checks once during the build and freeze `commit`);
+`route.test.ts` asserts the exported value. It is not what makes the route dynamic on this Next version: a
+scratch `next build --webpack` (Next 16.4.3, this config, `.next` removed first) with the export deleted still
+lists `/api/health` as `ƒ (Dynamic)`, and `next start` of that build read `VERCEL_GIT_COMMIT_SHA` at request
+time. So the `ƒ (Dynamic)` line in the build output does not show what the export does, and the test pins the
+declaration, not an effect.
 
 ## Decision 3 — the commit is `VERCEL_GIT_COMMIT_SHA` or the literal `"unknown (local dev)"`, never guessed
 

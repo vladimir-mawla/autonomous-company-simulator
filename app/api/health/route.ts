@@ -10,10 +10,12 @@ import {
 } from "../../../lib/contracts/index.js";
 
 /**
- * `force-dynamic`: without it Next.js may prerender this handler at build time and serve that one
- * response forever. The "live" contracts check below would then have run once, during the build,
- * and `commit` would be frozen at whatever the build saw. A health endpoint has to run its checks
- * on every request, so the route opts out of static rendering explicitly.
+ * `force-dynamic`: plan §6 M2 requires it, and it makes the opt-out of static rendering explicit, so a
+ * prerendered response (the checks run once, during the build, and `commit` frozen at whatever the build
+ * saw) cannot happen. It is not what makes this handler dynamic on Next 16.4.3: with the line removed, a
+ * scratch build still lists `/api/health` as `ƒ (Dynamic)` and a started server still read
+ * `VERCEL_GIT_COMMIT_SHA` at request time. A health endpoint has to run its checks on every request, so the
+ * declaration stays.
  */
 export const dynamic = "force-dynamic";
 

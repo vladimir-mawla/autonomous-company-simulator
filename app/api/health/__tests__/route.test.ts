@@ -77,7 +77,7 @@ describe("GET /api/health: the real checks", () => {
     expect(guard).toHaveBeenCalledTimes(6);
   });
 
-  it("exports dynamic = force-dynamic, so Next does not prerender one response at build time", () => {
+  it("exports dynamic = force-dynamic, as plan §6 M2 requires", () => {
     expect(route.dynamic).toBe("force-dynamic");
   });
 });
