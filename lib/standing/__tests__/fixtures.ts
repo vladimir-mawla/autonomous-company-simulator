@@ -624,6 +624,21 @@ export const STEPS = 100;
  */
 export const SEED_LOOP_TIMEOUT_MS = 20_000;
 
+/** The prefix lengths to check for a world: all of them, or the points where the tree changes plus a spread. */
+export function cutsOf(log: Log<Cap>, exhaustive: boolean): number[] {
+  const n = log.length;
+  const cuts = new Set<number>([n]);
+  for (let k = 1; k <= n; k++) {
+    const event = log[k - 1];
+    if (exhaustive || event?.kind === "revoke") {
+      cuts.add(k);
+      if (k > 1) cuts.add(k - 1);
+    }
+  }
+  if (!exhaustive) for (let part = 1; part <= 8; part++) cuts.add(Math.max(1, Math.floor((n * part) / 8)));
+  return [...cuts].filter((k) => k >= 1 && k <= n).sort((a, b) => a - b);
+}
+
 /** The profile a seed runs under: every fifth seed is `deep`. Fixed here so every file agrees on which seeds are deep. */
 export const profileOf = (seed: number): "default" | "deep" => (seed % 5 === 0 ? "deep" : "default");
 

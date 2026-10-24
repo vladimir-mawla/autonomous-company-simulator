@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { fold, mayCommit } from "../index.js";
 import type { CommitRecord } from "../index.js";
-import type { Log } from "../../contracts/index.js";
 import { judgeCommit } from "../verdict.js";
 import {
   CHARTER,
   ORG,
   chunked,
+  cutsOf,
   commit,
   commitEvent,
   g,
@@ -78,21 +78,6 @@ function keyOf(record: CommitRecord<Cap>): string {
   const head = `${record.seq}|${c.id}|${c.actor}|${c.actedUnder}|${c.capability}|${c.amount}|`;
   const v = record.verdict;
   return v.kind === "warranted" ? `${head}W|${v.warrant.chain.join(",")}|${v.warrant.trail.join(",")}` : `${head}B|${JSON.stringify(v.breach)}`;
-}
-
-/** The prefix lengths to check for a world: all of them, or the points where the tree changes plus a spread. */
-function cutsOf(log: Log<Cap>, exhaustive: boolean): number[] {
-  const n = log.length;
-  const cuts = new Set<number>([n]);
-  for (let k = 1; k <= n; k++) {
-    const event = log[k - 1];
-    if (exhaustive || event?.kind === "revoke") {
-      cuts.add(k);
-      if (k > 1) cuts.add(k - 1);
-    }
-  }
-  if (!exhaustive) for (let part = 1; part <= 8; part++) cuts.add(Math.max(1, Math.floor((n * part) / 8)));
-  return [...cuts].filter((k) => k >= 1 && k <= n).sort((a, b) => a - b);
 }
 
 const scans = chunked(SEEDS, CHUNKS, (first, last): Scan => {
