@@ -12,6 +12,13 @@ import { CAPABILITIES, CHARTER, rawCommit, rawCommitEvent, rawGrant, rawGrantEve
 
 const TOO_LONG = "x".repeat(MAX_ID_LENGTH + 1);
 
+/** `[ <hole>, "purchase" ]`: length 2, index 0 never assigned. */
+function sparse(): unknown[] {
+  const list = new Array<unknown>(2);
+  list[1] = "purchase";
+  return list;
+}
+
 /** What a refused shape looks like, written once so each case below states only what differs. */
 function shape(eventKind: "grant" | "revoke" | "commit" | "unknown", ...fields: string[]) {
   return {
@@ -299,6 +306,8 @@ describe("readEventInput: invalid-event-shape names the offending field, one at 
       ["a non-string", [1]],
       ["a null element", ["purchase", null]],
       ["a nested array", [["purchase"]]],
+      ["a sparse array (a hole reads as undefined)", sparse()],
+      ["a typed array, which is not an Array", new Uint8Array(1)],
     ])("%s", (label, value) => {
       const grant = label === "missing" ? without(rawGrant(), "capabilities") : rawGrant({ capabilities: value });
       expect(readEventInput(CHARTER, { kind: "grant", grant })).toEqual(shape("grant", "capabilities"));
@@ -344,6 +353,14 @@ describe("readEventInput: invalid-event-shape names the offending field, one at 
     };
     expect(readEventInput(CHARTER, rawGrantEvent({ id }))).toEqual(shape("grant", "id"));
     expect(coerced).toBe(false);
+  });
+
+  it("ids are opaque tokens, not grammars: whitespace, control characters, a lone surrogate and names that collide with Object.prototype are all accepted unchanged", () => {
+    for (const id of [" ", "\t", "\u0000", "\ud800", "__proto__", "constructor", "toString", "G 1", "G1\n"]) {
+      const result = readEventInput(CHARTER, rawGrantEvent({ id, grantor: id, grantee: id + "x" }));
+      expect(result.ok && result.event.kind === "grant" && result.event.grant.id, JSON.stringify(id)).toBe(id);
+      expect(result.ok && result.event.kind === "grant" && result.event.grant.grantor, JSON.stringify(id)).toBe(id);
+    }
   });
 
   it("a String object is not a string", () => {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { MAX_ROOT_DEPTH } from "../../contracts/index.js";
 import type { Grant, GrantId, GrantTree } from "../../contracts/index.js";
-import { MAX_CHARTER_ENTRIES, chainOf, liveAuthorityAbove, readCharter, readEventInput, readLogEvent, trailOf } from "../index.js";
-import { CHARTER, g, grant, mulberry32, rawCommit, rawCommitEvent, rawGrant, rawGrantEvent, rawRevokeEvent, treeOf } from "./fixtures.js";
+import { MAX_CHARTER_ENTRIES, chainOf, checkGrantStructure, liveAuthorityAbove, readCharter, readEventInput, readLogEvent, trailOf } from "../index.js";
+import { CHARTER, canonBefore, g, grant, mulberry32, rawCommit, rawCommitEvent, rawGrant, rawGrantEvent, rawRevokeEvent, treeOf } from "./fixtures.js";
 import type { Cap } from "./fixtures.js";
 
 /**
@@ -606,5 +606,29 @@ describe("over random hostile graphs: chainOf always terminates, and agrees with
     // Non-vacuous: the graphs really did contain both kinds of grant.
     expect(defined).toBeGreaterThan(200);
     expect(undefinedCount).toBeGreaterThan(200);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// HONEST LIMITS: what is trusted, shown by running it
+// ---------------------------------------------------------------------------------------------------
+
+describe("HONEST LIMIT: only intake is hardened against accessors; the rest of the layer trusts the typed values it is handed", () => {
+  it("readEventInput trusts the charter argument: a charter whose own `capabilities` getter throws makes it throw (pass it `readCharter(...).charter`)", () => {
+    const hostileCharter = withAccessor({ roots: ["dana"] }, "capabilities", throwing(new Error("charter getter")));
+    expect(() => readEventInput(hostileCharter as never, rawGrantEvent())).toThrow("charter getter");
+    // ...whereas readCharter turns the same object into a typed refusal, which is the route that makes it safe.
+    expect(readCharter(hostileCharter as never)).toEqual({ ok: false, fields: ["capabilities"] });
+  });
+
+  it("checkGrantStructure reads a grant's `parent` more than once, so an accessor-bearing grant is judged on mixed reads (grants are specified to come out of readEventInput, which never returns one)", () => {
+    const plain = grant({ id: "G8", parent: "G2", grantor: "ops", grantee: "buyer-c", capabilities: ["purchase"], depth: 2 });
+    expect(checkGrantStructure(CHARTER, canonBefore(), plain)).toEqual({ ok: true });
+
+    // The same grant with `parent` answering "G2" the first time and "g-ghost" afterwards: the first read says it is
+    // not a root, a later one finds no such parent, and the refusal names the later value. One consistent read of
+    // "G2" would have been accepted.
+    const flippingParent = Object.defineProperties({ ...plain }, { parent: flipping("G2", "g-ghost") });
+    expect(checkGrantStructure(CHARTER, canonBefore(), flippingParent as Grant<Cap>)).toEqual({ ok: false, rejection: { kind: "unknown-parent", parent: "g-ghost" } });
   });
 });
