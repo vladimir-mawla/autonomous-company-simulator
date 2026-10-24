@@ -118,7 +118,7 @@ The `Brand` helper itself is not exported: nothing else in M1 needs to mint a br
   and two controls (the first element is `number`, not `number | undefined`, under
   `noUncheckedIndexedAccess`; widening to `readonly number[]` is allowed). It is a compile-time
   statement only: at run time it is an ordinary array, and `map`/`filter`/`slice` return plain arrays,
-  so M3/M4/M5 will have to rebuild a tuple where they need the guarantee. M1 provides no helper for
+  so a later consumer that needs the guarantee has to rebuild a tuple. M1 provides no helper for
   that (the plan's function-ownership list for M1 names none).
 
 ## Decision 4 — `Grant`, `Commitment` and `Charter` carry the capability vocabulary as a type parameter `C`
@@ -546,7 +546,8 @@ working tree that the commit adding each bullet leaves, not on `9d2404a`.
    `.genesis/checkpoints/CURRENT.md` and the smoke test's comment say `npm run build` covers this "from M1";
    for M1 that is not so. Checked once, by hand and not pinned by any test: `app/page.tsx` temporarily imported
    `../lib/contracts/index.js`, `npm run build` ("next build --webpack") compiled, type-checked under
-   `tsconfig.json` and prerendered, and the change was reverted. M2's health route is the first real check.
+   `tsconfig.json` and prerendered, and the change was reverted. The plan's M2 (`GET /api/health` importing
+   `lib/contracts`) would be the first such check; M2 is not built.
 5. **`?: never` behaves differently under the repo's two tsconfigs** (Decision 9): `tsconfig.json` (for `app/` and
    `components/`) has no `exactOptionalPropertyTypes`, so an explicit `undefined` is accepted there. A consumer in
    `components/` (M8) compiles `lib/contracts` under that config. Setting `exactOptionalPropertyTypes` in

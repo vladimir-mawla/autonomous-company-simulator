@@ -22,7 +22,7 @@ describe("HONEST LIMIT: GrantTree is a view over maps, not a frozen or write-onc
     expect(tree.revokedAt.get(g)).toBe(99);
   });
 
-  it("a tree can be built by hand, which M3's hostile-tree tests depend on", () => {
+  it("a tree can be built by hand, which the plan's M3 case (a hand-built cyclic tree must make `chainOf` return `undefined`) requires", () => {
     const empty: GrantTree = { grants: new Map(), revokedAt: new Map() };
     expect(empty.grants.size).toBe(0);
     expect(empty.revokedAt.size).toBe(0);
