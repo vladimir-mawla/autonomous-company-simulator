@@ -37,6 +37,9 @@ import type { DriverEvent, WorldView } from "./fixtures.js";
 const SEEDS = 40;
 const STEPS = 80;
 
+/** See `conservation.test.ts`: every test that reads the shared pass carries the same named timeout. ADR 0004, Decision 8. */
+const SHARED_PASS_TIMEOUT_MS = 30_000;
+
 type Property = "exact-return" | "returned-nonnegative" | "absorbed-equals-subtree" | "used-moves-only-at-parent" | "live-elsewhere-unchanged";
 const PROPERTIES: readonly Property[] = ["exact-return", "returned-nonnegative", "absorbed-equals-subtree", "used-moves-only-at-parent", "live-elsewhere-unchanged"];
 
@@ -175,11 +178,11 @@ describe(`exact return: ${header}`, () => {
     expect(results().violations.get(property), `${property} was violated (first few)`).toEqual([]);
   };
 
-  it("revoking h raises its live parent's headroom by exactly limit(h) - subtreeOwn(h)", () => holds("exact-return"));
-  it("limit(h) - subtreeOwn(h) is never negative: what was spent below h never exceeds h's limit", () => holds("returned-nonnegative"));
-  it("absorbedBy(h) is subtreeOwn(h), computed from the raw charges", () => holds("absorbed-equals-subtree"));
-  it("usedOf changes for no grant but the parent, and for the parent by exactly the amount returned", () => holds("used-moves-only-at-parent"));
-  it("the headroom of every grant that is still live after the revoke, other than the parent, is unchanged", () => holds("live-elsewhere-unchanged"));
+  it("revoking h raises its live parent's headroom by exactly limit(h) - subtreeOwn(h)", () => holds("exact-return"), SHARED_PASS_TIMEOUT_MS);
+  it("limit(h) - subtreeOwn(h) is never negative: what was spent below h never exceeds h's limit", () => holds("returned-nonnegative"), SHARED_PASS_TIMEOUT_MS);
+  it("absorbedBy(h) is subtreeOwn(h), computed from the raw charges", () => holds("absorbed-equals-subtree"), SHARED_PASS_TIMEOUT_MS);
+  it("usedOf changes for no grant but the parent, and for the parent by exactly the amount returned", () => holds("used-moves-only-at-parent"), SHARED_PASS_TIMEOUT_MS);
+  it("the headroom of every grant that is still live after the revoke, other than the parent, is unchanged", () => holds("live-elsewhere-unchanged"), SHARED_PASS_TIMEOUT_MS);
 });
 
 describe(`COVERAGE: the revokes reach every branch the equality needs (${header})`, () => {
@@ -189,5 +192,5 @@ describe(`COVERAGE: the revokes reach every branch the equality needs (${header}
       .filter(([key, floor]) => (tally.get(key) ?? 0) < floor)
       .map(([key, floor]) => `${key}: ${tally.get(key) ?? 0} < ${floor}`);
     expect(short, `counts ${JSON.stringify([...tally].sort())}`).toEqual([]);
-  });
+  }, SHARED_PASS_TIMEOUT_MS);
 });

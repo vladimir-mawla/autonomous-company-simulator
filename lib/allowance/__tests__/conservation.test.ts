@@ -45,6 +45,14 @@ import type { DriverEvent, WorldView } from "./fixtures.js";
 const SEEDS = 40;
 const STEPS = 80;
 
+/**
+ * Per-test timeout for every test that reads the shared pass: the first of them to run performs the whole pass, and a
+ * filtered run (`-t`) may start anywhere, so they all carry it. vitest's default is 5 s. It is a failure threshold, not
+ * a guard against a hang (the pass is synchronous). ADR 0004, Decision 8, gives the measured durations and why SEEDS
+ * is not cut further.
+ */
+const SHARED_PASS_TIMEOUT_MS = 30_000;
+
 type Property =
   | "live-headroom-nonnegative"
   | "root-not-overspent"
@@ -302,15 +310,15 @@ describe(`conservation: ${header}`, () => {
     expect(found, `${property} was violated (first few)`).toEqual([]);
   };
 
-  it("every live grant has headroom >= 0", () => holds("live-headroom-nonnegative"));
-  it("every root grant has subtreeOwn <= its limit", () => holds("root-not-overspent"));
-  it("a root grant's subtreeOwn never decreases (the oracle's number: this clause constrains the trace, not the library)", () => holds("root-subtree-monotone"));
-  it("every dead grant has headroom exactly 0", () => holds("dead-headroom-zero"));
-  it("checkHeadroom allows exactly the headroom and not one more, with the true shortfall; a dead grant is refused at 0 and at 1", () => holds("boundary"));
-  it("absorbedBy is a number exactly for a revoked grant, at most its limit, and fixed once the grant is revoked", () => holds("absorbed"));
-  it("usedOf, headroomOf and absorbedBy give undefined for an id outside the tree, and checkHeadroom refuses it with headroom 0", () => holds("unknown-id"));
-  it("a child grant is admitted only with limit <= the parent's headroom, and a refusal carries the exact shortfall", () => holds("reservation-fits"));
-  it("the oracle's idea of live agrees with lib/chain's at every grant of every prefix", () => holds("oracle-agrees-with-chain"));
+  it("every live grant has headroom >= 0", () => holds("live-headroom-nonnegative"), SHARED_PASS_TIMEOUT_MS);
+  it("every root grant has subtreeOwn <= its limit", () => holds("root-not-overspent"), SHARED_PASS_TIMEOUT_MS);
+  it("a root grant's subtreeOwn never decreases (the oracle's number: this clause constrains the trace, not the library)", () => holds("root-subtree-monotone"), SHARED_PASS_TIMEOUT_MS);
+  it("every dead grant has headroom exactly 0", () => holds("dead-headroom-zero"), SHARED_PASS_TIMEOUT_MS);
+  it("checkHeadroom allows exactly the headroom and not one more, with the true shortfall; a dead grant is refused at 0 and at 1", () => holds("boundary"), SHARED_PASS_TIMEOUT_MS);
+  it("absorbedBy is a number exactly for a revoked grant, at most its limit, and fixed once the grant is revoked", () => holds("absorbed"), SHARED_PASS_TIMEOUT_MS);
+  it("usedOf, headroomOf and absorbedBy give undefined for an id outside the tree, and checkHeadroom refuses it with headroom 0", () => holds("unknown-id"), SHARED_PASS_TIMEOUT_MS);
+  it("a child grant is admitted only with limit <= the parent's headroom, and a refusal carries the exact shortfall", () => holds("reservation-fits"), SHARED_PASS_TIMEOUT_MS);
+  it("the oracle's idea of live agrees with lib/chain's at every grant of every prefix", () => holds("oracle-agrees-with-chain"), SHARED_PASS_TIMEOUT_MS);
 });
 
 describe(`COVERAGE: the traces reach every branch the properties above need (${header})`, () => {
@@ -320,7 +328,7 @@ describe(`COVERAGE: the traces reach every branch the properties above need (${h
       .filter(([key, floor]) => (tally.get(key) ?? 0) < floor)
       .map(([key, floor]) => `${key}: ${tally.get(key) ?? 0} < ${floor}`);
     expect(short, `counts ${JSON.stringify([...tally].sort())}`).toEqual([]);
-  });
+  }, SHARED_PASS_TIMEOUT_MS);
 });
 
 // ---------------------------------------------------------------------------------------------------
