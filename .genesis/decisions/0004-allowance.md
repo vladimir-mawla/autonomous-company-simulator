@@ -15,8 +15,9 @@ in "Coverage" are counts of what a trace did, not of tests that passed.
 `.genesis/PLAN.md` §4.4 defines the accounting (`own`, `subtreeOwn`, `chargeToParent`, `used`, `headroom`, liveness)
 and states the conservation theorem; §5 gives this layer four functions (`usedOf`, `headroomOf`, `absorbedBy`,
 `checkHeadroom`); §6 gives four things it must refuse and asks for a test driver that re-implements no predicate,
-properties at every prefix including the exact-return equality, a proof that the generator reaches what the properties
-need, and a four-row sabotage ledger. M3's ADR (`0003-chain.md`) is where the layer below is described; this one
+properties at every prefix including the exact-return equality, and a four-row sabotage ledger. A proof that the
+generator reaches what the properties need is asked for in §6 M3 and listed in §13 as a technique, not in the M4 entry,
+so the coverage floors below are this milestone's own addition. M3's ADR (`0003-chain.md`) is where the layer below is described; this one
 cites it for what `chainOf` and `firstDeadLink` do and does not restate it.
 
 ## Decision 1 — `headroomOf` reports `limit - used` as it is; it never clamps
