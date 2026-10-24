@@ -157,6 +157,13 @@ describe("B. the guard is real: cast-built contaminated values are refused by M5
     expect(deriveStanding(tree, record({ kind: "warranted", warrant })).kind).toBe("binding");
   });
 
+  it("the one other throw in the builder: a warranted record whose cut link is not in the tree is an internal error, not a standing", () => {
+    // Only a hand-built tree can do this (a fold never records a revocation for a grant it does not hold).
+    const tree = { grants: new Map(), revokedAt: new Map([[g("G1"), 5]]) };
+    const record = { commit: commit("c", "cfo", "G1", "purchase", 1), seq: 3, verdict: { kind: "warranted", warrant } } as unknown as CommitRecord<Cap>;
+    expect(() => deriveStanding(tree, record)).toThrow("internal error: a warranted commit's chain names a grant that is not in the tree");
+  });
+
   it("the real guard is on the path of an ordinary call: every standing of the canonical log came back through the wrapper that forwards to it", () => {
     control.calls.length = 0;
     const folded = mustFold(CHARTER, CANON);

@@ -20,24 +20,28 @@ import type { CommitRecord } from "./fold.js";
  * WHY `void` IS ABSORBING. The standing of a breached commit is built from the breach alone, and a breach is a
  * property of the verdict, which is a property of the prefix up to the commit's `seq` (`verdict.ts`). Nothing later
  * in the log is consulted for it, so no later event can change it; that is a consequence of where the data comes
- * from, not of a rule that checks it. (`lattice.test.ts` shows it behaviourally: over every prefix of every
- * generated log, a `void` standing is the same value in every later prefix.)
+ * from, not of a rule that checks it. (`lattice.test.ts` shows it behaviourally: between the cut points of the generated
+ * logs, a `void` standing is the same value at every later cut point. The cut points are every prefix for 150 of the
+ * 1 500 seeds and a sample for the rest; they are not every prefix of every log.)
  *
  * WHY THE HEIR IS THE GRANTOR OF THE FIRST DEAD LINK. Counting from the root, the first revoked link is the break;
  * every link above it is live, so the principal who GRANTED it still holds authority through a live chain, and is the
- * nearest such principal to the act. It is therefore always above the break and never the actor (a principal does not
- * repeat on a chain, so the actor, who is the last grantee, is not the grantor of any link on the chain). It is read
- * from the link itself (`grantor`), NOT from whoever performed the revocation (plan D7, case 11: `dana` revoking G2
- * still names `cfo`), and not from the link's `grantee`, who is the principal the break cut off.
+ * nearest such principal to the act. That principal is above the break, and is not the actor: the actor is the last
+ * grantee, a principal does not repeat on a chain (`principal-cycle`), and every grantor on the chain is an earlier
+ * principal on the trail. (`heir.test.ts` checks both, and that the heir is the trail principal at the break, on every
+ * inherited standing it generates.) It is read from the link itself (`grantor`), NOT from whoever performed the
+ * revocation (plan D7, case 11: `dana` revoking G2 still names `cfo`), and not from the link's `grantee`, who is the
+ * principal the break cut off.
  *
  * WHY THE HEIR CLIMBS. Cutting a link NEARER THE ROOT later makes that link the first dead one, so `severed` moves up
- * the chain and the heir with it. It can never move down or sideways: a grant that is dead (itself or through an
- * ancestor) cannot be revoked again (`already-dead`), so a link below the break can never become the first dead one.
+ * the chain and the heir with it. A link below the break cannot become the first dead one, because a grant that is dead
+ * (itself or through an ancestor) is refused a revoke (`already-dead`); `heir.test.ts` checks that across the cut points
+ * of the generated logs the severed link's index never increases.
  *
  * `chargedTo` is the PARENT of the first dead link: the heir's own grant, the one that absorbs what was spent (M4's
  * `absorbedBy`). A root grant has no parent, its grantor is a charter root, and the amount is off the ledger, so
  * `chargedTo` is `null`. `severed.atSeq` is the seq of the revoke; the commit was warranted before that revoke was in
- * the log, so it is always later than `committedAt`.
+ * the log, so it is later than `committedAt` (`heir.test.ts` checks that on every inherited standing it generates).
  */
 export function deriveStanding<C extends string>(tree: GrantTree<C>, record: CommitRecord<C>): Standing {
   const { commit, seq, verdict } = record;
@@ -88,7 +92,7 @@ export type StandingsResult =
 
 /**
  * The standing of every commit in the log, in the order of `committedAt` (the commits map is filled in `seq` order, so
- * its iteration order is that order and nothing here sorts; `replay.test.ts` asserts it is ascending), and the log's
+ * its iteration order is that order and nothing here sorts; `lattice.test.ts` asserts it is strictly ascending), and the log's
  * `head`. Standing is derived against the tree of the WHOLE log: it is "now" for the log you give it, so folding a
  * shorter log gives the standings as they stood at that point.
  */

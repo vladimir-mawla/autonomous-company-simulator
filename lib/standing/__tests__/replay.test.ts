@@ -229,6 +229,26 @@ describe("a caller cannot choose seq, and no other key of an input reaches the l
   });
 });
 
+describe("a fold's maps are its own: fresh for every call, and writing to one changes nothing else", () => {
+  it("two folds of the same log return different Map objects, and writing through a cast to the first leaves the second and a third untouched", () => {
+    const log = logOf(CHARTER, ORG);
+    const first = mustFold(CHARTER, log);
+    const second = mustFold(CHARTER, log);
+    expect(first.tree.grants).not.toBe(second.tree.grants);
+    expect(first.tree.revokedAt).not.toBe(second.tree.revokedAt);
+    expect(first.commits).not.toBe(second.commits);
+    expect(first.charges).not.toBe(second.charges);
+
+    const before = JSON.stringify(snapshotOf(second));
+    (first.tree.grants as Map<unknown, unknown>).clear();
+    (first.tree.revokedAt as Map<unknown, unknown>).set("G1", 99);
+    (first.charges as unknown[]).push({ grantId: "G1", amount: 1 });
+    (first.commits as Map<unknown, unknown>).set("x", {});
+    expect(JSON.stringify(snapshotOf(second))).toBe(before);
+    expect(JSON.stringify(snapshotOf(mustFold(CHARTER, log)))).toBe(before);
+  });
+});
+
 describe("append gives back new objects", () => {
   it("the returned log shares no event object with the log passed in, and the events are equal in content", () => {
     const base = logOf(CHARTER, ORG);
