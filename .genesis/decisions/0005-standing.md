@@ -254,7 +254,7 @@ named a link at every index 0 to 7 (3 at index 7); and a grant `b` on a chain of
 | | the fifteen rejections inside inadmissible-event, least and most | 407 (unknown-grant) to 5 914 (invalid-event-shape) | 130 each |
 | | element reads on a log claiming too many events | 0 | 0 |
 | `prefix` | cut points / commit records compared / commits recomputed by `mayCommit` | 30 790 / 827 539 / 36 187 | 10 000 / 280 000 / 12 000 |
-| | commits that judging against the final tree would rule differently (a warranted one becoming link-dead, over-limit, or an over-limit one becoming warranted) | 35 115 (20 434, 11 354, 56 of them) | 10 000 (6 000 for link-dead) |
+| | commits that judging against the final tree would rule differently | 35 115: 20 434 warranted to link-dead, 11 354 warranted to over-limit, 1 576 capability-not-granted to link-dead, 839 over-limit to link-dead, 671 over-limit to over-limit with another headroom, 185 link-dead to link-dead naming another link and seq, 56 over-limit to warranted | 10 000 (6 000 for link-dead) |
 | | commits checked by property D | 80 361 | 26 000 |
 | | link-dead named at chain index 0 to 7 | 2 968, 242, 117, 72, 23, 21, 21, 3 | 7 each, 1 at index 7 |
 | | link-dead on a chain of length 1 to 8 | 1 555, 653, 477, 327, 200, 78, 59, 118 | 19 each |
