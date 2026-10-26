@@ -5,7 +5,7 @@
 - **Phase / milestone:** M5 (BUILD) — `lib/standing/**` (`verdict.ts fold.ts standing.ts append.ts index.ts`, `__tests__/`)
 
 The timings were measured on the tree of commit `39624cd` and
-the falsifiability log on the tree of commit `43c52f4`. Between them `lib/standing` changed in three ways: `COVERAGE_TIMEOUT_MS` was added to `fixtures.ts` and nine coverage tests use it in place of `SEED_LOOP_TIMEOUT_MS`; one test was added to `hostile-input.test.ts` (it runs in a few milliseconds); and comments changed, including one in `index.ts`. `git diff 39624cd..43c52f4 -- lib/standing`, with the comment lines, the blank lines and the two timeout constants filtered out, shows that test and nothing else. The commits after `43c52f4` change this ADR and, in the last of them, comments and the text of one `describe` title in
+the falsifiability log on the tree of commit `43c52f4`. Between them `lib/standing` changed in three ways: `COVERAGE_TIMEOUT_MS` was added to `fixtures.ts` and nine coverage tests use it in place of `SEED_LOOP_TIMEOUT_MS`; one test was added to `hostile-input.test.ts` (it runs in a few milliseconds); and comments changed, including one in `index.ts`. `git diff 39624cd..43c52f4 -- lib/standing`, with the comment lines, the blank lines and the two timeout constants filtered out, shows that test and nothing else. The commits after `43c52f4` change this ADR and, in some of them, comments and the text of one `describe` title in
 `lib/standing` (`git diff 43c52f4..HEAD -- lib/standing`, with the comment lines and the blank lines filtered out, shows that title and
 nothing else). The rows of the log quote only "N failed" and not a count of passing tests, which goes stale whenever a test is
 added. The counts in "Coverage" are counts of what a trace did, not of tests that passed.
@@ -278,7 +278,7 @@ named a link at every index 0 to 7 (3 at index 7); and a grant `b` on a chain of
 
 Each row is ONE edit to the shipped source (P1 and P6 add an import to the file they edit), then `tsc -p tsconfig.lib.json --noEmit` (the lib half of `npm run typecheck`) and the
 FULL `vitest run --reporter=json` against it, then `git checkout -- <file>` and an empty `git status --porcelain`: 43 edits and one unedited control, every one restored clean.
-Measured by a script (kept outside the repository) that applied the edit, ran both commands and parsed the result, on the tree of commit `43c52f4`; the commits after it change this ADR and, in the last of them, comments and one `describe` title in `lib/standing` (see the top). The control, with no edit, had 0 failed of 1255. Each edit is described here in one line. The plan's six
+Measured by a script (kept outside the repository) that applied the edit, ran both commands and parsed the result, on the tree of commit `43c52f4`; the commits after it change this ADR and, in some of them, comments and one `describe` title in `lib/standing` (see the top). The control, with no edit, had 0 failed of 1255. Each edit is described here in one line. The plan's six
 are P1 to P6; the rest are mine. Several tests can go red from one edit; the files are named so the layer that caught it is visible. A "chunk" test counts once per chunk of 100 seeds, so a property
 that catches an edit in every chunk shows 15.
 
