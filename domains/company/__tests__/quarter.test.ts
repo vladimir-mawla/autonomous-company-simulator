@@ -276,10 +276,11 @@ describe("what the 200 quarters reached", () => {
     expect([...outcomes.keys()].filter((key) => key.endsWith(":faulty-log"))).toEqual([]);
   });
 
-  it("DelegatorPolicy was refused only for want of headroom, and RefunderPolicy and CompromisedPolicy were never refused (a commit is always recorded)", () => {
+  it("DelegatorPolicy was never refused, in numbers (it asks the engine by a dry run), and nor were RefunderPolicy, CompromisedPolicy or BuyerPolicy: only OverreachPolicy's acts were refused", () => {
+    const outcomes = total((entry) => entry.outcomes);
+    expect(outcomes.get("DelegatorPolicy:admitted-grant") ?? 0).toBeGreaterThan(1000);
+    expect(outcomes.get("DelegatorPolicy:rejected") ?? 0).toBe(0);
     const refusals = total((entry) => entry.refusals);
-    const delegator = [...refusals.keys()].filter((key) => key.startsWith("DelegatorPolicy:"));
-    expect(delegator).toEqual(["DelegatorPolicy:over-allocation"]);
-    expect([...refusals.keys()].filter((key) => key.startsWith("RefunderPolicy:") || key.startsWith("CompromisedPolicy:"))).toEqual([]);
+    expect([...new Set([...refusals.keys()].map((key) => key.slice(0, key.indexOf(":"))))]).toEqual(["OverreachPolicy"]);
   });
 });

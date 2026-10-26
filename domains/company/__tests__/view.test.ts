@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { commitId, grantId, principalId } from "../../../lib/contracts/index.js";
-import type { Commitment, Log } from "../../../lib/contracts/index.js";
-import { mayCommit } from "../../../lib/standing/index.js";
+import type { Commitment, EventInput, Log } from "../../../lib/contracts/index.js";
+import { append, mayCommit } from "../../../lib/standing/index.js";
 import { CANON_ALL, logOf } from "../../../lib/standing/__tests__/fixtures.js";
 import { CHARTER } from "../org.js";
 import type { CompanyCapability } from "../org.js";
@@ -94,6 +94,24 @@ describe("the view's pre-check is the engine's pre-check, unchanged", () => {
       return answer.ok ? answer.verdict.kind : "not judged";
     });
     expect(verdicts).toEqual(["warranted", "breached"]);
+  });
+});
+
+describe("the view's dry run is append itself, called and not kept", () => {
+  it("answers exactly what append answers, for a grant that would be admitted, a revoke that would be refused and a commit, and changes no log", () => {
+    const log = canon(18);
+    const before = JSON.stringify(log);
+    const view = viewOf(log);
+    const events: EventInput<CompanyCapability>[] = [
+      { kind: "grant", grant: { id: grantId("Gd1"), parent: grantId("G1"), grantor: principalId("cfo"), grantee: principalId("ops"), capabilities: ["purchase"], limit: 1_000, depth: 1 } },
+      { kind: "revoke", grantId: grantId("G2"), by: principalId("cfo") },
+      { kind: "commit", commit: { id: commitId("p9"), actor: principalId("buyer-a"), actedUnder: grantId("G7"), capability: "purchase", amount: 1_000 } },
+    ];
+    for (const event of events) expect(view.dryRun(event)).toEqual(append(CHARTER, log, event));
+    expect(view.dryRun(events[0] as EventInput<CompanyCapability>).ok).toBe(true);
+    expect(view.dryRun(events[1] as EventInput<CompanyCapability>).ok).toBe(false);
+    expect(JSON.stringify(log)).toBe(before);
+    expect(view.head).toBe(18);
   });
 });
 

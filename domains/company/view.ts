@@ -1,7 +1,7 @@
 import { chainOf, firstDeadLink, trailOf } from "../../lib/chain/index.js";
-import type { Commitment, FoldFault, Grant, Log, PrincipalId, Seq } from "../../lib/contracts/index.js";
-import { fold, mayCommit } from "../../lib/standing/index.js";
-import type { MayCommitResult } from "../../lib/standing/index.js";
+import type { Commitment, EventInput, FoldFault, Grant, Log, PrincipalId, Seq } from "../../lib/contracts/index.js";
+import { append, fold, mayCommit } from "../../lib/standing/index.js";
+import type { AppendResult, MayCommitResult } from "../../lib/standing/index.js";
 import { CHARTER } from "./org.js";
 import type { CompanyCapability } from "./org.js";
 
@@ -9,8 +9,10 @@ import type { CompanyCapability } from "./org.js";
  * What a policy is allowed to see of the company (plan §6 M6: policies are `(OrgView, rng) -> EventInput | null`).
  *
  * THE VIEW IS READ OFF THE ENGINE, NOT COMPUTED HERE. Whether a grant is still live comes from `lib/chain`'s walkers
- * (`chainOf` then `firstDeadLink`); the trail of principals above it from `trailOf`; and whether a commitment would bind
- * from `lib/standing`'s `mayCommit`, the pre-check plan D9 gives a runtime that wants prevention. Nothing in this file
+ * (`chainOf` then `firstDeadLink`); the trail of principals above it from `trailOf`; whether a commitment would bind
+ * from `lib/standing`'s `mayCommit`, the pre-check plan D9 gives a runtime that wants prevention; and whether any other event
+ * would be admitted from `append` itself, called and not kept (`append` returns a new log and changes the one it is given, so
+ * calling it is a dry run). Nothing in this file
  * decides a rule, and nothing in it does arithmetic on a limit, an amount or a headroom: a policy that wants to know whether
  * an act would be allowed asks the engine, and a policy that does not ask is simply ruled on afterwards (plan D4: acts are
  * facts). That is also why the view carries no headroom: a policy that could see one would be tempted to compute with it.
@@ -39,6 +41,11 @@ export interface OrgView {
   readonly grants: readonly GrantView[];
   /** The engine's pre-check for a commitment against this log (`lib/standing`: `mayCommit`). */
   readonly mayCommit: (commit: Commitment<CompanyCapability>) => MayCommitResult;
+  /**
+   * What `append` would answer to `event` against this log, without recording it: the engine's own call, its result discarded by the caller.
+   * It is how a policy that wants a grant or a revoke the engine will admit asks, as `mayCommit` is how one that wants a commit that binds asks.
+   */
+  readonly dryRun: (event: EventInput<CompanyCapability>) => AppendResult<CompanyCapability>;
 }
 
 export type OrgViewResult = { readonly ok: true; readonly view: OrgView } | { readonly ok: false; readonly fault: FoldFault };
@@ -76,6 +83,7 @@ export function makeOrgView(log: Log<CompanyCapability>, tick: number): OrgViewR
       log,
       grants,
       mayCommit: (commit) => mayCommit(CHARTER, log, commit),
+      dryRun: (event) => append(CHARTER, log, event),
     },
   };
 }

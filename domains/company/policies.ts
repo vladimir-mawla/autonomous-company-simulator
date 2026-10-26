@@ -21,7 +21,8 @@ import type { GrantView, OrgView } from "./view.js";
  *  - `DelegatorPolicy`: the managers. They hand a part of what they hold to someone below them, and from time to time
  *    withdraw a mandate (plan §10: "time-boxed authority = a scheduled `revoke` event"). They propose only grants whose
  *    parts they can see are sound (a capability the parent has, a depth below the parent's, a grantee not already above
- *    them), and are still sometimes refused, because they are not shown the headroom (the view carries none).
+ *    them), and ask the engine by a dry run for the largest size it would admit, so they are not refused for want of a headroom they are
+ *    not shown (the view carries none).
  *  - `BuyerPolicy`: a diligent purchaser. It asks `mayCommit` first and only commits what would bind, so its acts are
  *    never ruled `void`.
  *  - `RefunderPolicy`: an agent acting on the last mandate it was given, without asking whether it still holds. After
@@ -47,7 +48,7 @@ export const REFUND_AMOUNTS = Object.freeze([500, 1_000, 2_000, 5_000] as const)
 /** The size of one act of the compromised agent: large, and not looked at. */
 export const DRAIN_AMOUNTS = Object.freeze([10_000, 25_000, 50_000] as const);
 /** What a manager hands down. */
-export const DELEGATION_LIMITS = Object.freeze([5_000, 10_000, 25_000, 50_000, 100_000] as const);
+export const DELEGATION_LIMITS = Object.freeze([2_000, 5_000, 10_000, 25_000] as const);
 /** What a root grant to the cfo is worth. */
 export const ROOT_LIMITS = Object.freeze([250_000, 500_000, 1_000_000] as const);
 /** The depth a root grant to the cfo allows; the company has six agents, so a chain cannot be longer than six links. */
@@ -84,6 +85,12 @@ function pick<T>(rng: Rng, items: readonly [T, ...T[]]): T {
 function subsetOf(rng: Rng, caps: NonEmptyReadonlyArray<CompanyCapability>): NonEmptyReadonlyArray<CompanyCapability> {
   const [first, ...rest] = caps.filter(() => rng() < 0.6);
   return first === undefined ? [pick(rng, caps)] : [first, ...rest];
+}
+
+/** `sizes` from a ceiling drawn at random down to the smallest, largest first: pure index work over a list, no value in it is read. */
+function fromCeiling(rng: Rng, sizes: readonly number[]): readonly number[] {
+  const ceiling = below(rng, sizes.length);
+  return sizes.filter((_, index) => index <= ceiling).reverse();
 }
 
 /** A grant or commit id no earlier event of the log carries: the position the event would take. */
@@ -147,7 +154,14 @@ export const DelegatorPolicy: Policy = (view, rng) => {
     if (grantee === undefined) return null;
     // Usually one link shorter than the parent allows, so that chains reach the depth the plan's heir-climb needs; sometimes shorter still.
     const depth = rng() < 0.6 ? parent.grant.depth - 1 : below(rng, parent.grant.depth);
-    return delegation(view, { parent, grantee, capabilities: subsetOf(rng, parent.grant.capabilities), depth, limit: pick(rng, DELEGATION_LIMITS) });
+    const capabilities = subsetOf(rng, parent.grant.capabilities);
+    // The size: from a ceiling drawn at random, the largest the engine would admit. It asks by a dry run, so the manager is never refused for
+    // want of headroom it was not shown, and it needs no headroom arithmetic of its own; when not even the smallest fits there is nothing to hand down.
+    for (const limit of fromCeiling(rng, DELEGATION_LIMITS)) {
+      const event = delegation(view, { parent, grantee, capabilities, depth, limit });
+      if (view.dryRun(event).ok) return event;
+    }
+    return null;
   }
 
   if (roll < DELEGATE_CHANCE + REVIEW_CHANCE) {

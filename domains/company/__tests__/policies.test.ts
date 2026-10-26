@@ -3,7 +3,7 @@ import type { EventInput, Log } from "../../../lib/contracts/index.js";
 import { append, standings } from "../../../lib/standing/index.js";
 import { mulberry32 } from "../../../lib/chain/__tests__/fixtures.js";
 import { CANON_ALL, logOf, revokeEvent } from "../../../lib/standing/__tests__/fixtures.js";
-import { AGENTS, CHARTER, ROOT, agent } from "../org.js";
+import { AGENTS, CAPABILITIES, CHARTER, ROOT, agent } from "../org.js";
 import type { CompanyCapability } from "../org.js";
 import {
   BuyerPolicy,
@@ -11,6 +11,7 @@ import {
   COMPROMISED,
   CompromisedPolicy,
   DELEGATE_CHANCE,
+  DELEGATION_LIMITS,
   DRAIN_AMOUNTS,
   DelegatorPolicy,
   OVERREACHES,
@@ -134,7 +135,7 @@ describe("DelegatorPolicy: the managers", () => {
     }
   });
 
-  it("with a live root it proposes only a grant it can see is sound, or the revoke of a live grant by that grant's own grantor, and the engine refuses the grants only for want of headroom", () => {
+  it("with a live root it proposes only a grant it can see is sound, or the revoke of a live grant by that grant's own grantor, and the engine admits every one of them (it asks first)", () => {
     const log = canon(18);
     const view = viewOf(log);
     const byId = new Map(view.grants.map((entry) => [entry.grant.id as string, entry]));
@@ -157,6 +158,7 @@ describe("DelegatorPolicy: the managers", () => {
         expect(proposed.grant.capabilities.every((cap) => parent.grant.capabilities.includes(cap)), `seed ${seed}: capabilities are a subset`).toBe(true);
         expect(proposed.grant.depth, `seed ${seed}: depth is below the parent's`).toBeLessThan(parent.grant.depth);
         expect(parent.trail, `seed ${seed}: the grantee is not already above`).not.toContain(proposed.grant.grantee);
+        expect(DELEGATION_LIMITS, `seed ${seed}: the size is from the list`).toContain(proposed.grant.limit);
       } else if (proposed.kind === "revoke") {
         reviews++;
         const target = byId.get(proposed.grantId as string);
@@ -171,9 +173,25 @@ describe("DelegatorPolicy: the managers", () => {
     expect(delegations).toBeGreaterThan(100);
     expect(reviews).toBeGreaterThan(5);
     expect(silent).toBeGreaterThan(50);
-    expect([...rulings.keys()].sort()).toEqual(["admitted grant", "admitted revoke", "rejected over-allocation"]);
+    expect([...rulings.keys()].sort()).toEqual(["admitted grant", "admitted revoke"]);
     // The share of seeds that propose a grant is DELEGATE_CHANCE less the seeds that find nothing to aim at; it must be near it.
     expect(Math.abs(delegations / SEEDS - DELEGATE_CHANCE)).toBeLessThan(0.1);
+  });
+
+  it("when not even the smallest size fits what the parent has left, it hands nothing down: it proposes a revoke or nothing, never a grant the engine would refuse", () => {
+    // G1 has limit 1 000 and depth 1; all of it is reserved to ops (G2, depth 0), so G1's headroom is 0 and G2 cannot delegate at all.
+    const spent = logOf(CHARTER, [
+      { kind: "grant", grant: { id: "G1" as never, parent: null, grantor: ROOT, grantee: agent("cfo"), capabilities: CAPABILITIES, limit: 1_000, depth: 1 } },
+      { kind: "grant", grant: { id: "G2" as never, parent: "G1" as never, grantor: agent("cfo"), grantee: agent("ops"), capabilities: ["purchase"], limit: 1_000, depth: 0 } },
+    ]);
+    const view = viewOf(spent);
+    let reviews = 0;
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const proposed = DelegatorPolicy(view, mulberry32(seed));
+      expect(proposed === null || proposed.kind === "revoke", `seed ${seed}`).toBe(true);
+      if (proposed?.kind === "revoke") reviews++;
+    }
+    expect(reviews).toBeGreaterThan(5);
   });
 });
 
