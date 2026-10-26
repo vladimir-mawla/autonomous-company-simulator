@@ -225,7 +225,7 @@ mean a quiet machine. The slowest M5 test of each run, in ms, and as a share of 
 | `prefix.test.ts` alone, 20 `yes`, 3 runs (wall 16.81, 17.33, 15.87 s) | 1227, 1430, 1213 | 23.08→20.29; 24.88→24.22; 26.44→24.93 | up to 7% |
 | each file's coverage test run alone (`-t coverage`), no added load, 9 files | 2 219 to 8 404 (replay the largest) | 27 to 41 | 42% of 20 s, which is why it has its own 90 s |
 
-All 20 `yes` processes were killed after the runs and `pgrep -x yes` printed 0, before and after. Every run had 0 failed. In every row the slowest test is a chunk test, and in every full-suite run it is
+All 20 `yes` processes were killed after the runs and `pgrep -x yes` printed 0, before and after. Every run had 0 failed. In every row but the last the slowest test is a chunk test (in the last it is the coverage test, which pays for its file's whole run), and in every full-suite run it is
 `replay.test.ts`'s, which builds each world twice (the incremental engine and the public `append`). The same file under load is the largest share: 34%
 of 20 s, the largest of the three runs in its row, under the 40% the tests are meant to stay under in those runs. Each figure in the "Slowest M5 test" column is the slowest test of one run, each percentage is the largest over the runs in its row, the host's load
 changed from run to run, and none of them is a bound: the L4 verifier's own runs on the same laptop reached 44.9% of 20 s for the slowest M5 test in one plain local run, whose one-minute load average was 19.8 at its start and 33.0 at its end, and
