@@ -88,7 +88,7 @@
         <tr><td>M2</td><td>Deploy skeleton (deployed now, never last)</td><td>DEPLOY</td><td><code>curl -sf $DEPLOY_URL/api/health</code></td><td>L1, L4</td><td><span class="pill ok">done</span></td></tr>
         <tr><td>M3</td><td>Chain: intake and structure (<code>lib/chain</code>)</td><td>BUILD</td><td><code>npm test -- lib/chain</code></td><td>L1, L4</td><td><span class="pill ok">done</span></td></tr>
         <tr><td>M4</td><td>Allowance: conservation (<code>lib/allowance</code>)</td><td>BUILD</td><td><code>npm test -- lib/allowance</code></td><td>L1, L4</td><td><span class="pill ok">done</span></td></tr>
-        <tr><td>M5</td><td>Standing: the ledger fold, the verdict, the heir (<code>lib/standing</code>)</td><td>BUILD</td><td><code>npm test -- lib/standing</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
+        <tr><td>M5</td><td>Standing: the ledger fold, the verdict, the heir (<code>lib/standing</code>)</td><td>BUILD</td><td><code>npm test -- lib/standing</code></td><td>L1, L4</td><td><span class="pill ok">done</span></td></tr>
         <tr><td>M6</td><td>Domain: Meridian Supply Co. (<code>domains/company</code>)</td><td>INTEGRATE</td><td><code>npm run demo:company</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
         <tr><td>M7</td><td>The failure suite (11 cases)</td><td>VERIFY</td><td><code>npm test -- failures</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
         <tr><td>M8</td><td>Interactive demo</td><td>BUILD</td><td>deployed URL renders the same table as the last block of <code>npm run demo:company</code></td><td>L1, L4</td><td><span class="pill todo">todo</span></td></tr>
@@ -97,8 +97,8 @@
     </table>
     <p class="note">Total token budget = 9 milestones × 150000. Update <span class="pill wip">wip</span> /
        <span class="pill ok">done</span> as loops complete — a milestone only flips to <code>done</code>
-       after independent (L4) verification, never by the building agent marking its own work. M1, M2, M3 and M4 are
-       <code>done</code> (M1: PR #2; M2: PR #4; M3: PR #6; M4: PR #8; M1 and M2 each passed independent L4 APPROVE in round 3, M3 and M4 in round 2); the other five rows are still <code>todo</code>.
+       after independent (L4) verification, never by the building agent marking its own work. M1, M2, M3, M4 and M5 are
+       <code>done</code> (M1: PR #2; M2: PR #4; M3: PR #6; M4: PR #8; M5: PR #10; M1 and M2 each passed independent L4 APPROVE in round 3, M3 and M4 in round 2, M5 in round 5); the other four rows are still <code>todo</code>.
        This table is mirrored in <code>PLAN.md</code> (§6) for the agent to parse.</p>
   </div>
 
