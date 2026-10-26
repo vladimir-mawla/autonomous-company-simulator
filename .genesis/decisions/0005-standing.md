@@ -230,8 +230,8 @@ All 20 `yes` processes were killed after the runs and `pgrep -x yes` printed 0, 
 of 20 s on this host, under the 40% the tests are meant to stay under. The runs under load are a stress test of this host and are not a prediction for GitHub's runner;
 the GitHub runner's numbers are in the next paragraph.
 
-**On GitHub's runner.** The pull request's first CI run (run 40288725574, `ubuntu-26.04`, the whole suite: 41 files, 1 254 tests, all passed) took 58.45 s for `vitest run`, against 12 s to 13 s for the same
-suite on the laptop above with no added load, about 4.5 times as long; the runner's core count was not recorded, and its files ran alongside each other. **The slowest M5 test on the
+**On GitHub's runner.** The pull request's first CI run (run 40288725574, `ubuntu-26.04`, the whole suite: 41 files, 1 254 tests, all passed) took 58.45 s for `vitest run`, against 12.58 s to 22.41 s (wall time, three runs) for the same
+suite on the laptop above with no added load, which is 2.6 to 4.6 times as long (the runner's figure is vitest's own Duration and the laptop's is wall time, which also counts start-up, so the ratios are slightly higher than these); the runner's core count was not recorded, and its files ran alongside each other. **The slowest M5 test on the
 runner was 2 644 ms** (`replay.test.ts`, the determinism test of seeds 801 to 900), 13% of its 20 s; the next five were 1 991 to 2 305 ms, all of them `replay.test.ts`'s. The runner prints
 a test's duration only when it is over 300 ms, so "slowest" is read from those lines (129 M5 tests were listed); a test under 300 ms is not in them. File durations: `replay` 27.1 s,
 `lattice` 21.7, `locality` 18.1, `may-commit-equivalence` 16.7, `conservation` 16.4, `prefix` 15.8, `heir` 9.9, `fold-faults` 9.6, `revoke-admission` 4.7, and the other six M5 files each under 130 ms.
