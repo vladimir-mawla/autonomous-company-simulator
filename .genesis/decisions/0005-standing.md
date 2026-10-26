@@ -209,7 +209,7 @@ was 5.8 s in a full-suite run and 14.3 s in a full-suite run under 20 busy proce
 tenth and there are fifteen chunks; the same measurement is below.
 
 **Timings measured on 2026-10-25, `vitest run --reporter=json`, tree of `39624cd`, on a 10-core laptop that was never idle: other jobs kept its one-minute
-load average between 9 and 28 in the runs below (and at 41 to 60 during the ledger).** "No added load" means no processes of mine beyond the run; it does not
+load average between 9 and 28 in the first nine rows below and between 27 and 41 in the last (and at 41 to 60 during the ledger).** "No added load" means no processes of mine beyond the run; it does not
 mean a quiet machine. The slowest M5 test of each run, in ms, and as a share of the 20 s chunk timeout where the test has it:
 
 | Run | Slowest M5 test, ms | Host one-minute load average, start to end | Share of 20 s |
