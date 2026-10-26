@@ -43,8 +43,8 @@ import {
  * and a commit is born `binding` or `void`, never `inherited` (no link of its chain can have been cut when it is made).
  *
  * Over the cut points of `cutsOf` (every prefix for every tenth seed, `isExhaustiveSeed`, and a sample of where the tree changes
- * for the rest), for every pair of consecutive cut points, for every commit in both. The relation is transitive, so a sample
- * of cut points constrains every pair between them. What else is checked: that the kind of each standing agrees with an
+ * for the rest), for every pair of consecutive cut points, for every commit in both. The relation is transitive, so the pairs checked imply it between any two
+ * cut points of a seed; a prefix that is not a cut point is not checked, and a state that broke the lattice only there would not be seen. What else is checked: that the kind of each standing agrees with an
  * independent reading of the log (a breached verdict is `void`; a warranted one is `inherited` exactly when a link of its
  * chain has a revoke in the log, read from the events and not from M3), that `standingOf` agrees with `standings` for the
  * same commit, and that `standings` is in `committedAt` order with one entry per commit.
