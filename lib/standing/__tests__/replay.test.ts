@@ -40,7 +40,8 @@ import type { Cap } from "./fixtures.js";
  *      charges equal to what the generator saw admitted.
  *   3. A CALLER CANNOT CHOOSE `seq` (plan D3, §6 M5 "Must refuse"): whatever is in an input's `seq`, from every value class,
  *      the event is stamped `head + 1`, and no other key of the input reaches the log.
- *   4. `append` GIVES BACK NEW OBJECTS: the returned log shares nothing mutable with what the caller passed in.
+ *   4. `append` GIVES BACK NEW OBJECTS: no event of the returned log is an event of the log passed in, and changing the
+ *      input's `commit` or emptying the old log after the call does not change the returned log.
  */
 
 
