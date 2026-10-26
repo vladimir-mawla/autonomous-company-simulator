@@ -127,6 +127,16 @@ describe("the log's length: read once, from every value class, and the result is
     });
   }
 
+  it("the first integer past the largest safe integer is not a count: hostile-log-input, one read of length and no element read, at every entry point", () => {
+    for (const [entry, run] of ENTRY_POINTS) {
+      const { log, counts } = withLength(Number.MAX_SAFE_INTEGER + 1, LENGTH);
+      const fault = faultIn(run(CHARTER, log));
+      expect(reads(counts, "log.length"), entry).toBe(1);
+      expect(fault, entry).toStrictEqual({ kind: "hostile-log-input", message: "log.length is not a count" });
+      expect(reads(counts, "log.0"), entry).toBe(0);
+    }
+  });
+
   it("a first read of a SMALLER valid length is the log of that length: fold reads that many elements and no more, and head is that length", () => {
     const { log, counts } = withLength(2, LENGTH);
     const result = fold(CHARTER, log);
