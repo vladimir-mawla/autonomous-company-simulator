@@ -40,7 +40,7 @@ import {
  *      commit is recorded and charges nothing (plan §4.2, the `void` row, "What it refuses": "to charge any allowance");
  *   3. for each root grant R, the amounts of the `binding` and `inherited` commits whose chain starts at R add up to
  *      exactly `subtreeOwn(R)`, computed from the raw charges by the oracle and from the standings by the engine, so a
- *      spent amount is neither lost when a link is cut nor counted twice (plan §4.1: "spent authority is never forgiven");
+ *      spent amount is neither lost when a link is cut nor counted twice (plan §3 D2: "Spent authority is never forgiven.");
  *   4. `subtreeOwn` of each root never decreases from one cut point to the next.
  */
 
