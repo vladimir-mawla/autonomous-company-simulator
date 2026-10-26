@@ -58,7 +58,7 @@ compute headroom.
 - **What shows the verdict cannot depend on a later event** (`prefix.test.ts`, A to C here and D in the next bullet): at each cut point of each generated log
   every commit a prefix holds is the record the full log holds; `mayCommit` asked against the log just before a commit returns
   the verdict the full log holds; and from one cut point to the next no grant, revocation, charge or commit changes. The cut points are
-  every prefix for every tenth seed (150 of the 1 500), and for the others the last prefix, every revoke and the event before it, and eight evenly
+  every prefix for every tenth seed (150 of the 1 500; the seeds divisible by ten, which are all `deep`-profile seeds with the one-root charter, so no default-profile log and no two-root log has every prefix checked), and for the others the last prefix, every revoke and the event before it, and eight evenly
   spaced ones. **That is a sample, not every prefix of every seed**: a pass over every prefix of all 1 500 seeds, with the worlds built through the
   public `append`, took 16.4 s for the file in one run (host load not recorded, about 5 s of it building the worlds), and the sample keeps each
   chunk to a fraction of a second. The property is not run over an empty domain: judging against the final tree would rule 35 115 commits differently from how they were
