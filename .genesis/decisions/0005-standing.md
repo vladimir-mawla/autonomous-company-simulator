@@ -227,8 +227,8 @@ mean a quiet machine. The slowest M5 test of each run, in ms, and as a share of 
 
 All 20 `yes` processes were killed after the runs and `pgrep -x yes` printed 0, before and after. Every run had 0 failed. In every row the slowest test is a chunk test, and in every full-suite run it is
 `replay.test.ts`'s, which builds each world twice (the incremental engine and the public `append`). The same file under load is the largest share: 34%
-of 20 s, the largest of the three runs in its row, under the 40% the tests are meant to stay under in those runs. Each figure in the table is a maximum over the runs in its row on a host whose load
-changed from run to run, and none is a bound: the L4 verifier's own runs on the same laptop reached 44.9% of 20 s for the slowest M5 test in one plain local run at a load average of 14 to 33, and
+of 20 s, the largest of the three runs in its row, under the 40% the tests are meant to stay under in those runs. Each figure in the "Slowest M5 test" column is the slowest test of one run, each percentage is the largest over the runs in its row, the host's load
+changed from run to run, and none of them is a bound: the L4 verifier's own runs on the same laptop reached 44.9% of 20 s for the slowest M5 test in one plain local run at a load average of 14 to 33, and
 74% of 90 s for `replay`'s coverage test with all nine coverage tests started together under 20 `yes` (those two figures are the verifier's, and I did not reproduce them). On a laptop that busy the
 tests can be over the 40% they are meant to stay under; the margin is the GitHub runner's, where the slowest M5 test was 13% of its timeout in the first CI run (next paragraph). The runs under load
 are a stress test of this host and are not a prediction for GitHub's runner.
