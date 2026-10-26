@@ -200,7 +200,7 @@ test in the layer (the worked examples, the tables, the ladders, `hostile-input`
 over the timing runs below, loaded ones included, took 153 ms (the first test of `integrity.test.ts`, which pays for the module mock).
 
 **The work is cut where the plan allows and not elsewhere.** 1 500 seeds by 100 events is the plan's number and every property keeps it. What was cut
-is the prefix cut points and the `standingOf` comparisons (Decision 2 and the observation on samples). A timeout is a failure threshold, not a guard
+is the prefix cut points, the commits `mayCommit` is asked about at their own moment in `prefix.test.ts`, and the `standingOf` comparisons (Decision 2 and the observation on samples). A timeout is a failure threshold, not a guard
 against a hang: these tests are synchronous, and a slow one is reported as timed out only after it has finished. Neither number is claimed to protect against
 a test that never returns.
 
