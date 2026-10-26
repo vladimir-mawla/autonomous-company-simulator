@@ -323,6 +323,12 @@ PR #3 to #10 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`
   post-merge redeploy "has not happened yet". Each was true when written; no record was edited here (this PR
   touches only `DONE.html` and this file). "What M2 adds", "What M3 adds", "What M4 adds" and "What M5 adds"
   have the state after each merge.
+- **A comment in `app/api/health/route.ts` is out of date and is not edited here.** Lines 37 and 38 say
+  `lib/chain`, `lib/allowance` and `lib/standing` "are not built". All three are on `main` (M3, M4 and M5), and
+  the comment has been out of date for `lib/chain` since M3 and for `lib/allowance` since M4. The claim the
+  comment makes about the route, that it self-checks `lib/contracts` only, is still true: the file's one
+  import is from `lib/contracts/index.js`. The plan's directory-ownership table (§6) gives `app/api/health/**`
+  to M2 and freezes it after M2, and this PR edits only the two bookkeeping files, so the comment stays as it is.
 - This checkpoint has no `model:` field. Which model did this work is not recoverable from the repository
   alone. The `Co-Authored-By` trailer on every commit is a fixed string required by the account's commit
   rule, written regardless of which model did the work, and must not be read as authorship evidence.
