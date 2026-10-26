@@ -5,7 +5,7 @@
 - **Phase / milestone:** M5 (BUILD) — `lib/standing/**` (`verdict.ts fold.ts standing.ts append.ts index.ts`, `__tests__/`)
 
 Decisions are in the order of the commits that made them. The falsifiability log and the timings were measured on the tree of
-commit `39624cd`; the next commit changes only a timeout constant and the ones after change only this ADR. No number below is a count of passing tests: those go stale
+commit `39624cd`; the next commit adds `COVERAGE_TIMEOUT_MS` to `fixtures.ts` and makes the nine coverage tests use it in place of `SEED_LOOP_TIMEOUT_MS` (no source file and no assertion changes), and the ones after change only this ADR. No number below is a count of passing tests: those go stale
 whenever a test is added, and the log quotes only "N failed" for a sabotage. The counts in "Coverage" are counts of what a
 trace did, not of tests that passed.
 
@@ -282,8 +282,8 @@ named a link at every index 0 to 7 (3 at index 7); and a grant `b` on a chain of
 
 Each row is ONE edit to the shipped source (P1 and P6 add an import to the file they edit), then `tsc -p tsconfig.lib.json --noEmit` (the lib half of `npm run typecheck`) and the
 FULL `vitest run --reporter=json` against it, then `git checkout -- <file>` and an empty `git status --porcelain`: 42 edits and one unedited control, every one restored clean.
-Measured by a script (kept outside the repository) that applied the edit, ran both commands and parsed the result, on the tree of commit `39624cd`; the commit after it changes only a timeout
-constant and the commits after that change only this ADR. The control, with no edit, had 0 failed of 1254. Each edit is described here so that it can be repeated by hand. The plan's six
+Measured by a script (kept outside the repository) that applied the edit, ran both commands and parsed the result, on the tree of commit `39624cd`; the commit after it adds `COVERAGE_TIMEOUT_MS` to
+`fixtures.ts` and makes the nine coverage tests use it in place of `SEED_LOOP_TIMEOUT_MS` (no source file and no assertion changes), and the commits after that change only this ADR. The control, with no edit, had 0 failed of 1254. Each edit is described here so that it can be repeated by hand. The plan's six
 are P1 to P6; the rest are mine. Several tests can go red from one edit; the files are named so the layer that caught it is visible. A "chunk" test counts once per chunk of 100 seeds, so a property
 that catches an edit in every chunk shows 15.
 
