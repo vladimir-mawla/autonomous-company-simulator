@@ -7,6 +7,7 @@ import {
   DEEP_LENGTH,
   ORG,
   SEEDS,
+  COVERAGE_TIMEOUT_MS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
   chunked,
@@ -353,6 +354,6 @@ describe(`heir invariants over ${SEEDS} generated logs of ${STEPS} events`, () =
       for (let distance = 1; distance <= 4; distance++) expect(distances[distance] ?? 0, `climbed ${distance}`).toBeGreaterThanOrEqual(50);
       expect(Math.max(...Object.keys(distances).map(Number))).toBeGreaterThanOrEqual(6);
     },
-    SEED_LOOP_TIMEOUT_MS,
+    COVERAGE_TIMEOUT_MS,
   );
 });

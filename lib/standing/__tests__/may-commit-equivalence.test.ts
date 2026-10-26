@@ -6,6 +6,7 @@ import {
   CHARTER,
   ORG,
   SEEDS,
+  COVERAGE_TIMEOUT_MS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
   chunked,
@@ -110,7 +111,7 @@ describe(`mayCommit and append over ${SEEDS} generated logs of ${STEPS} events`,
         expect(total[kind] ?? 0, kind).toBeGreaterThanOrEqual(100);
       }
     },
-    SEED_LOOP_TIMEOUT_MS,
+    COVERAGE_TIMEOUT_MS,
   );
 });
 

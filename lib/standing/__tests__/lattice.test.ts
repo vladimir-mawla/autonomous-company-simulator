@@ -21,6 +21,7 @@ import {
   revokeSeqs,
   runWorld,
   SEEDS,
+  COVERAGE_TIMEOUT_MS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
   CHUNKS,
@@ -230,7 +231,7 @@ describe(`the standing lattice over ${SEEDS} generated logs of ${STEPS} events`,
       expect(births["void"] ?? 0).toBeGreaterThanOrEqual(700);
       for (const kind of ["binding", "inherited", "void"]) expect(checked[kind] ?? 0, `standingOf checked for ${kind}`).toBeGreaterThanOrEqual(1_000);
     },
-    SEED_LOOP_TIMEOUT_MS,
+    COVERAGE_TIMEOUT_MS,
   );
 });
 

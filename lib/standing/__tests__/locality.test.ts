@@ -5,6 +5,7 @@ import { fold, mayCommit, standings } from "../index.js";
 import {
   CHARTER,
   SEEDS,
+  COVERAGE_TIMEOUT_MS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
   chunked,
@@ -329,6 +330,6 @@ describe(`locality over ${SEEDS} generated logs of ${STEPS} events`, () => {
       // b at every chain length, down to the longest the bound allows.
       for (let length = 1; length <= 8; length++) expect(byLength[length] ?? 0, `b on a chain of ${length}`).toBeGreaterThanOrEqual(140);
     },
-    SEED_LOOP_TIMEOUT_MS,
+    COVERAGE_TIMEOUT_MS,
   );
 });

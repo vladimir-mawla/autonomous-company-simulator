@@ -18,6 +18,7 @@ import {
   revokeEvent,
   runWorld,
   SEEDS,
+  COVERAGE_TIMEOUT_MS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
   CHUNKS,
@@ -336,6 +337,6 @@ describe(`prefix hindsight-invariance over ${SEEDS} generated logs of ${STEPS} e
       for (let position = 0; position < 8; position++) expect(deadAtIndex[position] ?? 0, `link-dead naming the link at index ${position}`).toBeGreaterThanOrEqual(position === 7 ? 1 : 7);
       for (let length = 1; length <= 8; length++) expect(deadByLength[length] ?? 0, `link-dead on a chain of ${length}`).toBeGreaterThanOrEqual(19);
     },
-    SEED_LOOP_TIMEOUT_MS,
+    COVERAGE_TIMEOUT_MS,
   );
 });

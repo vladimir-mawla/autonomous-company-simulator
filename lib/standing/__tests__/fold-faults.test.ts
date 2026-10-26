@@ -8,6 +8,7 @@ import {
   CAPABILITIES,
   ORG,
   SEEDS,
+  COVERAGE_TIMEOUT_MS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
   chunked,
@@ -465,6 +466,6 @@ describe(`fold faults over ${SEEDS} damaged generated logs`, () => {
       }
       expect(reads).toBe(0);
     },
-    SEED_LOOP_TIMEOUT_MS,
+    COVERAGE_TIMEOUT_MS,
   );
 });

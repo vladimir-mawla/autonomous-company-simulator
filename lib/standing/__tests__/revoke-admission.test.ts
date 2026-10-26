@@ -27,6 +27,7 @@ import {
   revokeSeqs,
   runWorld,
   SEEDS,
+  COVERAGE_TIMEOUT_MS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
   CHUNKS,
@@ -430,6 +431,6 @@ describe(`revoke admission over ${SEEDS} generated logs of ${STEPS} events`, () 
       expect(checked).toBeGreaterThanOrEqual(800);
       expect(nonzero).toBeGreaterThanOrEqual(400);
     },
-    SEED_LOOP_TIMEOUT_MS,
+    COVERAGE_TIMEOUT_MS,
   );
 });

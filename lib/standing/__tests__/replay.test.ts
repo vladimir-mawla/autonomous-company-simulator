@@ -5,6 +5,7 @@ import {
   CHARTER,
   ORG,
   SEEDS,
+  COVERAGE_TIMEOUT_MS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
   chunked,
@@ -163,7 +164,7 @@ describe(`replay over ${SEEDS} generated logs of ${STEPS} events`, () => {
       expect(sum.rejectedAttempts).toBeGreaterThanOrEqual(10_000);
       expect(sum.frozenFolds).toBe(SEEDS);
     },
-    SEED_LOOP_TIMEOUT_MS,
+    COVERAGE_TIMEOUT_MS,
   );
 });
 

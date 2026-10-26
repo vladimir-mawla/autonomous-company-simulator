@@ -8,6 +8,7 @@ import {
   DEEP_LENGTH,
   ORG,
   SEEDS,
+  COVERAGE_TIMEOUT_MS,
   SEED_LOOP_TIMEOUT_MS,
   STEPS,
   chunked,
@@ -202,6 +203,6 @@ describe(`conservation over ${SEEDS} generated logs of ${STEPS} events`, () => {
       // A charge landed on a chain of every length, down to the longest the bound allows (M4's floors counted branches and no charge landed past five).
       for (let length = 1; length <= DEEP_LENGTH; length++) expect(byLength[length] ?? 0, `charges on a chain of ${length}`).toBeGreaterThanOrEqual(300);
     },
-    SEED_LOOP_TIMEOUT_MS,
+    COVERAGE_TIMEOUT_MS,
   );
 });

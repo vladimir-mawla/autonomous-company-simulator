@@ -654,6 +654,14 @@ export function cloneJson<T>(value: T): T {
 }
 
 /**
+ * The per-test timeout of each file's COVERAGE test, which sums what every chunk did and so reads all of them. In a whole run
+ * the chunks are already computed and it takes milliseconds; run alone (`vitest -t coverage`) it pays for the file's whole run,
+ * which was measured at up to 8.4 s (replay) on a host whose load average was 27 to 41. Same reasoning as `SEED_LOOP_TIMEOUT_MS`:
+ * a failure threshold, far above the measurement, and not a guard against a hang.
+ */
+export const COVERAGE_TIMEOUT_MS = 90_000;
+
+/**
  * Every whole-system property runs its seeds in this many chunks, each its own test (`chunked`): 100 seeds a chunk. The slowest
  * test of a file is its first chunk, which also pays for the world-building the later ones share, so a smaller chunk is a
  * shorter worst case.
