@@ -3,8 +3,9 @@
  * from it.
  *
  * Everything a later layer may import is named here; a later layer imports `lib/standing/index.js` and nothing
- * deeper. The internals are deliberately not exported: `judgeCommit` (verdict.ts), `decide`, `apply`, `replay` and the
- * `Ledger` (fold.ts) and `deriveStanding` and `sealStanding` (standing.ts). Each would let a caller judge, record or
+ * deeper. The internals are deliberately not exported: `Ledger`, `emptyLedger`, `Effect`, `Decision`, `decide`, `apply`,
+ * `Replay`, `replay` and `foldedOf` (fold.ts), `Prepared` and `admitInput` (append.ts), `deriveStanding` and `sealStanding`
+ * (standing.ts), and `judgeCommit` (verdict.ts). Each would let a caller judge, record or
  * build a standing by a path that skips one of the others.
  */
 export { fold } from "./fold.js";

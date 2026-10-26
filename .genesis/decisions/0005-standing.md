@@ -35,7 +35,7 @@ there is no second copy to drift, which is a stronger statement than the tests c
   per seed, which is why the generator has a second engine (Decision 7). Nothing is cached between calls. The tests that would
   notice state kept between calls are `replay.test.ts`'s determinism test (a deep-frozen copy folds the same) and its freshness test; no sabotage that adds
   a cache was run.
-- **`admitInput`, `decide`, `apply`, `replay` and the `Ledger` are exported inside the layer and not from `index.ts`**
+- **Fourteen names are exported inside the layer and not from `index.ts`: `Ledger`, `emptyLedger`, `Effect`, `Decision`, `decide`, `apply`, `Replay`, `replay` and `foldedOf` (`fold.ts`), `Prepared` and `admitInput` (`append.ts`), `deriveStanding` and `sealStanding` (`standing.ts`), and `judgeCommit` (`verdict.ts`)**
   (`architecture.test.ts` pins the barrel at the plan's five names). `admitInput` exists so a test generator can extend one ledger
   a step at a time; the public functions never skip the replay.
 - **Admission precedence is the plan's §4.3.** Grant: M3's structure rules, then `over-allocation` from M4's shortfall, which names
