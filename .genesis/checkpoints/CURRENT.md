@@ -250,6 +250,61 @@ PR #3 to #10 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`
   the builder's measurement and was not re-run for this PR. A verdict, a standing and an heir are
   `lib/standing`'s (M5, below), so nothing here shows them.
 
+## What M5 adds, and what was run to check it
+
+- **What it is:** `lib/standing/**` (`verdict.ts`, `fold.ts`, `standing.ts`, `append.ts`, `index.ts`), fifteen test
+  files under `lib/standing/__tests__/` (beside `fixtures.ts`, the shared generator and fixtures, which is not a
+  test file) and ADR 0005. `git diff --stat d47dd5f^ d47dd5f` lists those 22 files and no others. Its source files
+  import `lib/contracts`, `lib/chain` and `lib/allowance` through their `index.ts` barrels only. Nothing outside
+  `lib/standing` imports it. On this branch `git grep lib/standing`, outside `lib/standing` and `.genesis/`, finds
+  the comment at `app/api/health/route.ts:38` (see the known gaps below) and otherwise only comments, layer
+  tables and string fixtures in the architecture tests of `lib/contracts` and `lib/allowance`, and in the
+  layer-graph module `lib/contracts/__tests__/support/module-graph.ts`. So no route or page runs it.
+- **The five public functions** (the barrel exports these five and eight types, `CommitRecord`, `Folded`,
+  `FoldResult`, `AppendFailure`, `AppendResult`, `MayCommitResult`, `StandingOfResult` and `StandingsResult`):
+  `fold`, `append`, `mayCommit`, `standings` and `standingOf`. What each does at its edges is ADR 0005,
+  Decisions 1 to 6, which are the reference; this file does not restate it. The layer's other names are
+  exported inside the layer and not from the barrel; ADR 0005, Decision 1, lists them.
+- **Plan §7 replayed.** `canonical.test.ts` replays the plan's §7 incident through the engine: its header
+  counts the 18 admitted events it offers to `append` and the 15 rejections it offers where §7 places them. ADR
+  0005 (the test table, Plan observation 11) is the reference for what it asserts; this file claims only that it
+  replays §7.
+- **Properties over 1 500 seeds of 100 events.** Nine test files (`conservation`, `fold-faults`, `heir`,
+  `lattice`, `locality`, `may-commit-equivalence`, `prefix`, `replay` and `revoke-admission`) run properties
+  over logs that a seeded generator builds by offering one proposal per step to the engine: `SEEDS` 1 500 by
+  `STEPS` 100 in `fixtures.ts`, in fifteen chunks of 100 seeds, each chunk its own test (ADR 0005 Decisions 7
+  and 8). Three of the checks are samples and not every prefix or every commit, as ADR 0005 names them
+  (Decision 9 and Plan observation 9): the prefix cut points, the commits `mayCommit` is asked about in
+  `prefix.test.ts`'s B, and the commits `standingOf` is compared on. ADR 0005's "What M5 does not claim" says
+  the properties hold at the cut points of the logs this seeded generator produces and not for every log, and
+  its Coverage tables count what the traces reached.
+- **The two named timeouts.** `SEED_LOOP_TIMEOUT_MS` (20 000 ms) is the per-test timeout of the chunk tests and
+  `COVERAGE_TIMEOUT_MS` (90 000 ms) of each file's coverage test, in place of vitest's 5 s default
+  (`vitest.config.ts` sets none). Each is defined once, in `lib/standing/__tests__/fixtures.ts`. M3 has a
+  constant of the same name, 60 000 ms, local to `attenuation-closure.test.ts`; it is not this one. The
+  measurements, the reason, and what a timeout does and does not protect against are ADR 0005 Decision 9; this
+  file does not restate them.
+- **Tests:** `npm ci && npm test` printed `Test Files  41 passed (41)` and `Tests  1255 passed (1255)`: 15
+  files and 543 tests under `lib/standing/__tests__/` on top of M4's 26 files and 712 tests. `npm test --
+  lib/standing`, M5's demo command, printed `Test Files  15 passed (15)` and `Tests  543 passed (543)`.
+  `npm run typecheck` and `npm run build` also exited 0 (`build` with `.next` removed first). Those runs were on
+  the mark-done branch, which differs from `d47dd5f` only in the two `.genesis/` files this PR edits.
+- **Observed 2026-10-26 at 11:21 UTC, before this PR:** `curl https://autonomous-company-simulator.vercel.app/api/health`
+  answered HTTP 200 with `"status":"ok"` and a `commit` of `d47dd5f735f09dca05edc0fd03be45c756b59631`: the
+  current `main` (`git ls-remote origin refs/heads/main` returned the same SHA at 11:21:50 UTC and at 11:21:59
+  UTC, around the curl at 11:21:54), which is M5's own merge commit (`gh pr view 10` gives `mergedAt` 11:13:35
+  UTC). `checks.contracts.pass` was true with all three assertions at `"pass":true`.
+- **What this does not show.** The route checks `lib/contracts` only and imports none of `lib/chain`,
+  `lib/allowance` and `lib/standing`, so the curl shows which commit Vercel built and that those three
+  self-checks passed then, and nothing about the standing layer; nor does `npm run build` run it, since nothing
+  under `app/` imports it. The tests pin what they pin: the properties are over the seeded generator's logs at
+  the cut points above, and the architecture test is about imports and not purity; ADR 0005's "What M5 does not
+  claim" has the full list. The ADR's falsifiability log (43 one-edit sabotages, each recorded there as failing,
+  and one unedited control) is the builder's measurement and was not re-run for this PR. The independent L4
+  APPROVE in round 5, and the four fix rounds before it, are as given to the author of this PR and not read
+  from the verifier's report. `domains/company` does not exist, so nothing here shows the Meridian Supply Co.
+  demo, the failure suite or the page.
+
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
 - `.genesis/decisions/` holds five decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2),
