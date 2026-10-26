@@ -361,7 +361,7 @@ that catches an edit in every chunk shows 15.
 - **V2 was run twice.** In the first pass of this final ledger the row coincided with a clock jump on the host (the script's own timer read 113 399 s for it) and showed one stray failure in
   each of four unrelated files; the row above is a re-run on its own, with the control, on the same tree.
 - **A deleted rule is usually caught by many tests** (X2: 250; X21: 108; X6: 132), because every property reads verdicts, charges or seqs. The count says how widely a rule is used, not how well it is
-  pinned; the rows with a count under ten (X5, X12, X16, X17, X18, V7) are the narrowly pinned ones.
+  pinned; the rows with a count under ten (X5, X12, X15, X16, X17, X18, V7: seven of the 42) are the narrowly pinned ones.
 - **Earlier trees.** An earlier measurement of the same ledger, on the tree before property D and before the chunking changed (10 chunks of 150, first 150 seeds exhaustive), had every row red
   as well; its counts are not quoted because they describe tests that no longer exist.
 
