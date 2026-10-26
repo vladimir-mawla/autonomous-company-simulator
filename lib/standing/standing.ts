@@ -10,8 +10,8 @@ import type { CommitRecord } from "./fold.js";
  *     standing  =  the verdict fixed at the commit's own `seq`  (+)  whether its chain is still intact
  *
  * The verdict half never changes (`verdict.ts`). The liveness half is read off the tree as the log built it, which
- * is the only place a later event can show. Three outcomes, and the only transition in the whole system is the
- * second of the first row:
+ * is the only place a later event can show. Three outcomes, and the only change of kind over time is `binding`
+ * to `inherited` (`lattice.test.ts` asserts that none of the other moves happens at the cut points of the generated logs):
  *
  *   breached verdict                    -> `void`.      The actor alone answers. Nothing turns it into anything else.
  *   warranted, no link of the chain cut -> `binding`.   Everyone on `warrant.trail` answers.
@@ -34,9 +34,8 @@ import type { CommitRecord } from "./fold.js";
  * principal the break cut off.
  *
  * WHY THE HEIR CLIMBS. Cutting a link NEARER THE ROOT later makes that link the first dead one, so `severed` moves up
- * the chain and the heir with it. A link below the break cannot become the first dead one, because a grant that is dead
- * (itself or through an ancestor) is refused a revoke (`already-dead`); `heir.test.ts` checks that across the cut points
- * of the generated logs the severed link's index never increases.
+ * the chain and the heir with it. `heir.test.ts` checks that across the cut points of the generated logs the severed
+ * link's index never increases.
  *
  * `chargedTo` is the PARENT of the first dead link: the heir's own grant, the one that absorbs what was spent (M4's
  * `absorbedBy`). A root grant has no parent, its grantor is a charter root, and the amount is off the ledger, so

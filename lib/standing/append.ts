@@ -10,7 +10,7 @@ import type { Effect, Ledger } from "./fold.js";
  * BOTH REPLAY THE LOG FIRST. The log is the only state (D3): neither function is handed a tree or a charge list, each
  * replays the log it is given through `fold.ts`'s `replay`, and a log that cannot be replayed is `faulty-log` whichever
  * function asked. Then both run the SAME `admitInput`: one read of the input through M3's intake, one `decide` (the
- * admission path `fold` also uses), one capacity check. They cannot drift (D9); `may-commit-equivalence.test.ts`
+ * admission path `fold` also uses), one capacity check. There is no second predicate for either to differ in (D9); `may-commit-equivalence.test.ts`
  * compares them over generated logs.
  *
  * PRECEDENCE, first failing step wins: a charter that cannot be read; a log that cannot be replayed; an input that
@@ -19,10 +19,11 @@ import type { Effect, Ledger } from "./fold.js";
  * event that would be refused anyway adds nothing, so a full log still answers `rejected` for a bad event and only a
  * good one is stopped by the bound.
  *
- * WHAT `append` NEVER DOES: take `seq` from the caller. The input is read through `readEventInput`, which builds the
+ * WHAT `append` DOES NOT DO: take `seq` from the caller. The input is read through `readEventInput`, which builds the
  * event from the fields it names and copies nothing else, so a `seq` on the input (or any other key) is not in the
- * logged event; the engine stamps `head + 1` (D3: "a caller cannot choose, and cannot back-date").
- * It never gives the caller's own objects back either: the returned `log` is a new array of events read through intake.
+ * logged event (`replay.test.ts` offers every value class as a `seq`); the engine stamps `head + 1` (D3: "a caller cannot
+ * choose, and cannot back-date"). It does not give the caller's own event objects back either: the returned `log` is a new
+ * array of events read through intake (`replay.test.ts` checks that no event object is shared).
  */
 
 export type AppendFailure =
@@ -64,7 +65,7 @@ function rejected(rejection: Rejection): { readonly ok: false; readonly failure:
 export function admitInput<C extends string>(charter: Charter<C>, ledger: Ledger<C>, input: unknown): Prepared<C> {
   const intake = readEventInput(charter, input);
   if (!intake.ok) {
-    // A throwing read on the INPUT has no `Rejection` (the plan has none); the only typed place for "a read threw" is
+    // A throwing read on the INPUT has no `Rejection` (the plan has none); the only place `AppendFailure` has for "a read threw" is
     // the fault below, so the log is reported faulty although the log itself was fine. The message says which input.
     if (intake.failure.kind === "hostile") return faultyLog({ kind: "hostile-log-input", message: `input: ${intake.failure.message}` });
     return rejected(intake.failure.rejection);
@@ -92,8 +93,8 @@ function prepare<C extends string>(charter: Charter<C>, log: Log<C>, input: unkn
 /**
  * Record `input` at the end of `log`, or say why not (plan §5). On success `log` is the old events followed by the new
  * one, which carries `seq = head + 1`, and `verdict` is the verdict of a commit and `null` for a grant or a revoke.
- * A commit that breaches a rule is NOT refused: it is recorded and its verdict says so (plan D4). Never throws on any
- * input; `rejected` is an event the ledger refuses, `faulty-log` is a charter, log or input that could not be read, or
+ * A commit that breaches a rule is NOT refused: it is recorded and its verdict says so (plan D4). Plan §5 asks that no input
+ * throw it; `rejected` is an event the ledger refuses, `faulty-log` is a charter, log or input that could not be read, or
  * a log that is full.
  */
 export function append<C extends string>(charter: Charter<C>, log: Log<C>, input: EventInput<C>): AppendResult<C> {

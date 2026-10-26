@@ -40,7 +40,7 @@ import type { Cap } from "./fixtures.js";
  * AS FIRST DRAFTED (rejected, and shown to be false below): "deleting every commit under `subtree(a)` leaves verdicts under
  * any non-ancestral grant `b` unchanged". Deleting a commit under `a` can raise an ANCESTOR's headroom once `a` is revoked,
  * which turns an ancestor's `over-limit` commit into a warranted one, which charges the ancestor and leaves a LATER grant
- * with too little to reserve, so the shortened log no longer replays. The hand-worked case below is the smallest log that
+ * with too little to reserve, so the shortened log no longer replays. The hand-worked case below is a log that
  * does this, and the property below tries the first formulation on every grant of every generated log and requires that
  * the generator finds some (it does: 30 of 24 539 deletions, every one an `over-allocation` at a later grant).
  *
@@ -93,7 +93,7 @@ function mapStanding(standing: Standing, seqMap: ReadonlyMap<number, number>): S
   return { ...standing, committedAt };
 }
 
-describe("the rejected formulation is false: the smallest log that shows it", () => {
+describe("the rejected formulation is false: a log that shows it", () => {
   // G1 dana -> cfo, limit 100.  GA cfo -> ua, 50.  GB cfo -> ub, 30.  G1 has 100 - 50 - 30 = 20 left.
   const LOG = logOf(CHARTER, [
     grantEvent({ id: "G1", grantor: "dana", grantee: "cfo", capabilities: ["purchase"], limit: 100, depth: 2 }),

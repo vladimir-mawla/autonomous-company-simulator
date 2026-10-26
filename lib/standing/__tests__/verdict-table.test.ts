@@ -37,7 +37,7 @@ import type { Cap } from "./fixtures.js";
  *   2. EVERY COMBINATION OF FIVE. The five breaches are five switches, each with ONE way to breach its rule (a borrowed
  *      actor, a dead link at G2, a capability the grant lacks, an amount one over); all 32 combinations are built, and each
  *      must be reported as the earliest switch set. That is every combination of those five, not of every way to breach
- *      each rule; the rows of layer 1 give more ways for each. (Plan: "a commit that breaches 2 to 3 rules reports only the
+ *      each rule; the rows of layer 1 give more ways for each. (Plan: "a commit that breaches 2–3 rules reports only the
  *      first"; this is the pair and the triple of every precedence step, and the rest.) Then the breaches are peeled off one
  *      at a time and each reveals the next.
  *   3. THE LONGEST CHAIN. The same questions on a chain of `MAX_ROOT_DEPTH + 1` = 8 grants, with the dead link at every

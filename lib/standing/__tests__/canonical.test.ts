@@ -24,7 +24,7 @@ import type { Cap } from "./fixtures.js";
  * `lib/contracts/__tests__/canonical-incident.test.ts` (M1) wrote every value of §7 as a value of the real TYPES, and says of
  * itself that it is not evidence about behaviour: no engine existed to compute the numbers. This file is the other half. The
  * eighteen admitted events of §7 are offered to the real `append` one at a time; the fifteen rejections of its beat 1 and its
- * intake lines are offered at the points §7 places them; and every number and every standing the table states is asserted
+ * intake lines are offered at the points §7 places them; and these numbers and standings are asserted
  * against what the engine computed: the headroom of G1, G2, G4 and G6 after seq 10, absorbed 220 000 and returned 180 000 at the
  * revoke, G1's headroom from 500 000 to 680 000, the verdicts of c1 to c10, the three standings at seq 10 and after, and the
  * scrub back to seq 10. §7's numbers are the plan's; where this file agrees with them, it is the engine that computed them.

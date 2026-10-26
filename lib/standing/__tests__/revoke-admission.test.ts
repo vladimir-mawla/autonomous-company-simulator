@@ -45,9 +45,9 @@ import type { Cap } from "./fixtures.js";
  *      fixture breaks only its own rule.
  *   2. WHAT HIDES WHAT: `unknown-grant` before `already-dead` before `revoker-not-authorised`, each shown to hide the next
  *      and the next to appear once the first is repaired.
- *   3. WHO MAY REVOKE, AT EVERY DEPTH: on the longest chain (8 grants) every principal on the trail and three outsiders
- *      try to revoke every link: 8 x 12 = 96 attempts, each admitted exactly when the revoker granted a link at or above
- *      the target.
+ *   3. WHO MAY REVOKE, AT EVERY DEPTH: on the longest chain (8 grants) every principal on the trail (`dana` and the
+ *      8 holders) and two outsiders, the other charter root and a stranger, try to revoke every link: 8 x 11 = 88 attempts,
+ *      each admitted exactly when the revoker granted a link at or above the target.
  *   4. A PROPERTY over generated logs (1 500 seeds x 100 events): every revoke the generator offered is decided as an
  *      independent reading of the log says, and every admitted revoke returns EXACTLY what was unspent. That second one is
  *      what a deleted `already-dead` breaks.
@@ -207,8 +207,8 @@ describe("what hides what: unknown-grant, then already-dead, then revoker-not-au
 describe("who may revoke, at every depth of the longest chain", () => {
   const CHAIN = deepChainEvents();
   const base = logOf(CHARTER2, CHAIN);
-  // The 8 holders, the charter root, the other charter root, and a stranger: 11 principals... plus the root grant's own grantor
-  // is `dana`, so the trail is dana d0 ... d7 (9 principals); `erin` and `stranger` are outsiders.
+  // `dana` (the charter root and the root grant's grantor), the 8 holders, the other charter root and a stranger: 11 principals.
+  // The trail is dana d0 ... d7 (9 principals); `erin` and `stranger` are outsiders.
   const principals = ["dana", ...Array.from({ length: DEEP_LENGTH }, (_, index) => deepHolder(index)), "erin", "stranger"];
 
   it("there are 8 targets and 11 principals, and the table has 88 attempts", () => {

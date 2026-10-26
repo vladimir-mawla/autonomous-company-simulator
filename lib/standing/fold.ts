@@ -31,8 +31,8 @@ import { judgeCommit } from "./verdict.js";
  * DECIDE, THEN APPLY. `decide` looks at one already-read event against the ledger and says what admitting it would do,
  * or why it is refused; it changes nothing. `apply` writes that effect. `fold` runs both per event; `append` and
  * `mayCommit` run `decide` against the replayed ledger, so a grant, a revoke or a commit is judged by the same code
- * whether it is being replayed or offered. That is plan §5's "one admission path", and it is why `fold(append-built
- * log)` can only differ from the incremental result by a defect in this file (`replay.test.ts` checks that it does not).
+ * whether it is being replayed or offered. That is plan §5's "one admission path"; `replay.test.ts` checks that `fold`
+ * of an `append`-built log gives the incremental result.
  *
  * ADMISSION PRECEDENCE, first failing rule wins (plan §4.3; M3's intake has already run, so shape and
  * `unknown-capability` came first):
@@ -136,14 +136,13 @@ export function decide<C extends string>(charter: Charter<C>, ledger: Ledger<C>,
     }
 
     case "revoke": {
-      // `unknown-grant` also covers a grant whose ancestry cannot be completed (`chainOf` fails closed): only a
-      // hand-built tree has one, and a grant that cannot be placed cannot be revoked.
+      // `unknown-grant` also covers a grant whose ancestry cannot be completed (`chainOf` fails closed): a
+      // hand-built tree can have one, and a grant that cannot be placed cannot be revoked.
       const chain = chainOf(tree, event.grantId);
       if (chain === undefined) return refuse({ kind: "unknown-grant", grantId: event.grantId });
 
-      // Dead means the grant OR ANY ANCESTOR is revoked (plan §4.4). Revoking it again would overwrite `revokedAt`
-      // and stop the parent's headroom rising a second time; a grant dead only through an ancestor is dead already and
-      // has nothing left to cut.
+      // Dead means the grant OR ANY ANCESTOR is revoked (plan §4.4). Revoking it again would overwrite `revokedAt`;
+      // a grant dead only through an ancestor is dead already and has nothing left to cut.
       if (firstDeadLink(tree, chain) !== undefined) return refuse({ kind: "already-dead", grantId: event.grantId });
 
       // Only a principal ABOVE the grant may revoke it (plan §2.4): the grantors on its chain, root first. The grantee
@@ -286,9 +285,10 @@ export function foldedOf<C extends string>(ledger: Ledger<C>): Folded<C> {
 }
 
 /**
- * Replay `log` under `charter` and return what it built, or the first reason it cannot be replayed (plan §5). Never
- * throws on any input: a malformed charter, a hostile or oversized log, a gap in `seq` and an event that is not
- * admissible are each a typed `FoldFault`. The charter is checked before the log is touched.
+ * Replay `log` under `charter` and return what it built, or the first reason it cannot be replayed (plan §5). A malformed
+ * charter, a hostile or oversized log, a gap in `seq` and an event that is not admissible are each a typed `FoldFault`
+ * and not a throw (plan §5 asks that no input throw; `hostile-input.test.ts` tries every value class in every position it
+ * names). The charter is checked before the log is touched.
  */
 export function fold<C extends string>(charter: Charter<C>, log: Log<C>): FoldResult<C> {
   const read = readCharter(charter);

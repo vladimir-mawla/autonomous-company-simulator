@@ -200,7 +200,7 @@ describe(`conservation over ${SEEDS} generated logs of ${STEPS} events`, () => {
       expect(sum.voidCommits).toBeGreaterThanOrEqual(70_000);
       expect(sum.chargesChecked).toBeGreaterThanOrEqual(200_000);
       expect(sum.rootSumsNonzero).toBeGreaterThanOrEqual(20_000);
-      // A charge landed on a chain of every length, down to the longest the bound allows (M4's floors counted branches and no charge landed past five).
+      // A charge landed on a chain of every length, down to the longest the bound allows (ADR 0004: on seeds 1 to 40 of M4's driver no charge above 0 landed on a line longer than five grants).
       for (let length = 1; length <= DEEP_LENGTH; length++) expect(byLength[length] ?? 0, `charges on a chain of ${length}`).toBeGreaterThanOrEqual(300);
     },
     COVERAGE_TIMEOUT_MS,

@@ -349,7 +349,7 @@ describe(`heir invariants over ${SEEDS} generated logs of ${STEPS} events`, () =
       // The revoker was the heir, and was somebody above the heir, both many times: the heir does not depend on who revoked.
       expect(revokerIsHeir).toBeGreaterThanOrEqual(4_000);
       expect(revokerAbove).toBeGreaterThanOrEqual(1_500);
-      // The heir climbed, and by how much: distances 1 to at least 5 levels were seen.
+      // The heir climbed, and by how much: distances 1 to 4 at least 50 times each, and a climb of 6 levels or more.
       expect(climbs).toBeGreaterThanOrEqual(1_700);
       for (let distance = 1; distance <= 4; distance++) expect(distances[distance] ?? 0, `climbed ${distance}`).toBeGreaterThanOrEqual(50);
       expect(Math.max(...Object.keys(distances).map(Number))).toBeGreaterThanOrEqual(6);

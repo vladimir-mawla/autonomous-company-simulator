@@ -41,7 +41,7 @@ import type { Cap } from "./fixtures.js";
  *      is not every prefix of every seed, and the ADR says so.
  *   B. AT ITS OWN MOMENT. For a commit, `mayCommit` asked against the log as it stood just BEFORE the commit (so against
  *      exactly the information the verdict may use) returns the verdict the full log holds. This is the recomputation the
- *      plan names, done with the pre-check, and it shares nothing with `fold`'s own bookkeeping. Every commit of every
+ *      plan names, done with the pre-check, and it does not read the verdict `fold` recorded: it judges the commit again against a replay of the prefix before it. Every commit of every
  *      tenth seed; for the rest, every commit whose chain was cut later (the ones hindsight could change) and every fifth
  *      of the others.
  *   C. THE LOG GROWS, IT IS NEVER REWRITTEN. Going from one cut point to the next no grant, revocation, charge or commit that
@@ -50,7 +50,7 @@ import type { Cap } from "./fixtures.js";
  *
  *   D. THE FIRST FOUR RULES AGREE WITH AN INDEPENDENT READING. For every commit of every seed, read straight from the raw
  *      events that came BEFORE it (none of M3's walkers): the grant acted under, its holder, and the first link of its chain
- *      that already had a revoke. A warranted verdict must have none of the three problems; `no-such-grant`, `wrong-actor` and
+ *      that already had a revoke. A warranted verdict must have none of the four problems; `no-such-grant`, `wrong-actor` and
  *      `link-dead` must each name what the reading finds; and a commit under an existing grant, by its holder, with a link
  *      already cut must be `link-dead` and no other verdict. The same for `capability-not-granted`. This is the one property
  *      over the generated logs that can see a `judgeCommit` that looks at too few links: without it, the hand-worked 8-link

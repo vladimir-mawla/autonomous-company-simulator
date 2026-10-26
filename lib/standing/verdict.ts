@@ -7,13 +7,13 @@ import type { Breach, Charge, Commitment, GrantTree, Verdict } from "../contract
  *
  * THIS IS THE ONLY PLACE A COMMITMENT IS JUDGED. `fold` calls it for every commit in a log, `append` for the one it
  * is asked to record and `mayCommit` for the one it is asked about, through the same admission path (`fold.ts`), so
- * the pre-check cannot say something the record does not (plan D9; contrast the duplicated literal that plan §3
- * cites from a sibling's ADR 0005 Decision 1).
+ * the pre-check and the record use one predicate and there is no second copy of it (plan D9; contrast the duplicated literal
+ * that plan §3 cites from a sibling's ADR 0005 Decision 1).
  *
  * WHY THE VERDICT CANNOT DEPEND ON A LATER EVENT. The function takes the tree and the charges as they are when the
  * commit arrives and nothing else: no log, no final state. `fold` builds the tree event by event and calls this with
- * the tree it has built so far, so a revocation that comes LATER in the log is not in the tree yet. That is the whole
- * mechanism of prospective revocation (plan D1): the verdict is fixed at the commit's own `seq` and never revisited,
+ * the tree it has built so far, so a revocation that comes LATER in the log is not in the tree yet. That is how the
+ * verdict is fixed at the act (plan D1): at the commit's own `seq`, and never revisited,
  * and what a later revoke changes is the STANDING (`standing.ts`), which is derived from this verdict plus liveness
  * now. A caller that passed a tree built from the whole log would get hindsight; `prefix.test.ts` is what shows the
  * engine does not.
@@ -23,7 +23,7 @@ import type { Breach, Charge, Commitment, GrantTree, Verdict } from "../contract
  * first and is `warranted` only once every rule holds):
  *
  *  1. `no-such-grant`: `actedUnder` is not in the tree, or its ancestry cannot be completed (`chainOf` and `trailOf`
- *     are `undefined`: only a hand-built tree can do that, and the fail-closed answer is "no such grant").
+ *     are `undefined`: the tests reach this with hand-built trees, and the fail-closed answer is "no such grant").
  *  2. `wrong-actor`: `actor` is not the grant's `grantee`. A grant is not lendable: acting under someone else's grant is
  *     a breach even when the grant is fine, so this is checked before liveness (plan §7, c6: borrowed AND dead is
  *     reported as borrowed).

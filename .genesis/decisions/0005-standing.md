@@ -1,22 +1,22 @@
 # ADR 0005 — M5 standing: one admission path, a verdict fixed at the act, a standing derived from it, and an heir that is the grantor of the first dead link
 
 - **Date:** 2026-10-25 to 2026-10-26
-- **Status:** proposed — written by the builder, not yet verified by an independent L4 pass
+- **Status:** proposed — written by the builder; not yet approved by an independent L4 pass
 - **Phase / milestone:** M5 (BUILD) — `lib/standing/**` (`verdict.ts fold.ts standing.ts append.ts index.ts`, `__tests__/`)
 
-Decisions are in the order of the commits that made them. The timings were measured on the tree of commit `39624cd` and
-the falsifiability log on the tree of commit `43c52f4`. Between them `lib/standing` changed in three ways: `COVERAGE_TIMEOUT_MS` was added to `fixtures.ts` and nine coverage tests use it in place of `SEED_LOOP_TIMEOUT_MS`; one test was added to `hostile-input.test.ts` (it runs in a few milliseconds); and comments changed, including one in `index.ts`. `git diff 39624cd..43c52f4 -- lib/standing`, with the comment lines, the blank lines and the two timeout constants filtered out, shows that test and nothing else. The commits after `43c52f4` change only this ADR. No number below is a count of passing tests: those go stale
-whenever a test is added, and the log quotes only "N failed" for a sabotage. The counts in "Coverage" are counts of what a
-trace did, not of tests that passed.
+The timings were measured on the tree of commit `39624cd` and
+the falsifiability log on the tree of commit `43c52f4`. Between them `lib/standing` changed in three ways: `COVERAGE_TIMEOUT_MS` was added to `fixtures.ts` and nine coverage tests use it in place of `SEED_LOOP_TIMEOUT_MS`; one test was added to `hostile-input.test.ts` (it runs in a few milliseconds); and comments changed, including one in `index.ts`. `git diff 39624cd..43c52f4 -- lib/standing`, with the comment lines, the blank lines and the two timeout constants filtered out, shows that test and nothing else. The commits after `43c52f4` change this ADR and, in the last of them, comments and the text of one `describe` title in
+`lib/standing` (`git diff 43c52f4..HEAD -- lib/standing`, with the comment lines and the blank lines filtered out, shows that title and
+nothing else). The rows of the log quote only "N failed" and not a count of passing tests, which goes stale whenever a test is
+added. The counts in "Coverage" are counts of what a trace did, not of tests that passed.
 
 ## Context
 
 `.genesis/PLAN.md` §5 gives this layer five functions (`fold`, `append`, `mayCommit`, `standings`, `standingOf`) and an internal
 `judgeCommit`; §4.2 and §4.3 give the closed standing enum and the admission precedence; §6 (M5) gives what it must refuse and the
 test layers it asks for. It composes the three layers below it through their barrels: M3's intake and walkers, M4's headroom,
-and M1's `assertStandingWellFormed`. ADRs 0001, 0003 and 0004 describe those layers and are cited, not restated. This is the first
-layer in which the whole engine runs, so it is the first place the plan's §7 numbers can be checked against code: all of them
-reproduce (`canonical.test.ts`).
+and M1's `assertStandingWellFormed`. ADRs 0001, 0003 and 0004 describe those layers and are cited, not restated. `canonical.test.ts`
+replays the plan's §7 incident through it.
 
 ## Decision 1 — one admission path: `decide` looks, `apply` writes, and replay, `append` and `mayCommit` all go through `decide`
 
@@ -26,13 +26,12 @@ event of a log, in this order: the element is read, M3's `readLogEvent` reads it
 `decide` and `apply`. `append.ts` calls `replay` on the log it is given, then `admitInput` (one read of the input through
 `readEventInput`, one `decide`, one capacity check). `mayCommit` runs the same `admitInput` on `{ kind: "commit", commit }`.
 So a grant, a revoke and a commit are judged by one function whether they are being replayed, recorded or only asked about, and
-`judgeCommit` has one call site, inside `decide`. Plan D9 says `append` and `mayCommit` "cannot drift"; here they cannot because
-there is no second copy to drift, which is a stronger statement than the tests can make, and the sabotage that gives
+`judgeCommit` has one call site, inside `decide`. Plan D9 says `append` and `mayCommit` "cannot drift"; here there is one function and no second copy to drift, and the sabotage that gives
 `mayCommit` its own predicate (P6 below) has to put one there.
 
 - **What is replayed every time.** The log is the only state (plan D3), so each public function reads the charter once through
-  `readCharter` and replays the whole log: O(n) per `append`. Measured on the test generator, that replay was 3.1 ms of 3.4 ms
-  per seed, which is why the generator has a second engine (Decision 7). Nothing is cached between calls.
+  `readCharter` and replays the whole log on every `append`. In one measurement over 300 seeds of the test generator, replaying the log through `append` took
+  3.1 ms of the 3.4 ms a seed cost to build, which is why the generator has a second engine (Decision 7). Nothing is cached between calls.
 - **Fourteen names are exported inside the layer and not from `index.ts`: `Ledger`, `emptyLedger`, `Effect`, `Decision`, `decide`, `apply`, `Replay`, `replay` and `foldedOf` (`fold.ts`), `Prepared` and `admitInput` (`append.ts`), `deriveStanding` and `sealStanding` (`standing.ts`), and `judgeCommit` (`verdict.ts`)**
   (`architecture.test.ts` pins the barrel at the plan's five names). `admitInput` exists so a test generator can extend one ledger
   a step at a time; the public functions never skip the replay.
@@ -44,21 +43,21 @@ there is no second copy to drift, which is a stronger statement than the tests c
 ## Decision 2 — the verdict is computed against the tree as it stands at the act, and nothing else
 
 `judgeCommit(tree, charges, commit)` takes the tree and the charges and no log. `replay` builds the tree event by event and calls
-it with the tree built so far, so a revocation later in the log is not in the tree when an earlier commit is judged. That is the whole
-mechanism of prospective revocation (plan D1). The five breaches are checked in the plan's order: `no-such-grant`, `wrong-actor`,
+it with the tree built so far, so a revocation later in the log is not in the tree when an earlier commit is judged. That is how the verdict is fixed at the act (plan D1). The five breaches are checked in the plan's order: `no-such-grant`, `wrong-actor`,
 `link-dead`, `capability-not-granted`, `over-limit`. `link-dead` names the dead link nearest the root (M3's `firstDeadLink`) and
 its revoke's `seq`, not the grant acted under; `over-limit` takes `requested` and `headroom` from M4's `Shortfall` and does not
 compute headroom.
 
-- **A grant whose chain or trail cannot be completed is `no-such-grant`.** Only a hand-built tree can do that; the plan's five breaches
-  have no sixth, and fail-closed is the answer M3 gives for the same case (ADR 0003, Decision 5). `verdict-table.test.ts` has a cycle, a
-  missing parent and an ancestry one grant past the chain bound, with the bound's N and N+1.
+- **A grant whose chain or trail cannot be completed is `no-such-grant`.** The plan's five breaches
+  have no sixth, and fail-closed is the answer M3 gives for the same case (ADR 0003, Decision 5: a tree can be built by hand).
+  `verdict-table.test.ts` has a cycle, a missing parent and an ancestry one grant past the chain bound, with the bound's N and N+1, each on a
+  hand-built tree.
 - **What shows the verdict cannot depend on a later event** (`prefix.test.ts`, A to C here and D in the next bullet): at each cut point of each generated log
   every commit a prefix holds is the record the full log holds; `mayCommit` asked against the log just before a commit returns
   the verdict the full log holds; and from one cut point to the next no grant, revocation, charge or commit changes. The cut points are
   every prefix for every tenth seed (150 of the 1 500; the seeds divisible by ten, which are all `deep`-profile seeds with the one-root charter, so no default-profile log and no two-root log has every prefix checked), and for the others the last prefix, every revoke and the event before it, and eight evenly
   spaced ones. **That is a sample, not every prefix of every seed**: a pass over every prefix of all 1 500 seeds, with the worlds built through the
-  public `append`, took 16.4 s for the file in one run (host load not recorded, about 5 s of it building the worlds), and the sample keeps each
+  public `append`, took 16.4 s for the file in one run (host load not recorded), and the sample keeps each
   chunk to 682 ms at most in the runs of the file alone with no added load, 1 430 ms at most under 20 busy processes (Decision 9), and 1 566 ms on the first CI run. The property is not run over an empty domain: judging against the final tree would rule 35 115 commits differently from how they were
   ruled at the time, and for 20 434 of them the difference is a warranted act becoming `link-dead` (counts in "Coverage").
 - **D reads the first four rules again from the raw events.** For every commit of every seed (80 361), `prefix.test.ts` finds the grant acted under, its holder and the first
@@ -73,22 +72,21 @@ revocation, and an `inherited` otherwise. Nothing else in the log is read for a 
 consequence of where its data comes from, and `lattice.test.ts` shows it behaviourally (between cut points a `void` is the same value).
 
 - **The heir is the grantor of the first dead link counting from the root**, read from the link (`grantor`), not from the revoke's
-  `by` (plan D7; `heir.test.ts` has `dana` and `cfo` revoking G2 give the same standing). It is above the break, and it is not the
-  actor, because a principal does not repeat on a chain and every grantor on it is an earlier principal on the trail.
+  `by` (plan D7; `heir.test.ts` has `dana` and `cfo` revoking G2 give the same standing). `heir.test.ts` checks that it is above the break and is not the actor.
   `chargedTo` is the PARENT of that link (the heir's own grant) or `null` when the link is a root grant, so the heir is a charter root.
-  `severed.atSeq` is the revoke's seq. The heir climbs because cutting a link nearer the root makes it the first dead one, and cannot
-  fall because a dead grant is refused a second revoke (`already-dead`).
+  `severed.atSeq` is the revoke's seq. The heir climbs when a link nearer the root is cut, which makes that link the first dead one; `heir.test.ts` checks across the cut points that
+  the severed link's index never increases.
 - **Checked against an independent reading, not against M3.** `heir.test.ts` rebuilds the chain and trail from grant events and the first
   revoked link from revoke events, and checks `severed.atSeq > committedAt`, `heir` is the grantor and the trail principal at the break,
   neither the actor nor below it, and every link above it uncut; `chargedTo` null means the heir is a charter root, otherwise
   `chargedTo` is the link above the break, is live, and its grantee is the heir. The monotone climb is checked across cut points.
 - **A ladder on the longest chain** (8 grants, `MAX_ROOT_DEPTH + 1`) cuts the links from the leaf up with a commit at every level and checks
   every standing after every cut exactly: the heir of the leaf's commit is `d6, d5, d4, d3, d2, d1, d0, dana`.
-- **Every standing leaves through `sealStanding`**, which calls `assertStandingWellFormed` and throws if it says no (plan §5). Two internal
-  throws exist: that one, and one in `deriveStanding` for a warranted commit whose cut link is not in the tree, which only a hand-built
-  tree can produce. `integrity.test.ts` reaches both.
-- **`standingOf` uses the recorded verdict and does not judge again.** Re-judging against the final tree would count the commit's own charge
-  against its own headroom and make a valid act `void`; sabotage P1 does exactly that.
+- **Every standing leaves through `sealStanding`**, which calls `assertStandingWellFormed` and throws if it says no (plan §5). `standing.ts` has two internal
+  throws: that one, and one in `deriveStanding` for a warranted commit whose cut link is not in the tree, which the test reaches with a hand-built
+  tree. `integrity.test.ts` reaches both.
+- **`standingOf` uses the recorded verdict and does not judge again.** Judging against the final tree would rule 35 115 commits differently (counts in "Coverage"); sabotage P1
+  does that in `standingOf` and is red in `lattice.test.ts` (16).
 
 ## Decision 4 — revoke admission
 
@@ -126,18 +124,18 @@ a `seq` that is not a safe integer of at least 1 is `inadmissible-event` carryin
   rule comes back `ok: true` with a `breached` verdict, because `append` would record it as exactly that (plan D4). Where `append` would
   refuse the commit, `mayCommit` answers `ok: false` with the identical failure; `may-commit-equivalence.test.ts` compares them over every
   commit the generator offered.
-- **`append` gives back new objects:** the returned `log` is a new array of events read through intake, and nothing in it is the caller's.
+- **`append` gives back new objects:** the returned `log` is a new array of events read through intake, and `replay.test.ts` checks that no event object in it is the caller's.
 - **A commit id and a grant id are different namespaces** (ids are opaque, plan §4.1); `admission-order.test.ts` pins that a commit may
   carry a grant's id and the grant is still there.
-- **One branch is unreachable by construction and untested:** `mayCommit` throws an internal error if a commit input is admitted as
+- **One branch no test reaches:** `mayCommit` throws an internal error if a commit input is admitted as
   something other than a commit.
 
 
 ## Decision 7 — the generator drives the real engine and decides nothing about admission
 
-`fixtures.ts`'s `runWorld(seed, steps, profile, engine)` builds a log by OFFERING one proposal per step to the engine and keeping what
+`fixtures.ts`'s `runWorld({ seed, steps, profile, engine })` builds a log by OFFERING one proposal per step to the engine and keeping what
 it admits. Whether a proposal is admitted, its verdict, and what it is rejected for are the engine's answers. What the generator decides is
-what to PROPOSE, and it is wrong on purpose a good part of the time (a widened capability, a borrowed grant, a limit one over the headroom,
+what to PROPOSE, and it is wrong on purpose some of the time (a widened capability, a borrowed grant, a limit one over the headroom,
 a revoke by the wrong principal, a re-revoke of a dead grant, a malformed shape, a smuggled `seq`), because a generator that only proposed
 valid events could not show a refusal fires. To propose sensibly it keeps a MIRROR (a tree and a list of charges built from the engine's own
 answers) and reads it with M3's and M4's published functions, the way `lib/allowance/__tests__/fixtures.ts` does. The mirror steers
@@ -145,10 +143,8 @@ and nothing else: `replay.test.ts` checks it equals what `fold` rebuilds.
 
 - **Two engines, one world.** `"incremental"` keeps one ledger and offers each proposal to `admitInput`; `"append"` calls the public `append`
   with the whole log every time. Over 400 seeds they gave byte-identical logs and attempts at 0.3 ms and 3.4 ms per seed, and
-  `replay.test.ts` asserts it for all 1 500. Every other file uses the cheap engine; that licence rests on `replay.test.ts`, and a defect in
-  `append`'s own replay that `admitInput` does not share would reach the other files only through `replay.test.ts` and the files that call
-  `fold` on prefixes.
-- **Two profiles.** Every fifth seed is `deep`: a root of depth 7, children under the deepest live grant, few revokes until late. Odd seeds use
+  `replay.test.ts` asserts it for all 1 500. Every other file uses the cheap engine; that licence rests on `replay.test.ts`.
+- **Two profiles.** Every fifth seed is `deep`: a root of depth 7, children mostly under the deepest live grant, few revokes until late. Odd seeds use
   a two-root charter, so a charter root that is not on a chain exists. A chain of 8 grants has 9 principals on its trail (the charter root and the 8 grantees), so a pool of 12 leaves three off it.
 - **The comparisons in the generator.** `grep -nE '(<=|>=|===|!==| < | > )'` over the lines of `runWorld`, comment lines removed, gives 46
   lines. Grouped by what they choose: which engine, profile and loop bound (5); whether a lookup found something, a list is empty or a pointer
@@ -181,13 +177,13 @@ architecture` and `fixtures.ts`. All are here. Four files are added, each becaus
 | `replay.test.ts` | determinism; append-built equals incremental equals fold; a caller cannot choose `seq`; fresh maps | 1 500 seeds; every value class as a `seq` |
 | `may-commit-equivalence.test.ts` | `mayCommit` gives `append`'s result | every commit the generator offered; the boundary; every whole-log failure |
 | `conservation.test.ts` (added) | the §4.4 theorem on the whole system; void commits charge nothing | cut points of 1 500 seeds, with M4's functions and M4's oracle |
-| `canonical.test.ts` (added) | plan §7, number for number | the 18 events, the 15 rejections, the standings, the scrub, a later cut of G1 |
+| `canonical.test.ts` (added) | plan §7 replayed through the engine | the 18 events, the 15 rejections, the standings, the scrub, a later cut of G1 |
 | `integrity.test.ts` | `assertStandingWellFormed` is asked and obeyed | mocked to fail; real guard on cast-built values; the builder's two internal throws |
 | `architecture.test.ts` | the layer's imports and its barrel | three barrels only; no cycle; five source files; five exports |
 
 **Chunks.** Every property over generated logs runs its 1 500 seeds in fifteen chunks of 100, each chunk its own test, computed lazily
-and once per file, so no test carries the whole run and a failure names the seeds. A coverage test at the end of each file sums
-what the chunks did and requires floors. The floors sit below what a run reaches (the tables under "Coverage" give the measured numbers and the floor beside them), are deterministic
+and once per file, so no chunk test carries the whole run and a failure names the seeds. A coverage test at the end of each file sums
+what the chunks did and requires floors. The floors sit at or below what a run reaches (the tables under "Coverage" give the measured numbers and the floor beside them), are deterministic
 (a seeded `mulberry32`), and are printed by `ACS_REPORT=1`, which is how those numbers were read.
 
 ## Decision 9 — chunks, two named timeouts, and what the timings were measured on
@@ -195,11 +191,11 @@ what the chunks did and requires floors. The floors sit below what a run reaches
 `SEEDS` 1 500, `STEPS` 100, `CHUNKS` 15, `SEED_LOOP_TIMEOUT_MS` 20 000 and `COVERAGE_TIMEOUT_MS` 90 000 are each defined once, in `fixtures.ts`.
 The chunk tests (and nothing else) have the 20 s timeout; the coverage test of each file, which reads every chunk, has the 90 s one; every other
 test in the layer (the worked examples, the tables, the ladders, `hostile-input`, `canonical`, `integrity`, `architecture`) runs under vitest's 5 s default; the slowest of those
-over the timing runs below, loaded ones included, took 153 ms (the first test of `integrity.test.ts`, which pays for the module mock).
+over the timing runs below, loaded ones included, took 153 ms (`integrity.test.ts`, "the three clean standings pass through the seal unchanged", in the first full-suite run under 20 busy processes).
 
-**The work is cut where the plan allows and not elsewhere.** 1 500 seeds by 100 events is the plan's number and every property keeps it. What was cut
+**What is sampled.** 1 500 seeds by 100 events is the plan's number and every property keeps it. What was cut
 is the prefix cut points, the commits `mayCommit` is asked about at their own moment in `prefix.test.ts`, and the `standingOf` comparisons (Decision 2 and the observation on samples). A timeout is a failure threshold, not a guard
-against a hang: these tests are synchronous, and a slow one is reported as timed out only after it has finished. Neither number is claimed to protect against
+against a hang: these tests are synchronous, and under vitest 5.0.1 a synchronous test that busy-looped for 2.5 s under a 1 s timeout (a scratch run, not in the repository) ran its 2.5 s and was reported as timed out only after it had finished. Neither number is claimed to protect against
 a test that never returns.
 
 **What the first measurement found, and what changed.** With the first 150 seeds as the exhaustive ones, in the first chunk, and ten chunks, the slowest M5 test
@@ -207,7 +203,7 @@ was 5.8 s in a full-suite run and 14.3 s in a full-suite run under 20 busy proce
 tenth and there are fifteen chunks; the same measurement is below.
 
 **Timings measured on 2026-10-25, `vitest run --reporter=json`, tree of `39624cd`, on a 10-core laptop that was never idle: other jobs kept its one-minute
-load average between 9 and 28 in the first nine rows below and between 27 and 41 in the last (and at 41 to 60 during the ledger).** "No added load" means no processes of mine beyond the run; it does not
+load average between 9 and 28 in the first nine rows below and between 27 and 41 in the last.** "No added load" means no processes of mine beyond the run; it does not
 mean a quiet machine. The slowest M5 test of each run, in ms, and as a share of the 20 s chunk timeout where the test has it:
 
 | Run | Slowest M5 test, ms | Host one-minute load average, start to end | Share of 20 s |
@@ -223,26 +219,25 @@ mean a quiet machine. The slowest M5 test of each run, in ms, and as a share of 
 | `prefix.test.ts` alone, 20 `yes`, 3 runs (wall 16.81, 17.33, 15.87 s) | 1227, 1430, 1213 | 23.08→20.29; 24.88→24.22; 26.44→24.93 | up to 7% |
 | each file's coverage test run alone (`-t coverage`), no added load, 9 files | 2 219 to 8 404 (replay the largest) | 27 to 41 | 42% of 20 s, which is why it has its own 90 s |
 
-All 20 `yes` processes were killed after the runs and `pgrep -x yes` printed 0, before and after. Every run had 0 failed. In every row but the last the slowest test is a chunk test (in the last it is the coverage test, which pays for its file's whole run), and in every full-suite run it is
-`replay.test.ts`'s, which builds each world twice (the incremental engine and the public `append`). The same file under load is the largest share: 34%
-of 20 s, the largest of the three runs in its row, under the 40% the tests are meant to stay under in those runs. Each figure in the "Slowest M5 test" column is the slowest test of one run, each percentage is the largest over the runs in its row, the host's load
+All 20 `yes` processes were killed after the runs, and `pgrep -x yes` printed 0 after the kill. Every run had 0 failed. In every row but the last the slowest test is a chunk test (in the last it is the coverage test, which pays for its file's whole run), and in every full-suite run it is
+`replay.test.ts`'s; that file builds each world twice (the incremental engine and the public `append`). Among the chunk tests in the table the largest share is
+`replay.test.ts` alone under load: 34% of 20 s, the largest of the three runs in its row. Each figure in the "Slowest M5 test" column is the slowest test of one run, each percentage is the largest over the runs in its row, the host's load
 changed from run to run, and none of them is a bound: the L4 verifier's own runs on the same laptop reached 44.9% of 20 s for the slowest M5 test in one plain local run, whose one-minute load average was 19.8 at its start and 33.0 at its end, and
-74% of 90 s for `replay`'s coverage test with all nine coverage tests started together under 20 `yes` (those two figures are the verifier's, and I did not reproduce them). On a laptop that busy the
-tests can be over the 40% they are meant to stay under; the margin is the GitHub runner's, where the slowest M5 test was 13% of its timeout in the first CI run (next paragraph). The runs under load
+74% of 90 s for `replay`'s coverage test with all nine coverage tests started together under 20 `yes` (those two figures are the verifier's, and I did not reproduce them). On a laptop that busy a
+test can be over 40% of its timeout (about the most this milestone was told a test may use, at CI-equivalent load); the margin is the GitHub runner's, where the slowest M5 test was 13% of its timeout in the first CI run (next paragraph). The runs under load
 are a stress test of this host and are not a prediction for GitHub's runner.
 
 **On GitHub's runner.** The pull request's first CI run (run 40288725574, `ubuntu-26.04`, the whole suite: 41 files, 1 254 tests, all passed) took 58.45 s for `vitest run`, against 12.58 s to 22.41 s (wall time, three runs) for the same
-suite on the laptop above with no added load, which is 2.6 to 4.6 times as long (the runner's figure is vitest's own Duration and the laptop's is wall time, which also counts start-up, so the ratios are slightly higher than these); the runner's core count was not recorded, and its files ran alongside each other. **The slowest M5 test on the
-runner was 2 644 ms** (`replay.test.ts`, the determinism test of seeds 801 to 900), 13% of its 20 s; the next five were 1 991 to 2 305 ms, all of them `replay.test.ts`'s. The runner prints
-a test's duration only when it is over 300 ms, so "slowest" is read from those lines (129 M5 tests were listed); a test under 300 ms is not in them. File durations: `replay` 27.1 s,
+suite on the laptop above with no added load, which is 2.6 to 4.6 times as long (the runner's figure is vitest's own Duration and the laptop's is wall time, which also counts start-up, so the ratios against the laptop's own Duration would be higher than these); the runner's core count was not recorded, and its files ran alongside each other. **The slowest M5 test on the
+runner was 2 644 ms** (`replay.test.ts`, the determinism test of seeds 801 to 900), 13% of its 20 s; the next five were 1 991 to 2 305 ms, all of them `replay.test.ts`'s. The runner's log lists a duration for 129 M5 tests, the smallest of them 303 ms,
+so "slowest" is read from those lines; a test that took less is not listed. File durations: `replay` 27.1 s,
 `lattice` 21.7, `locality` 18.1, `may-commit-equivalence` 16.7, `conservation` 16.4, `prefix` 15.8, `heir` 9.9, `fold-faults` 9.6, `revoke-admission` 4.7, and the other six M5 files each under 130 ms.
 Those are wall times of files that shared the runner's CPUs with each other, so they are not what each file costs alone.
 
 ## Coverage
 
-What each file's coverage test requires, with what a run reaches beside it. The floors are well below the measurement so that they fail on a generator that stopped
-reaching a case and not on noise; the run is a seeded `mulberry32`, so a rerun gives these counts. Counts that are totals over cut points count one commit once for each
-cut point that holds it. **Depth**, which M4's floors lacked (no charge landed on a chain longer than five): charges landed on chains of every length 1 to 8 (1 829 at 8,
+What each file's coverage test requires, with what a run reaches beside it. The floors are at or below the measurement; the run is a seeded `mulberry32`, so a rerun gives these counts. Counts that are totals over cut points count one commit once for each
+cut point that holds it. **Depth** (ADR 0004 found that on seeds 1 to 40 of its driver no charge above 0 landed on a line longer than five grants): charges landed on chains of every length 1 to 8 (1 829 at 8,
 `conservation.test.ts`); revokes were applied at every chain length 1 to 8 (161 at 8); the heir climbed up to 7 levels (3 times) and 6 levels (33 times); a `link-dead` verdict
 named a link at every index 0 to 7 (3 at index 7); and a grant `b` on a chain of 8 was the subject of locality 753 times.
 
@@ -283,7 +278,7 @@ named a link at every index 0 to 7 (3 at index 7); and a grant `b` on a chain of
 
 Each row is ONE edit to the shipped source (P1 and P6 add an import to the file they edit), then `tsc -p tsconfig.lib.json --noEmit` (the lib half of `npm run typecheck`) and the
 FULL `vitest run --reporter=json` against it, then `git checkout -- <file>` and an empty `git status --porcelain`: 43 edits and one unedited control, every one restored clean.
-Measured by a script (kept outside the repository) that applied the edit, ran both commands and parsed the result, on the tree of commit `43c52f4`; the commits after it change only this ADR. The control, with no edit, had 0 failed of 1255. Each edit is described here so that it can be repeated by hand. The plan's six
+Measured by a script (kept outside the repository) that applied the edit, ran both commands and parsed the result, on the tree of commit `43c52f4`; the commits after it change this ADR and, in the last of them, comments and one `describe` title in `lib/standing` (see the top). The control, with no edit, had 0 failed of 1255. Each edit is described here in one line. The plan's six
 are P1 to P6; the rest are mine. Several tests can go red from one edit; the files are named so the layer that caught it is visible. A "chunk" test counts once per chunk of 100 seeds, so a property
 that catches an edit in every chunk shows 15.
 
@@ -342,29 +337,28 @@ that catches an edit in every chunk shows 15.
 
 **Read these with care.**
 
-- **The `TS2339` and `TS2345` rows (P4, P5, X1, X3, X13, X20) are narrowing side effects of how the edit was written**, not findings about the property: code after an `if (false && ...)` is
-  unreachable, so a variable in it narrows to `never` and `tsc` says so. Every one of those rows is red under `npm test` on its own. The two `architecture` failures in P1 and P6 are the
+- **The `TS2339` and `TS2345` rows (P4, P5, X1, X3, X13, X20) fail `tsc` on the edited code as well as failing tests**; the type error is recorded and nothing is read into it. Every one of those rows is red under `npm test` on its own. The two `architecture` failures in P1 and P6 are the
   edge assertion tripping on the import the edit added.
 - **P4, delete `revoker-not-authorised`, is guarded by the table and by more than the table.** In `revoke-admission.test.ts` it is red in the six table rows for that rejection, in five worked
   tests, and in every one of the 15 chunks of the independent-reading property (26 failed in all); also in `fold-faults.test.ts` and `canonical.test.ts`. The plan says no property
   catches it; here one does (observation 1).
 - **P5, delete `already-dead`, is caught by the exact-return property in all 15 chunks**, as the plan says, and also by four table rows and three worked tests, by the independent-reading
-  property in `revoke-admission.test.ts`, by the heir invariants, and in `prefix.test.ts` by property C and property D: a second revoke overwrites `revokedAt`, so the revoke's `seq` moves.
+  property in `revoke-admission.test.ts`, by the heir invariants, and in `prefix.test.ts` by property C and property D (C requires a recorded revocation to keep its `seq` between cut points).
 - **P2 is not caught by the heir invariants** (observation 2). It is caught by the verdict table (9), `canonical.test.ts` (2) and, over the generated logs, by property D in `prefix.test.ts`
   (15 chunks, plus a three-event worked test): before D existed it was caught by hand-worked tests alone.
-- **The depth families.** D2 to D7 cut the standing's dead-link search to the first K links of the chain, and are caught by the heir invariants (3 to 4) and the lattice (15 to 17), at every K.
-  V2 to V7 cut `judgeCommit`'s link-dead search the same way: V2 to V5 are red in all 15 chunks of D and in the verdict table's hand-worked 8-link chain; V6 in 13 chunks; **V7, a search that misses
+- **The depth families.** D2 to D7 cut the standing's dead-link search to the first K links of the chain. Each is red in `lattice.test.ts` (15 to 17: all 15 chunks of the property that reads each standing's kind against an independent reading, and up to two worked tests) and in `heir.test.ts` (3 to 4: worked tests and the coverage test, and none of the 15 chunks of the heir property over generated logs), at every K.
+  V2 to V7 cut `judgeCommit`'s link-dead search the same way: V2 to V5 are red in all 15 chunks of D and in 2 to 4 hand-worked verdict-table tests; V6 in 13 chunks; **V7, a search that misses
   only the leaf, in 3 chunks of 15**: in the unmutated run a `link-dead` verdict that names the leaf occurs 3 times in the 1 500 seeds (the "Coverage" table), and the hand-worked chain is what pins that position.
-- **X5, a wrong number inside an over-limit breach, is caught only by worked examples** (verdict table 7, `canonical.test.ts` 1, and the three-event locality case 1). Property D reads only
-  which of `no-such-grant`, `wrong-actor`, `link-dead` and `capability-not-granted` a verdict is, and `over-limit` depends on M4's accounting, so no property constrains the numbers inside it.
+- **X5, a wrong number inside an over-limit breach, is red only in worked examples** (verdict table 7, `canonical.test.ts` 1, and the eight-event locality log 1); no property over the generated logs is red for it. Property D reads only
+  which of `no-such-grant`, `wrong-actor`, `link-dead` and `capability-not-granted` a verdict is, and not the numbers inside an `over-limit`.
 - **X9, void commits charging their grant,** leaves `locality.test.ts` unable to load at all (its hand-worked log is built when the file is collected, and the engine refuses it), so that file's 20
   tests did not run (1 235 of 1 255 ran). The 35 failed are in other files; the locality file is red as a file and its row says so.
 - **This ledger was run once, straight through** (the longest row took 17.0 s). The pass before the L4 round, on the tree before `hostile-input.test.ts` gained its last test, had one polluted row:
-  V2 coincided with a clock jump on the host (the script's own timer read 113 399 s for it) and showed one stray failure in each of four unrelated files, so it was re-run on its own. Every other row
+  V2 coincided with a clock jump on the host (the script's own timer read 113 399 s for it) and showed stray failures in unrelated files (24 failed, against 19 in the re-run), so it was re-run on its own. Every other row
   of that pass is the same as it is here, except X14 (16 failed there, 17 here) and X25, which did not exist.
-- **A deleted rule is usually caught by many tests** (X2: 250; X21: 108; X6: 132), because every property reads verdicts, charges or seqs. The count says how widely a rule is used, not how well it is
+- **Most rows are red in many tests** (35 of the 43 in ten or more; X2: 250; X21: 108; X6: 132). The count says how many tests an edit reaches, not how well the behaviour is
   pinned; the rows with a count under ten (X5, X12, X15, X16, X17, X18, X25, V7: eight of the 43) are the narrowly pinned ones.
-- **X25 was added after the L4 round, for a gap it found.** Changing `!Number.isSafeInteger(length)` to `!Number.isInteger(length)` in `openLog` gave 0 failed of 542 against the tests as they were, because the length
+- **X25 was added after the L4 round, for a gap it found.** Changing `!Number.isSafeInteger(length)` to `!Number.isInteger(length)` in `openLog` gave 0 failed of the 542 tests of `lib/standing` as they were, because the length
   classes stop at `Number.MAX_SAFE_INTEGER`, which is a count, and the first integer that is not one (`2 ** 53`) was never tried. The test added for it (`hostile-input.test.ts`, "the first integer past the largest safe
   integer is not a count") is the only thing that catches that edit: 1 failed. It is also the reason X14, a second read of `length`, went from 16 to 17 failed: the new test counts reads of `length` too.
 - **Earlier trees.** An earlier measurement of the same ledger, on the tree before property D and before the chunking changed (10 chunks of 150, first 150 seeds exhaustive), had every row red
@@ -382,14 +376,12 @@ that catches an edit in every chunk shows 15.
   a consequence of `already-dead`, which `prefix.test.ts` checks (a recorded revocation keeps its seq between cut points), not a property of the map.
 - That `lib/standing` is pure. The architecture test is about imports.
 - That `assertStandingWellFormed` catches everything (ADR 0001, Decision 10: presence, not relations).
-- That `npm run build` exercises this layer: nothing under `app/` imports `lib/standing`, so `next build --webpack` does not compile it. `tsc` and
-  `vitest` do.
-- That a caller cannot choose `seq` in a log it builds itself: `fold` refuses a log whose `seq` is wrong, and `append` never takes one from its
-  input, but nothing stops a caller writing a log with any events whose `seq` happens to be consecutive and whose content is invented (plan failure
+- That `npm run build` runs this layer: nothing under `app/` imports `lib/standing`. `npm run typecheck` checks its types and `vitest` runs it.
+- That a caller cannot choose `seq` in a log it builds itself: `fold` refuses a log whose `seq` is wrong, and `append` does not take one from its
+  input (`replay.test.ts` offers every value class as a `seq`), but nothing stops a caller writing a log with any events whose `seq` happens to be consecutive and whose content is invented (plan failure
   case 05: authorship is asserted).
 - That `fold` is fast on every log at the bound. One measurement, on the host described under Decision 9: a log of one grant and 4 999 warranted commits under it folds in about 106 ms
-  (its `standings` in about 105 ms, an `append` onto a log of 4 999 in about 100 ms) and one of void commits in about 5 ms, because M4 rebuilds its book of the charges for every headroom
-  check. A log whose commits are spread over many grants was not measured.
+  (its `standings` in about 105 ms, an `append` onto a log of 4 999 in about 100 ms) and one of void commits in about 5 ms. A log whose commits are spread over many grants was not measured.
 - Anything about M6's policies, M7's failure cases or M8's page.
 
 ## Plan observations (found by building; the plan is not edited)
@@ -397,10 +389,10 @@ that catches an edit in every chunk shows 15.
 1. **§6 M5 says `revoker-not-authorised` "has no property that catches its removal ... so this table is its only guard."** Built, the table does
    guard it (row P4: six table rows, five worked tests and all 15 chunks of the independent-reading property in `revoke-admission.test.ts`), and so do other tests: the property in the same
    file that decides every revoke the generator offered by an independent reading of the log, `fold-faults.test.ts` and `canonical.test.ts`.
-   The plan's sentence is about the properties on its throwaway model, which had no such reading, and is not contradicted; it is just not
+   The plan's sentence is about the properties on its throwaway model (plan §6 marks it ††), and is not contradicted; it is just not
    the whole picture here, and the ledger is what shows it.
 2. **§6 M5's second sabotage ("`judgeCommit` checks only the acted-under grant's own revocation") is expected to turn
-   `severed.atSeq > committedAt` red. It does not in this build.** M4's `checkHeadroom` refuses a dead grant ("unknown/dead => shortfall with
+   `severed.atSeq > committedAt` red. It does not in this build.** M4's `checkHeadroom` refuses a dead grant ("unknown/dead ⇒ shortfall with
    headroom 0", §5), so a commit whose dead link is above the grant it acted under still comes out `void`, as `over-limit` with headroom 0,
    and nothing reaches the heir. What catches P2 is the verdict table, `canonical.test.ts` and property D in `prefix.test.ts`, which was added
    for this: before it, P2 and the truncated-search rows V2 to V7 were caught by hand-worked tests alone.
@@ -424,9 +416,9 @@ that catches an edit in every chunk shows 15.
    seeds, the ones cut later and every fifth of the rest), and the commits `standingOf` is compared on (the first of each kind, at the last cut point
    and at a third of the cut points of the 150). Decision 2 says why.
 10. **The first formulation of locality is false in the generator too:** 30 of 24 539 deletions of one grant's subtree's commits did not replay, every one an
-    `over-allocation` at a later grant. The plan says 2 of 4 000 seeds; this is the same mechanism at a similar rarity (Decision 8, `locality.test.ts`).
-11. **§7's numbers reproduce on the real engine,** every one (`canonical.test.ts`).
+    `over-allocation` at a later grant. The plan says 2 of 4 000 seeds; this is the same mechanism (Decision 8, `locality.test.ts`).
+11. **§7's incident is replayed through the real engine** (`canonical.test.ts`), and the numbers that file asserts are the plan's.
 12. **ADR path:** as in M1, M3 and M4, §6 gives M5 `lib/standing/**` only, while §6 also says each milestone ends with its ADR; this file is
     `.genesis/decisions/0005-standing.md`.
-13. **Not edited because it is not M5's:** `README.md`, `.genesis/DONE.html` and `.genesis/checkpoints/CURRENT.md` still show M5 as not built; they change in a
-    `chore(genesis): mark M5 done` PR after independent verification.
+13. **Not edited because it is not M5's:** `README.md` ("nothing built yet"), `.genesis/DONE.html` and `.genesis/checkpoints/CURRENT.md` (both list M5 as `todo`). The plan has the two `.genesis/` files change in a
+    `chore(genesis): mark M5 done` PR after an independent L4 APPROVE, and `README.md` in M9.

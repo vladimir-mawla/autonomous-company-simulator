@@ -26,10 +26,11 @@ import type { AppendFailure, Folded } from "../index.js";
  * Shared test data and the WHOLE-SYSTEM GENERATOR for `lib/standing`. This file is not a test (vitest includes only
  * `*.test.ts`).
  *
- * THE GENERATOR (`runWorld`) builds a log by OFFERING events to the real `append`, one per step, and keeping whatever it
- * admits. It re-implements no rule: whether a proposal is admitted, what its verdict is and what it is rejected for are
- * answers from `append`, never decisions made here. What the generator DOES decide is what to PROPOSE, and it is
- * deliberately wrong a good part of the time (a widened capability, a borrowed grant, a limit one over the headroom, a
+ * THE GENERATOR (`runWorld`) builds a log by OFFERING events, one per step, to the real admission step (`admitInput`, which
+ * `append` runs after its replay) or to `append` itself (see the two engines below), and keeping whatever it admits. It
+ * re-implements no rule: whether a proposal is admitted, what its verdict is and what it is rejected for are answers from
+ * the engine, never decisions made here. What the generator DOES decide is what to PROPOSE, and it is deliberately wrong
+ * some of the time (a widened capability, a borrowed grant, a limit one over the headroom, a
  * revoke by the wrong principal, a malformed shape), because a generator that only proposes valid events could not show
  * that a refusal fires. To propose sensibly it keeps a MIRROR of what it has been told was admitted (a tree and a list of
  * charges built from `append`'s own answers) and reads it with M3's and M4's published functions, the way
@@ -38,11 +39,11 @@ import type { AppendFailure, Folded } from "../index.js";
  *
  * WHAT THE MIRROR READS. `chainOf`, `trailOf`, `firstDeadLink`, `liveAuthorityAbove` and `headroomOf` of the mirror, to
  * pick a live parent with room, a grantee not already on the chain, a revoker above the target, an amount near the
- * headroom. No comparison here decides admission; ADR 0005 lists every comparison in the generator and says what each one
+ * headroom. No comparison here decides admission; ADR 0005 lists the comparisons one `grep` finds in the generator and what each group
  * chooses.
  *
- * TWO PROFILES. The default draws principals from a pool of 12 (2 charter roots and 10 others), so a principal repeating
- * on a chain is common and `principal-cycle` is reached. The `deep` profile tilts towards the longest chain M3 admits
+ * TWO PROFILES. The default draws principals from a pool of 12 (2 charter roots and 10 others), so a principal can repeat
+ * on a chain and `principal-cycle` is reached. The `deep` profile tilts towards the longest chain M3 admits
  * (`MAX_ROOT_DEPTH + 1` = 8 grants): a root of depth 7, children chosen under the deepest live grant, a grantee off the
  * chain, and few revokes until late. Both are deterministic from the seed (`mulberry32`).
  */
@@ -580,7 +581,7 @@ export function snapshotOf(folded: Folded<Cap>): unknown {
 
 /**
  * Run `scan` over `total` seeds in `count` equal chunks, lazily and once per chunk, so that tests which each read one chunk
- * share its work and no single test carries the whole run. `range(i)` is the inclusive seed range of chunk `i`.
+ * share its work and no single chunk test carries the whole run. `range(i)` is the inclusive seed range of chunk `i`.
  */
 export function chunked<T>(
   total: number,
@@ -606,7 +607,7 @@ export function chunked<T>(
 }
 
 /**
- * Print the counts a coverage test is about to assert, when `ACS_REPORT=1`. The floors in the tests are set well under what
+ * Print the counts a coverage test is about to assert, when `ACS_REPORT=1`. The floors in the tests are set at or under what
  * the run reaches; this is how the numbers they are compared with are read (ADR 0005 quotes them). Silent otherwise.
  */
 export function report(name: string, counts: unknown): void {
@@ -618,9 +619,9 @@ export const SEEDS = 1500;
 export const STEPS = 100;
 /**
  * The per-test timeout of every test that reads a generated chunk, one named constant for all of them. The work is
- * synchronous, so a timeout is a failure threshold and not a guard against a hang. It is far above what a chunk takes (the
- * slowest is about a second on a quiet machine) so that a slow runner does not turn a correct run red; ADR 0005 gives the
- * measured durations, the load they were measured under, and why the chunks are not cut further.
+ * synchronous, so a timeout is a failure threshold and not a guard against a hang. It is above every chunk duration ADR 0005
+ * measured, so that a slow runner does not turn a correct run red; the ADR gives the measured durations and the load they
+ * were measured under.
  */
 export const SEED_LOOP_TIMEOUT_MS = 20_000;
 
@@ -657,21 +658,20 @@ export function cloneJson<T>(value: T): T {
  * The per-test timeout of each file's COVERAGE test, which sums what every chunk did and so reads all of them. In a whole run
  * the chunks are already computed and it takes milliseconds; run alone (`vitest -t coverage`) it pays for the file's whole run,
  * which was measured at up to 8.4 s (replay) on a host whose load average was 27 to 41. Same reasoning as `SEED_LOOP_TIMEOUT_MS`:
- * a failure threshold, far above the measurement, and not a guard against a hang.
+ * a failure threshold, above the measurement, and not a guard against a hang.
  */
 export const COVERAGE_TIMEOUT_MS = 90_000;
 
 /**
- * Every whole-system property runs its seeds in this many chunks, each its own test (`chunked`): 100 seeds a chunk. The slowest
- * test of a file is its first chunk, which also pays for the world-building the later ones share, so a smaller chunk is a
+ * Every whole-system property runs its seeds in this many chunks, each its own test (`chunked`): 100 seeds a chunk; a smaller chunk is a
  * shorter worst case.
  */
 export const CHUNKS = 15;
 
 /**
  * The seeds whose EVERY prefix is checked by the files that sample cut points (`cutsOf`): every tenth, 150 of the 1 500. Spread
- * over the seed range, so that every chunk carries the same weight; the first 150 seeds in one chunk made that chunk several
- * times heavier than the others, and it was the slowest test in the suite.
+ * over the seed range, so that every chunk has ten of them; with the first 150 seeds in one chunk, that chunk was the slowest
+ * M5 test in each full-suite run of the first measurement (ADR 0005, Decision 9).
  */
 export const isExhaustiveSeed = (seed: number): boolean => seed % 10 === 0;
 
