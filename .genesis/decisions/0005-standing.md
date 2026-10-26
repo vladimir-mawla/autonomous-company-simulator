@@ -151,7 +151,7 @@ and nothing else: `replay.test.ts` checks it equals what `fold` rebuilds.
   `append`'s own replay that `admitInput` does not share would reach the other files only through `replay.test.ts` and the files that call
   `fold` on prefixes.
 - **Two profiles.** Every fifth seed is `deep`: a root of depth 7, children under the deepest live grant, few revokes until late. Odd seeds use
-  a two-root charter, so a charter root that is not on a chain exists. A pool of 12 principals is the least that holds a chain of 8 grants.
+  a two-root charter, so a charter root that is not on a chain exists. A chain of 8 grants has 9 principals on its trail (the charter root and the 8 grantees), so a pool of 12 leaves three off it.
 - **The comparisons in the generator.** `grep -nE '(<=|>=|===|!==| < | > )'` over the lines of `runWorld`, comment lines removed, gives 46
   lines. Grouped by what they choose: which engine, profile and loop bound (5); whether a lookup found something, a list is empty or a pointer
   is null, which picks where to propose (`=== undefined`, `.size > 0`, `.length > 0`, `!== null`, `!== grantor`, and the liveness question

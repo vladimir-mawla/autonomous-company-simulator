@@ -50,7 +50,7 @@ import type { AppendFailure, Folded } from "../index.js";
 export { CAPABILITIES, CHARTER, g, grant, mulberry32, p, treeOf };
 export type { Cap, GrantSpec };
 
-/** Two charter roots and ten others. A pool of 12 is the least that can hold a chain of 8 grants (9 principals on the trail). */
+/** Two charter roots and ten others. A chain of 8 grants has 9 principals on its trail, so a pool of 12 leaves three off the longest chain. */
 export const ROOTS = ["dana", "erin"] as const;
 export const OTHERS = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10"] as const;
 export const POOL: readonly string[] = [...ROOTS, ...OTHERS];
