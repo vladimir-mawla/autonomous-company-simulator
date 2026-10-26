@@ -197,7 +197,7 @@ what the chunks did and requires floors. The floors sit below what a run reaches
 `SEEDS` 1 500, `STEPS` 100, `CHUNKS` 15, `SEED_LOOP_TIMEOUT_MS` 20 000 and `COVERAGE_TIMEOUT_MS` 90 000 are each defined once, in `fixtures.ts`.
 The chunk tests (and nothing else) have the 20 s timeout; the coverage test of each file, which reads every chunk, has the 90 s one; every other
 test in the layer (the worked examples, the tables, the ladders, `hostile-input`, `canonical`, `integrity`, `architecture`) runs under vitest's 5 s default; the slowest of those
-over all 35 timing runs below, loaded ones included, took 153 ms (the first test of `integrity.test.ts`, which pays for the module mock).
+over the timing runs below, loaded ones included, took 153 ms (the first test of `integrity.test.ts`, which pays for the module mock).
 
 **The work is cut where the plan allows and not elsewhere.** 1 500 seeds by 100 events is the plan's number and every property keeps it. What was cut
 is the prefix cut points and the `standingOf` comparisons (Decision 2 and the observation on samples). A timeout is a failure threshold, not a guard
