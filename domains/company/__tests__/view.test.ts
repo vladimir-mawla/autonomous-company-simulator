@@ -1,0 +1,111 @@
+import { describe, expect, it } from "vitest";
+import { commitId, grantId, principalId } from "../../../lib/contracts/index.js";
+import type { Commitment, Log } from "../../../lib/contracts/index.js";
+import { mayCommit } from "../../../lib/standing/index.js";
+import { CANON_ALL, logOf } from "../../../lib/standing/__tests__/fixtures.js";
+import { CHARTER } from "../org.js";
+import type { CompanyCapability } from "../org.js";
+import { makeOrgView } from "../view.js";
+import type { OrgView } from "../view.js";
+
+/**
+ * `makeOrgView`: what a policy is shown (`view.ts`). The logs are plan §7's incident built by M5's own fixtures (`logOf` over
+ * `CANON_ALL`, which offers each event to the real `append`), not by this domain's script, so what the view says is checked against
+ * data this domain did not write: §7's chains (G4 hangs from G2, which hangs from G1), and which of them the revoke at seq 11 cut.
+ */
+
+const canon = (seq: number): Log<CompanyCapability> => logOf(CHARTER, CANON_ALL.slice(0, seq));
+
+function viewOf(log: Log<CompanyCapability>, tick = 0): OrgView {
+  const made = makeOrgView(log, tick);
+  if (!made.ok) throw new Error(`no view: ${JSON.stringify(made.fault)}`);
+  return made.view;
+}
+
+const summary = (view: OrgView): string[] =>
+  view.grants.map((entry) => `${entry.grant.id}:${entry.live ? "live" : "dead"}:${entry.links}:${entry.trail.join(">")}`);
+
+describe("the view of plan section 7's log", () => {
+  it("at seq 10, before the revoke: G1 to G6 in the order they were admitted, all live, with the chain length and the trail of principals each hangs from", () => {
+    expect(summary(viewOf(canon(10)))).toEqual([
+      "G1:live:1:dana>cfo",
+      "G2:live:2:dana>cfo>ops",
+      "G3:live:2:dana>cfo>support",
+      "G4:live:3:dana>cfo>ops>buyer-a",
+      "G5:live:3:dana>cfo>ops>buyer-b",
+      "G6:live:3:dana>cfo>support>refunder",
+    ]);
+  });
+
+  it("at seq 11, after cfo revokes G2: G2 is dead and so are G4 and G5 beneath it, though neither was revoked itself; G1, G3 and G6 are live", () => {
+    expect(summary(viewOf(canon(11))).map((line) => line.split(":").slice(0, 2).join(":"))).toEqual(["G1:live", "G2:dead", "G3:live", "G4:dead", "G5:dead", "G6:live"]);
+  });
+
+  it("at seq 18, after the cure: G7 is live, one link below G1 (two links, trail dana > cfo > buyer-a); the dead stay dead", () => {
+    expect(summary(viewOf(canon(18)))).toEqual([
+      "G1:live:1:dana>cfo",
+      "G2:dead:2:dana>cfo>ops",
+      "G3:live:2:dana>cfo>support",
+      "G4:dead:3:dana>cfo>ops>buyer-a",
+      "G5:dead:3:dana>cfo>ops>buyer-b",
+      "G6:live:3:dana>cfo>support>refunder",
+      "G7:live:2:dana>cfo>buyer-a",
+    ]);
+  });
+
+  it("carries the tick it was made at, and head is the number of admitted events (seq of the last one)", () => {
+    const view = viewOf(canon(18), 7);
+    expect([view.tick, view.head, view.log.length]).toEqual([7, 18, 18]);
+  });
+
+  it("an empty log has head 0 and no grants", () => {
+    const view = viewOf([], 0);
+    expect([view.head, view.grants]).toEqual([0, []]);
+  });
+
+  it("is a function of the log and the tick: two views of the same log say the same, and a longer log says more", () => {
+    expect(summary(viewOf(canon(11)))).toEqual(summary(viewOf(canon(11))));
+    expect(viewOf(canon(10)).grants.length).toBeLessThan(viewOf(canon(17)).grants.length);
+  });
+});
+
+describe("the view's pre-check is the engine's pre-check, unchanged", () => {
+  const commit = (id: string, actor: string, under: string, capability: CompanyCapability, amount: number): Commitment<CompanyCapability> => ({
+    id: commitId(id),
+    actor: principalId(actor),
+    actedUnder: grantId(under),
+    capability,
+    amount,
+  });
+
+  it("answers exactly what lib/standing's mayCommit answers, for a commit that would bind, one under a cut chain, one over the limit and one under a grant that does not exist", () => {
+    const log = canon(18);
+    const view = viewOf(log);
+    for (const c of [
+      commit("p1", "buyer-a", "G7", "purchase", 1_000),
+      commit("p2", "buyer-a", "G4", "purchase", 1_000),
+      commit("p3", "refunder", "G6", "refund", 1_000_000),
+      commit("p4", "buyer-a", "g-ghost", "purchase", 1),
+    ]) {
+      expect(view.mayCommit(c)).toEqual(mayCommit(CHARTER, log, c));
+    }
+    const verdicts = [commit("p1", "buyer-a", "G7", "purchase", 1_000), commit("p2", "buyer-a", "G4", "purchase", 1_000)].map((c) => {
+      const answer = view.mayCommit(c);
+      return answer.ok ? answer.verdict.kind : "not judged";
+    });
+    expect(verdicts).toEqual(["warranted", "breached"]);
+  });
+});
+
+describe("a log the engine cannot replay is a typed fault, not a view and not a throw", () => {
+  it("a log whose seq is out of place", () => {
+    const log = canon(3).map((event, index) => (index === 1 ? { ...event, seq: 5 } : event));
+    expect(makeOrgView(log, 0)).toEqual({ ok: false, fault: { kind: "seq-mismatch", index: 1, expected: 2, actual: 5 } });
+  });
+
+  it("a log that is not an array at all", () => {
+    const made = makeOrgView(null as unknown as Log<CompanyCapability>, 0);
+    expect(made.ok).toBe(false);
+    expect(!made.ok && made.fault.kind).toBe("hostile-log-input");
+  });
+});
