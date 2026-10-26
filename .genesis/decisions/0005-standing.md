@@ -61,7 +61,7 @@ compute headroom.
   every prefix for every tenth seed (150 of the 1 500; the seeds divisible by ten, which are all `deep`-profile seeds with the one-root charter, so no default-profile log and no two-root log has every prefix checked), and for the others the last prefix, every revoke and the event before it, and eight evenly
   spaced ones. **That is a sample, not every prefix of every seed**: a pass over every prefix of all 1 500 seeds, with the worlds built through the
   public `append`, took 16.4 s for the file in one run (host load not recorded, about 5 s of it building the worlds), and the sample keeps each
-  chunk to a fraction of a second. The property is not run over an empty domain: judging against the final tree would rule 35 115 commits differently from how they were
+  chunk to 682 ms at most in the runs of the file alone with no added load, 1 430 ms at most under 20 busy processes (Decision 9), and 1 566 ms on the first CI run. The property is not run over an empty domain: judging against the final tree would rule 35 115 commits differently from how they were
   ruled at the time, and for 20 434 of them the difference is a warranted act becoming `link-dead` (counts in "Coverage").
 - **D reads the first four rules again from the raw events.** For every commit of every seed (80 361), `prefix.test.ts` finds the grant acted under, its holder and the first
   link of its chain that already had a revoke by reading the events before the commit and none of M3's walkers, and requires `no-such-grant`, `wrong-actor`, `link-dead` (the same link and
