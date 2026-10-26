@@ -4,8 +4,8 @@
 - **Status:** proposed — written by the builder, not yet verified by an independent L4 pass
 - **Phase / milestone:** M5 (BUILD) — `lib/standing/**` (`verdict.ts fold.ts standing.ts append.ts index.ts`, `__tests__/`)
 
-Decisions are in the order of the commits that made them. The falsifiability log and the timings were measured on the tree of
-commit `39624cd`; the next commit adds `COVERAGE_TIMEOUT_MS` to `fixtures.ts` and makes the nine coverage tests use it in place of `SEED_LOOP_TIMEOUT_MS` (no source file and no assertion changes), and the ones after change only this ADR. No number below is a count of passing tests: those go stale
+Decisions are in the order of the commits that made them. The timings were measured on the tree of commit `39624cd` and
+the falsifiability log on the tree of commit `43c52f4`. Between them `lib/standing` changed in three ways: `COVERAGE_TIMEOUT_MS` was added to `fixtures.ts` and nine coverage tests use it in place of `SEED_LOOP_TIMEOUT_MS`; one test was added to `hostile-input.test.ts` (it runs in a few milliseconds); and comments changed, including one in `index.ts`. `git diff 39624cd..43c52f4 -- lib/standing`, with the comment lines, the blank lines and the two timeout constants filtered out, shows that test and nothing else. The commits after `43c52f4` change only this ADR. No number below is a count of passing tests: those go stale
 whenever a test is added, and the log quotes only "N failed" for a sabotage. The counts in "Coverage" are counts of what a
 trace did, not of tests that passed.
 
@@ -281,9 +281,8 @@ named a link at every index 0 to 7 (3 at index 7); and a grant `b` on a chain of
 ## Falsifiability log
 
 Each row is ONE edit to the shipped source (P1 and P6 add an import to the file they edit), then `tsc -p tsconfig.lib.json --noEmit` (the lib half of `npm run typecheck`) and the
-FULL `vitest run --reporter=json` against it, then `git checkout -- <file>` and an empty `git status --porcelain`: 42 edits and one unedited control, every one restored clean.
-Measured by a script (kept outside the repository) that applied the edit, ran both commands and parsed the result, on the tree of commit `39624cd`; the commit after it adds `COVERAGE_TIMEOUT_MS` to
-`fixtures.ts` and makes the nine coverage tests use it in place of `SEED_LOOP_TIMEOUT_MS` (no source file and no assertion changes), and the commits after that change only this ADR. The control, with no edit, had 0 failed of 1254. Each edit is described here so that it can be repeated by hand. The plan's six
+FULL `vitest run --reporter=json` against it, then `git checkout -- <file>` and an empty `git status --porcelain`: 43 edits and one unedited control, every one restored clean.
+Measured by a script (kept outside the repository) that applied the edit, ran both commands and parsed the result, on the tree of commit `43c52f4`; the commits after it change only this ADR. The control, with no edit, had 0 failed of 1255. Each edit is described here so that it can be repeated by hand. The plan's six
 are P1 to P6; the rest are mine. Several tests can go red from one edit; the files are named so the layer that caught it is visible. A "chunk" test counts once per chunk of 100 seeds, so a property
 that catches an edit in every chunk shows 15.
 
@@ -315,7 +314,7 @@ that catches an edit in every chunk shows 15.
 | X11 | the grantee may revoke its own grant | passes | 21 failed | revoke-admission 19, fold-faults 2 |
 | X12 | log-too-long is off by one (>= instead of >) | passes | 6 failed | fold-faults 5, may-commit-equivalence 1 |
 | X13 | seq-mismatch is not checked | TS2339 | 27 failed | fold-faults 26, hostile-input 1 |
-| X14 | the log's length is read twice | passes | 16 failed | hostile-input 16 |
+| X14 | the log's length is read twice | passes | 17 failed | hostile-input 17 |
 | X15 | each log element is read twice | passes | 8 failed | hostile-input 8 |
 | X16 | append reads the charter twice | passes | 4 failed | hostile-input 4 |
 | X17 | append returns the caller's own event objects in the log it gives back | passes | 4 failed | hostile-input 3, replay 1 |
@@ -326,6 +325,7 @@ that catches an edit in every chunk shows 15.
 | X22 | link-dead names the grant acted under, not the dead link | passes | 23 failed | prefix 16, verdict-table 6, canonical 1 |
 | X23 | standings come back in reverse order | passes | 22 failed | lattice 16, canonical 4, heir 1, integrity 1 |
 | X24 | the heir is the actor's grantor (the link below the break) | passes | 23 failed | heir 20, canonical 3 |
+| X25 | the log length check accepts any integer (`Number.isInteger` instead of `Number.isSafeInteger`) | passes | 1 failed | hostile-input 1 |
 | D2 | the standing's dead-link search sees only the first 2 links of the chain | passes | 21 failed | lattice 17, heir 4 |
 | D3 | the standing's dead-link search sees only the first 3 links of the chain | passes | 20 failed | lattice 17, heir 3 |
 | D4 | the standing's dead-link search sees only the first 4 links of the chain | passes | 19 failed | lattice 16, heir 3 |
@@ -357,11 +357,15 @@ that catches an edit in every chunk shows 15.
 - **X5, a wrong number inside an over-limit breach, is caught only by worked examples** (verdict table 7, `canonical.test.ts` 1, and the three-event locality case 1). Property D reads only
   which of `no-such-grant`, `wrong-actor`, `link-dead` and `capability-not-granted` a verdict is, and `over-limit` depends on M4's accounting, so no property constrains the numbers inside it.
 - **X9, void commits charging their grant,** leaves `locality.test.ts` unable to load at all (its hand-worked log is built when the file is collected, and the engine refuses it), so that file's 20
-  tests did not run (1 234 of 1 254 ran). The 35 failed are in other files; the locality file is red as a file and its row says so.
-- **V2 was run twice.** In the first pass of this final ledger the row coincided with a clock jump on the host (the script's own timer read 113 399 s for it) and showed one stray failure in
-  each of four unrelated files; the row above is a re-run on its own, with the control, on the same tree.
+  tests did not run (1 235 of 1 255 ran). The 35 failed are in other files; the locality file is red as a file and its row says so.
+- **This ledger was run once, straight through** (the longest row took 17.0 s). The pass before the L4 round, on the tree before `hostile-input.test.ts` gained its last test, had one polluted row:
+  V2 coincided with a clock jump on the host (the script's own timer read 113 399 s for it) and showed one stray failure in each of four unrelated files, so it was re-run on its own. Every other row
+  of that pass is the same as it is here, except X14 (16 failed there, 17 here) and X25, which did not exist.
 - **A deleted rule is usually caught by many tests** (X2: 250; X21: 108; X6: 132), because every property reads verdicts, charges or seqs. The count says how widely a rule is used, not how well it is
-  pinned; the rows with a count under ten (X5, X12, X15, X16, X17, X18, V7: seven of the 42) are the narrowly pinned ones.
+  pinned; the rows with a count under ten (X5, X12, X15, X16, X17, X18, X25, V7: eight of the 43) are the narrowly pinned ones.
+- **X25 was added after the L4 round, for a gap it found.** Changing `!Number.isSafeInteger(length)` to `!Number.isInteger(length)` in `openLog` gave 0 failed of 542 against the tests as they were, because the length
+  classes stop at `Number.MAX_SAFE_INTEGER`, which is a count, and the first integer that is not one (`2 ** 53`) was never tried. The test added for it (`hostile-input.test.ts`, "the first integer past the largest safe
+  integer is not a count") is the only thing that catches that edit: 1 failed. It is also the reason X14, a second read of `length`, went from 16 to 17 failed: the new test counts reads of `length` too.
 - **Earlier trees.** An earlier measurement of the same ledger, on the tree before property D and before the chunking changed (10 chunks of 150, first 150 seeds exhaustive), had every row red
   as well; its counts are not quoted because they describe tests that no longer exist.
 
