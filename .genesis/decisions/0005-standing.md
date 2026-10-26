@@ -118,7 +118,7 @@ a `seq` that is not a safe integer of at least 1 is `inadmissible-event` carryin
 
 - **A hostile INPUT has no `Rejection`, so it is reported as `faulty-log` carrying `hostile-log-input`** with the message `input: reading
   <path> threw`, although the log was fine. The plan's `AppendFailure` has only those two members and `FoldFault` is the only closed type
-  with a "a read threw" variant.
+  that `AppendFailure` can carry with a "a read threw" variant (M3's `IntakeFailure` has a `hostile` kind too, which `append` does not return).
 - **A full log.** The plan does not say what `append` does at `MAX_LOG_EVENTS`. An admitted event that would make the log longer is
   `faulty-log` carrying `log-too-long` with `length` the length the log would have (5 001), and the check is LAST: a bad event on a full log
   is refused for being bad.
@@ -405,7 +405,7 @@ that catches an edit in every chunk shows 15.
    and nothing reaches the heir. What catches P2 is the verdict table, `canonical.test.ts` and property D in `prefix.test.ts`, which was added
    for this: before it, P2 and the truncated-search rows V2 to V7 were caught by hand-worked tests alone.
 3. **§5's `AppendFailure` has no member for an input whose read throws.** A hostile INPUT is reported as `faulty-log` carrying `hostile-log-input`,
-   the only typed place the plan has for "a read threw", although the log was fine (Decision 6).
+   the only typed place `AppendFailure` can carry for "a read threw" (M3's `IntakeFailure` has a `hostile` kind, which `append` does not return), although the log was fine (Decision 6).
 4. **§5 does not say what `append` does at `MAX_LOG_EVENTS`.** Built as `faulty-log` carrying `log-too-long` with the length the log would have,
    checked last (Decision 6).
 5. **A malformed `seq` is `inadmissible-event`, not `seq-mismatch`, and intake outranks `seq`.** This is ADR 0003's plan observation 4 made
