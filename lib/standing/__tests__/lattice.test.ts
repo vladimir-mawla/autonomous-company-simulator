@@ -223,7 +223,7 @@ describe(`the standing lattice over ${SEEDS} generated logs of ${STEPS} events`,
       for (const move of ["void->void", "binding->binding", "binding->inherited", "inherited->inherited", "inherited->inherited (climbed)"]) {
         expect(transitions[move] ?? 0, move).toBeGreaterThanOrEqual(2_000);
       }
-      // The four forbidden ones never happened (a forbidden move is also a violation in the tests above).
+      // The five forbidden ones never happened (a forbidden move is also a violation in the tests above).
       for (const move of ["void->binding", "void->inherited", "binding->void", "inherited->void", "inherited->binding"]) {
         expect(transitions[move] ?? 0, move).toBe(0);
       }
