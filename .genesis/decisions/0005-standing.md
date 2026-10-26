@@ -178,7 +178,7 @@ architecture` and `fixtures.ts`. All are here. Four files are added, each becaus
 | `may-commit-equivalence.test.ts` | `mayCommit` gives `append`'s result | every commit the generator offered; the boundary; every whole-log failure |
 | `conservation.test.ts` (added) | the §4.4 theorem on the whole system; void commits charge nothing | cut points of 1 500 seeds, with M4's functions and M4's oracle |
 | `canonical.test.ts` (added) | plan §7 replayed through the engine | the 18 events, the 15 rejections, the standings, the scrub, a later cut of G1 |
-| `integrity.test.ts` | `assertStandingWellFormed` is asked and obeyed | mocked to fail; real guard on cast-built values; the builder's two internal throws |
+| `integrity.test.ts` | `assertStandingWellFormed` is asked and obeyed | mocked to fail; real guard on cast-built values; the two internal throws in `standing.ts` |
 | `architecture.test.ts` | the layer's imports and its barrel | three barrels only; no cycle; five source files; five exports |
 
 **Chunks.** Every property over generated logs runs its 1 500 seeds in fifteen chunks of 100, each chunk its own test, computed lazily
