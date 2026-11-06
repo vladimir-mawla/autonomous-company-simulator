@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EventInput } from "../../../lib/contracts/index.js";
-import { principalId } from "../../../lib/contracts/index.js";
+import { MAX_AMOUNT, principalId } from "../../../lib/contracts/index.js";
 import { AGENTS, CAPABILITIES, CHARTER, ROOT, agent } from "../org.js";
 import type { CompanyCapability } from "../org.js";
 import { offer } from "../simulate.js";
@@ -69,6 +69,64 @@ describe("a hostile object handed to offer comes back as an attempt", () => {
     expect(reads).toBe(1);
     const outcome = offered.attempt.outcome;
     expect(outcome.kind === "admitted" && outcome.event.kind === "grant" && outcome.event.grant.limit).toBe(10);
+  });
+
+  it("read once, whatever the first read is: for a first answer of each class (null, 0, negative, MAX_AMOUNT and one past it, NaN, either infinity, a valid number) and a different second answer, a limit getter is read once and the engine's answer is what a plain object holding the first answer gets", () => {
+    const FIRST: readonly [string, unknown, unknown][] = [
+      ["null", null, 10],
+      ["zero", 0, -5],
+      ["negative", -1, 10],
+      ["MAX_AMOUNT, the largest the engine takes", MAX_AMOUNT, -5],
+      ["one past MAX_AMOUNT", MAX_AMOUNT + 1, 10],
+      ["NaN", Number.NaN, 10],
+      ["+Infinity", Number.POSITIVE_INFINITY, 10],
+      ["-Infinity", Number.NEGATIVE_INFINITY, 10],
+      ["a valid number", 10, Number.NaN],
+    ];
+    let admitted = 0;
+    let refused = 0;
+    for (const [name, first, second] of FIRST) {
+      let reads = 0;
+      const hostile = { kind: "grant", grant: withAccessor(grantWith({}), "limit", () => (++reads === 1 ? first : second)) };
+      const got = offer([], asEvent(hostile), META).attempt.outcome;
+      expect(reads, name).toBe(1);
+      const control = offer([], asEvent({ kind: "grant", grant: grantWith({ limit: first }) }), META).attempt.outcome;
+      expect(got.kind, name).toBe(control.kind);
+      if (got.kind === "admitted") {
+        admitted++;
+        expect(got.event.kind === "grant" && got.event.grant.limit, name).toBe(first);
+      } else {
+        refused++;
+        expect(got, name).toEqual(control);
+      }
+    }
+    // The table reached both outcomes: a table in which every first answer was refused (or every one admitted) would prove nothing about which answer was read.
+    expect([admitted, refused]).toEqual([3, 6]);
+  });
+
+  it("read once, for a commit's amount, the same way: each first answer is the only one read, and the outcome is the plain object's with that answer", () => {
+    const first = offer([], asEvent({ kind: "grant", grant: grantWith({ limit: 1_000 }) }), META);
+    expect(first.attempt.outcome.kind).toBe("admitted");
+    const commitWith = (amount: unknown) => ({ kind: "commit", commit: { id: "ch", actor: cfo, actedUnder: "Gh", capability: CAPABILITIES[0], amount } });
+    const FIRST: readonly [string, unknown, unknown][] = [
+      ["null", null, 10],
+      ["zero", 0, 10],
+      ["negative", -1, 10],
+      ["MAX_AMOUNT, the largest the engine takes", MAX_AMOUNT, 10],
+      ["one past MAX_AMOUNT", MAX_AMOUNT + 1, 10],
+      ["NaN", Number.NaN, 10],
+      ["+Infinity", Number.POSITIVE_INFINITY, 10],
+      ["-Infinity", Number.NEGATIVE_INFINITY, 10],
+      ["a valid number", 10, Number.NaN],
+    ];
+    for (const [name, firstAnswer, second] of FIRST) {
+      let reads = 0;
+      const live = commitWith(firstAnswer);
+      const hostile = { kind: "commit", commit: withAccessor(live.commit, "amount", () => (++reads === 1 ? firstAnswer : second)) };
+      const got = offer(first.log, asEvent(hostile), META).attempt.outcome;
+      expect(reads, name).toBe(1);
+      expect(got, name).toEqual(offer(first.log, asEvent(commitWith(firstAnswer)), META).attempt.outcome);
+    }
   });
 
   it("what is logged is a copy: neither the event in the log nor the one in the attempt is the caller's object, and changing the caller's object afterwards changes neither", () => {
