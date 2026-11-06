@@ -125,6 +125,11 @@ describe("the real demo, on the real tree", () => {
     expect(first.stdout).toContain("root G1: 242000 bound of a limit of 1000000");
   });
 
+  it("says how many prefixes its oracle checked, and it is every prefix: 18 for §7, and as many as the quarter's log has events", () => {
+    expect(first.stdout).toContain("(checked at every prefix, seq 1 to 18: 18 prefixes)");
+    expect(first.stdout).toMatch(/the oracle held at every prefix of the quarter's log, seq 1 to (\d+) \(\1 prefixes\)/);
+  });
+
   it("prints the same transcript every time it is run", () => {
     expect(run(REPO_ROOT).stdout).toBe(first.stdout);
   });
@@ -168,6 +173,25 @@ describe("the exit code: non-zero when the engine, or the script's own list, sto
     const result = run(copy);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("DEMO FAILED: at seq 11: standing of c1");
+  });
+
+  it("a standing that is wrong only at the end (an over-limit void whose standing carries other numbers than the verdict did, so every step's answer is still right): exit 1, on the standings at seq 18", () => {
+    const copy = copyOfTree();
+    mutate(copy, "lib/standing/standing.ts", '    return sealStanding({ ...base, kind: "void", breach: verdict.breach });', '    return sealStanding({ ...base, kind: "void", breach: verdict.breach.kind === "over-limit" ? { ...verdict.breach, requested: 1 } : verdict.breach });');
+    const result = run(copy);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("DEMO FAILED: at seq 18: standing of c8");
+    expect(result.stdout).toContain("[33] launder-capability");
+    expect(result.stdout).not.toContain("demo OK");
+  });
+
+  it("a quarter whose view cannot be built (the domain's makeOrgView folds a log that has a repeated event, which the engine faults): exit 1, because the quarter ended with a fault", () => {
+    const copy = copyOfTree();
+    mutate(copy, "domains/company/view.ts", "const result = fold(CHARTER, log);", "const result = fold(CHARTER, log.length > 17 ? [...log, ...log.slice(0, 1)] : log);");
+    const result = run(copy);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("DEMO FAILED: the quarter ended with a fault");
+    expect(result.stdout).not.toContain("demo OK");
   });
 
   it("a kind of Rejection that never occurs in the run (the script drops the launder step and the demo drops its answer): exit 1, naming unknown-capability", () => {

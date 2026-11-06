@@ -221,6 +221,20 @@ describe("runQuarter: the shape of every quarter", () => {
     for (const seed of seeds.filter((_, index) => index % 2 === 0)) expect(JSON.stringify(runQuarter(seed, 40))).toBe(JSON.stringify(runQuarter(seed, 40)));
   });
 
+  it("a seed means one quarter, across changes to this domain: seeds 1 and 2 at 60 ticks and seed 7 at 30 pin how many attempts each source made and how long the log is", () => {
+    const tally = (seed: number, ticks: number): { attempts: number; log: number; by: Record<string, number> } => {
+      const quarter = runQuarter(seed, ticks);
+      const by: Record<string, number> = {};
+      for (const attempt of quarter.attempts) by[attempt.source] = (by[attempt.source] ?? 0) + 1;
+      return { attempts: quarter.attempts.length, log: quarter.log.length, by };
+    };
+    // Written from this branch's own output (`runQuarter(1, 60)` is also the quarter `npm run demo:company` prints). A change to a policy, to the order or number of its
+    // draws, or to the generator's seeding changes these numbers on purpose: that is what "the order and the draws are part of what a seed means" says, and why this is pinned.
+    expect(tally(1, 60)).toEqual({ attempts: 155, log: 118, by: { canon: 33, DelegatorPolicy: 24, RefunderPolicy: 30, OverreachPolicy: 29, BuyerPolicy: 11, CompromisedPolicy: 28 } });
+    expect(tally(2, 60)).toEqual({ attempts: 148, log: 104, by: { canon: 33, RefunderPolicy: 30, DelegatorPolicy: 28, OverreachPolicy: 34, CompromisedPolicy: 22, BuyerPolicy: 1 } });
+    expect(tally(7, 30)).toEqual({ attempts: 77, log: 51, by: { canon: 33, DelegatorPolicy: 6, RefunderPolicy: 13, OverreachPolicy: 13, BuyerPolicy: 3, CompromisedPolicy: 9 } });
+  });
+
   it("different seeds give different quarters (the generator reaches the policies)", () => {
     const logs = new Set(seeds.map((seed) => JSON.stringify(runQuarter(seed, 40).log)));
     expect(logs.size).toBe(seeds.length);

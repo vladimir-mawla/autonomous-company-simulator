@@ -178,6 +178,14 @@ describe("DelegatorPolicy: the managers", () => {
     expect(Math.abs(delegations / SEEDS - DELEGATE_CHANCE)).toBeLessThan(0.1);
   });
 
+  it("with a generator stuck at 0 it picks the first live grant that can delegate and, for grantee, the first agent that is not already above it (ops under G1, whose holder is cfo), not the first agent", () => {
+    const proposed = DelegatorPolicy(viewOf(canon(18)), () => 0);
+    expect(proposed?.kind).toBe("grant");
+    if (proposed?.kind !== "grant") return;
+    expect([proposed.grant.parent, proposed.grant.grantor, proposed.grant.grantee]).toEqual(["G1", agent("cfo"), agent("ops")]);
+    expect(AGENTS[0]).toBe(agent("cfo"));
+  });
+
   it("when not even the smallest size fits what the parent has left, it hands nothing down: it proposes a revoke or nothing, never a grant the engine would refuse", () => {
     // G1 has limit 1 000 and depth 1; all of it is reserved to ops (G2, depth 0), so G1's headroom is 0 and G2 cannot delegate at all.
     const spent = logOf(CHARTER, [
@@ -288,9 +296,12 @@ describe("RefunderPolicy: an agent acting on the last mandate it was given, with
 describe("CompromisedPolicy: one agent that spends as fast as it can inside what it holds, from COMPROMISE_TICK on", () => {
   it("is buyer-a, and is silent before COMPROMISE_TICK whatever the generator says", () => {
     expect(COMPROMISED).toBe(agent("buyer-a"));
-    for (let tick = 0; tick < COMPROMISE_TICK; tick++) {
-      for (let seed = 1; seed <= 30; seed++) expect(CompromisedPolicy(viewOf(canon(18), tick), mulberry32(seed))).toBeNull();
+    // The ticks are written out and COMPROMISE_TICK is pinned beside them: a loop up to the constant is empty if the constant becomes 0 (ledger row P1).
+    expect(COMPROMISE_TICK).toBe(3);
+    for (const tick of [0, 1, 2]) {
+      for (let seed = 1; seed <= 30; seed++) expect(CompromisedPolicy(viewOf(canon(18), tick), mulberry32(seed)), `tick ${tick} seed ${seed}`).toBeNull();
     }
+    expect(CompromisedPolicy(viewOf(canon(18), 3), () => 0)).not.toBeNull();
   });
 
   it("from the tick on it proposes only purchases by buyer-a under its newest purchase grant (G7 at seq 18), of a size from the drain list", () => {
@@ -413,6 +424,22 @@ describe("OverreachPolicy: eighteen ways to act outside a mandate, each ruled by
     }
     expect(acted).toBeGreaterThan(100);
     expect(idle).toBeGreaterThan(100);
+  });
+
+  it("the ids the three ghost-aimed acts name (an unknown parent, an unknown grant to revoke, an unknown grant to act under) are ones no policy can mint: not `auto-g-<n>` or `auto-c-<n>`, and not any grant of the view", () => {
+    const view = viewOf(canon(18));
+    const ghosts: string[] = [];
+    for (const name of ["orphan-grant", "revoke-ghost", "phantom-commit"] as const) {
+      const entry = OVERREACHES.find((candidate) => candidate.name === name);
+      const proposed = entry?.build(view, mulberry32(1)) ?? null;
+      if (proposed === null) throw new Error(`${name} proposed nothing`);
+      ghosts.push(proposed.kind === "grant" ? String(proposed.grant.parent) : proposed.kind === "revoke" ? String(proposed.grantId) : String(proposed.commit.actedUnder));
+    }
+    expect(ghosts).toHaveLength(3);
+    for (const id of ghosts) {
+      expect(id, id).not.toMatch(/^auto-[gc]-\d+$/);
+      expect(view.grants.map((entry) => entry.grant.id as string)).not.toContain(id);
+    }
   });
 
   it("every agent is somebody OverreachPolicy can name, and the principals it names are the company's six and nobody else (no invented identity)", () => {
