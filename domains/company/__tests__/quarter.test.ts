@@ -30,8 +30,18 @@ import { oracleOf, violations } from "./support/oracle.js";
 
 const SEEDS = 200;
 const TICKS = 60;
-const CHUNKS = 20;
+const CHUNKS = 50;
 const PER_CHUNK = SEEDS / CHUNKS;
+
+/**
+ * An explicit timeout for a chunk of seeds, in place of vitest's 5 s default. With 10 seeds a chunk, the slowest chunk took 4.25 s in a full-suite run
+ * under 20 busy `yes` processes (85% of 5 s; 0.7 to 1.3 s without them), so the chunks were cut to 4 seeds. The timeout is not the fix for that
+ * margin, it is what keeps a machine slower than this one from failing a test that does nothing wrong: it does not shorten any work, and a
+ * quarter that hangs would be caught by it only after 20 s.
+ */
+const SEED_LOOP_TIMEOUT_MS = 20_000;
+/** The test that adds up all 200 seeds pays for every chunk only if it is run alone (`-t`); in a full run the chunks above have already been computed and memoised. */
+const ALL_SEEDS_TIMEOUT_MS = 90_000;
 
 const REJECTIONS: readonly Rejection["kind"][] = [
   "invalid-event-shape", "unknown-capability", "duplicate-id", "not-a-root", "unknown-parent", "parent-dead", "grantor-not-holder", "capability-widening",
@@ -193,7 +203,7 @@ describe(`runQuarter over ${SEEDS} seeds of ${TICKS} ticks: never throws, always
       const stats = chunk(index);
       expect(stats.flatMap((entry) => entry.problems)).toEqual([]);
       expect(stats.reduce((sum, entry) => sum + entry.events, 0), "the quarters were not empty").toBeGreaterThan(PER_CHUNK * 50);
-    });
+    }, SEED_LOOP_TIMEOUT_MS);
   }
 });
 
@@ -218,7 +228,7 @@ describe("what the 200 quarters reached", () => {
     expect(all()).toHaveLength(SEEDS);
     expect(all().map((entry) => entry.seed)).toEqual(Array.from({ length: SEEDS }, (_, index) => index + 1));
     expect(all().every((entry) => entry.events >= 18)).toBe(true);
-  });
+  }, ALL_SEEDS_TIMEOUT_MS);
 
   it("every policy made attempts: four of them in every one of the 200 quarters, and BuyerPolicy (which only proposes what the engine would warrant, and so is silent when nothing it holds is live) in at least 190", () => {
     const names: readonly PolicyName[] = POLICIES.map((entry) => entry.name);
