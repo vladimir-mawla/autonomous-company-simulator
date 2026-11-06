@@ -14,8 +14,12 @@ import {
   DELEGATION_LIMITS,
   DRAIN_AMOUNTS,
   DelegatorPolicy,
+  DRAIN_CHANCE,
   OVERREACHES,
+  OVERREACH_AMOUNT,
   OVERREACH_CHANCE,
+  REFUND_CHANCE,
+  REVIEW_CHANCE,
   OverreachPolicy,
   POLICIES,
   RefunderPolicy,
@@ -62,6 +66,20 @@ describe("the order the policies are stepped in", () => {
     expect(POLICIES.map((entry) => entry.name)).toEqual(["DelegatorPolicy", "BuyerPolicy", "RefunderPolicy", "OverreachPolicy", "CompromisedPolicy"]);
     expect(POLICIES.map((entry) => entry.policy)).toEqual([DelegatorPolicy, BuyerPolicy, RefunderPolicy, OverreachPolicy, CompromisedPolicy]);
     expect(Object.isFrozen(POLICIES)).toBe(true);
+  });
+});
+
+describe("the price lists and the chances, as written", () => {
+  it("are these numbers: a policy draws from them and a seed's quarter is made of those draws, so changing one is changing what every seed means (and the tests above compare a proposal with the list it came from, which would follow the change)", () => {
+    expect(ORDER_AMOUNTS).toEqual([1_000, 2_500, 5_000, 10_000, 25_000]);
+    expect(REFUND_AMOUNTS).toEqual([500, 1_000, 2_000, 5_000]);
+    expect(DRAIN_AMOUNTS).toEqual([10_000, 25_000, 50_000]);
+    expect(DELEGATION_LIMITS).toEqual([2_000, 5_000, 10_000, 25_000]);
+    expect(ROOT_LIMITS).toEqual([250_000, 500_000, 1_000_000]);
+    expect(ROOT_DEPTHS).toEqual([4, 5, 6]);
+    expect(OVERREACH_AMOUNT).toBe(1_000_000_000);
+    expect([DELEGATE_CHANCE, REVIEW_CHANCE, REFUND_CHANCE, OVERREACH_CHANCE, DRAIN_CHANCE, COMPROMISE_TICK]).toEqual([0.5, 0.08, 0.5, 0.5, 0.5, 3]);
+    for (const list of [ORDER_AMOUNTS, REFUND_AMOUNTS, DRAIN_AMOUNTS, DELEGATION_LIMITS, ROOT_LIMITS, ROOT_DEPTHS]) expect(Object.isFrozen(list)).toBe(true);
   });
 });
 
