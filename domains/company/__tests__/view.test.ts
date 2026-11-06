@@ -53,6 +53,41 @@ describe("the view of plan section 7's log", () => {
     ]);
   });
 
+  it("the longest chain the company can have, by hand: six grants, dana > cfo > ops > support > buyer-a > buyer-b > refunder, each one link longer than its parent, all live; cut at the third link, the third to the sixth are dead and the first two are not", () => {
+    // Six agents and a root: a grantee may not already be on the trail, so six grants is the most there can be. Depths 5, 4, 3, 2, 1, 0.
+    const NAMES = ["cfo", "ops", "support", "buyer-a", "buyer-b", "refunder"] as const;
+    const chain: EventInput<CompanyCapability>[] = NAMES.map((name, index) => ({
+      kind: "grant",
+      grant: {
+        id: grantId(`L${index + 1}`),
+        parent: index === 0 ? null : grantId(`L${index}`),
+        grantor: index === 0 ? principalId("dana") : principalId(NAMES[index - 1] as string),
+        grantee: principalId(name),
+        capabilities: ["purchase"],
+        limit: 1_000 - index,
+        depth: 5 - index,
+      },
+    }));
+    const whole = logOf(CHARTER, chain);
+    expect(whole).toHaveLength(6);
+    expect(summary(viewOf(whole))).toEqual([
+      "L1:live:1:dana>cfo",
+      "L2:live:2:dana>cfo>ops",
+      "L3:live:3:dana>cfo>ops>support",
+      "L4:live:4:dana>cfo>ops>support>buyer-a",
+      "L5:live:5:dana>cfo>ops>support>buyer-a>buyer-b",
+      "L6:live:6:dana>cfo>ops>support>buyer-a>buyer-b>refunder",
+    ]);
+    // The seventh link is refused by the engine, whoever is asked to take it: every agent is already on the trail.
+    for (const name of NAMES) {
+      const seventh = viewOf(whole).dryRun({ kind: "grant", grant: { id: grantId("L7"), parent: grantId("L6"), grantor: principalId("refunder"), grantee: principalId(name), capabilities: ["purchase"], limit: 1, depth: 0 } });
+      expect(seventh.ok, name).toBe(false);
+    }
+    const cut = logOf(CHARTER, [...chain, { kind: "revoke", grantId: grantId("L3"), by: principalId("ops") }]);
+    expect(summary(viewOf(cut)).map((line) => line.split(":").slice(0, 2).join(":"))).toEqual(["L1:live", "L2:live", "L3:dead", "L4:dead", "L5:dead", "L6:dead"]);
+    expect(viewOf(cut).grants.map((entry) => entry.links)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
   it("carries the tick it was made at, and head is the number of admitted events (seq of the last one)", () => {
     const view = viewOf(canon(18), 7);
     expect([view.tick, view.head, view.log.length]).toEqual([7, 18, 18]);

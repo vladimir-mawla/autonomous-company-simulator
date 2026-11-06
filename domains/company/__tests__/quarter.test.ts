@@ -257,10 +257,10 @@ describe("what the 200 quarters reached", () => {
     for (const [kind, count] of total((entry) => entry.standingsOfPolicy)) expect(count, kind).toBeGreaterThan(100);
   });
 
-  it("the deepest chain the policies built has five or more grants, in at least one quarter (the company has six agents, so six is the most there can be)", () => {
+  it("the deepest chain the policies built has six grants, the most the company can have (six agents), in at least three of the 200 quarters", () => {
     const deepest = Math.max(...all().map((entry) => entry.maxLinks));
-    expect(deepest).toBeGreaterThanOrEqual(5);
-    expect(deepest).toBeLessThanOrEqual(6);
+    expect(deepest, "the deepest the company allows was reached: six links, with six agents and one root").toBe(6);
+    expect(all().filter((entry) => entry.maxLinks === 6).length).toBeGreaterThanOrEqual(3);
     expect(all().filter((entry) => entry.maxLinks >= 4).length).toBeGreaterThan(20);
   });
 
