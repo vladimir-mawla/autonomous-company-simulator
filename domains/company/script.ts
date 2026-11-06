@@ -8,10 +8,10 @@ import type { AgentName, CompanyCapability } from "./org.js";
  *
  * THIS FILE HOLDS WHAT WAS OFFERED, NEVER WHAT THE ENGINE ANSWERED. A step is a key, a line of narration and the event; the
  * seq it was admitted at, the verdict it got and the rejection it met are not written down here, because a table of
- * answers in `domains/` would be a second copy of the engine's rulings. `__tests__/canon-script.test.ts` and
+ * answers in `domains/` would be a second copy of the engine's rulings. `__tests__/canon-replay.test.ts` and
  * `scripts/demo-company.ts` each hold §7's table of answers and check it against what the engine says when this list is offered
  * to it. `lib/standing/__tests__/canonical.test.ts` (M5) did the same for the same events, held there as its own fixtures;
- * `__tests__/canon-script.test.ts` shows this list's admitted events equal those.
+ * `__tests__/script.test.ts` shows this list's admitted events equal those.
  *
  * The 33 steps are §7's 18 admitted events and its 15 attempts that were refused (§7 beat 1 before the revoke: eleven; after
  * it: two; and the two intake lines at the end), at the places §7's table puts them. A refused attempt takes no seq, so where
