@@ -4,8 +4,7 @@
 - **Status:** proposed — written by the builder; not yet approved by an independent L4 pass
 - **Phase / milestone:** M6 (BUILD) — `domains/company/**` (`org.ts view.ts policies.ts script.ts simulate.ts index.ts`, `__tests__/`) and `scripts/demo-company.ts`
 
-The falsifiability log and the timings below were measured on the tree of commit `bbd8385`, the last commit of `domains/company` before this ADR
-was last edited (`git diff bbd8385..a433c70 --stat` lists this file and the comment-only edits of commit `a433c70` in `domains/company/policies.ts` and `domains/company/view.ts`, and nothing under `scripts/` or `lib/`). The rows of the log quote "N failed" and no count of
+The falsifiability log and the timings below were measured on the tree of commit `bbd8385`. The commits after it change this ADR and comments only: `git diff bbd8385..5c3cef2 --stat -- domains scripts lib` lists `domains/company/policies.ts`, `domains/company/view.ts`, `domains/company/__tests__/demo.test.ts` and `scripts/demo-company.ts`, and the comment-stripped emit of each is identical at `bbd8385` and `5c3cef2`. The rows of the log quote "N failed" and no count of
 passing tests, which goes stale whenever a test is added. The counts under "Coverage" are counts of what a trace did.
 
 ## Context
