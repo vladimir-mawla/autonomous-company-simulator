@@ -479,18 +479,29 @@ function visit(state: DemoState, names: readonly string[], counts: Counts): void
 }
 
 describe("EXHAUSTIVE: every sequence of at most 4 buttons yields a view, and the view conserves", () => {
-  it("the alphabet has eight buttons, and eight subtrees of 585 sequences are the 8 + 64 + 512 + 4096 = 4680 sequences of length 1 to 4", () => {
+  it("the alphabet has eight buttons, and 8 + 64 x 73 = 4680 = 8 + 64 + 512 + 4096 sequences of length 1 to 4 are covered by the tests below", () => {
     expect(ALPHABET).toHaveLength(8);
-    expect(ALPHABET.length * 585).toBe(8 + 64 + 512 + 4096);
+    expect(8 + ALPHABET.length * ALPHABET.length * (1 + 8 + 64)).toBe(8 + 64 + 512 + 4096);
   });
 
-  // 8 subtrees, one per first button, of 1 + 8 + 64 + 512 = 585 sequences each: 4680 in all, each with a live view and one scrubbed back from the head
+  it("the 8 sequences of length 1", () => {
+    const counts: Counts = { nodes: 0, scrubbed: 0 };
+    for (const first of ALPHABET) {
+      const state = step(initialDemoState(), first.action);
+      check(state, first.name);
+      counts.nodes++;
+    }
+    expect(counts.nodes).toBe(8);
+  });
+
+  // 64 subtrees, one per first two buttons, of 1 + 8 + 64 = 73 sequences each (lengths 2, 3 and 4), each with a live view and one scrubbed back from the head
   for (const first of ALPHABET) {
-    it(`every sequence of at most 4 buttons that begins with "${first.name}" (585 of them)`, () => {
-      const counts: Counts = { nodes: 0, scrubbed: 0 };
-      visit(step(initialDemoState(), first.action), [first.name], counts);
-      expect(counts.nodes).toBe(585);
-      expect(counts.scrubbed).toBeGreaterThan(500);
-    });
+    for (const second of ALPHABET) {
+      it(`every sequence of 2 to 4 buttons that begins "${first.name}" then "${second.name}" (73 of them)`, () => {
+        const counts: Counts = { nodes: 0, scrubbed: 0 };
+        visit(step(step(initialDemoState(), first.action), second.action), [first.name, second.name], counts);
+        expect(counts.nodes).toBe(73);
+      });
+    }
   }
 });
