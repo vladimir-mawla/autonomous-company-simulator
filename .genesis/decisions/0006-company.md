@@ -4,8 +4,8 @@
 - **Status:** proposed — written by the builder; not yet approved by an independent L4 pass
 - **Phase / milestone:** M6 (BUILD) — `domains/company/**` (`org.ts view.ts policies.ts script.ts simulate.ts index.ts`, `__tests__/`) and `scripts/demo-company.ts`
 
-The falsifiability log and the timings below were measured on the tree of commit `86f3153`, the last commit of `domains/company` before this ADR was
-added (`git diff 86f3153..HEAD --stat` lists this file and nothing under `domains/` or `scripts/`). The rows of the log quote "N failed" and no count of
+The falsifiability log and the timings below were measured on the tree of commit `bbd8385`, the last commit of `domains/company` before this ADR
+was last edited (`git diff bbd8385..HEAD --stat` lists this file and nothing under `domains/`, `scripts/` or `lib/`). The rows of the log quote "N failed" and no count of
 passing tests, which goes stale whenever a test is added. The counts under "Coverage" are counts of what a trace did.
 
 ## Context
@@ -24,8 +24,7 @@ answered by `append`, `mayCommit` and the walkers, and the domain only calls the
 
 `__tests__/source-scan.test.ts` (with `__tests__/support/source-scan.ts`) is the mechanical form of that. It parses every source file of the domain
 (`typescript/unstable/ast`) and reports these: a string literal equal to a kind of `Standing`, `Breach`, `Rejection` or `FoldFault`
-(the kind lists are read from `lib/contracts` by the scan, not typed into it, so a kind added there is refused here); arithmetic on `limit`, `amount`
-or `headroom`; an import that is not another layer's barrel; and a symlink, a file that is not `.ts` and a file that does not parse. The tests that give it teeth: a synthetic tree with one planted violation per rule and
+(the kind lists are read from `lib/contracts` by the scan, not typed into it, so a kind added there is refused here); arithmetic or an ordering comparison whose operand is, or was assigned from, an identifier or string-keyed property containing `limit`, `amount` or `headroom` (syntactic and file-local: money reaching arithmetic through a callback parameter, a return value, an array element or a computed key is not seen); an import that is not another layer's barrel; and a symlink, a file that is not `.ts` and a file that does not parse. The tests that give it teeth: a synthetic tree with one planted violation per rule and
 controls beside it (allowed imports, money only passed along or compared for equality), and one violating line planted in each of six real source
 files, each reported on its own line. The scan reads `domains/company` and does not read `__tests__`.
 
@@ -125,17 +124,16 @@ A hand-worked case at the maximum: `view.test.ts` builds the six-link chain `dan
 
 ## Timing
 
-Per-test durations from vitest's JSON reporter, on a host whose load average was 15 to 31 from other jobs while these ran (the host was not idle):
+Per-test durations from vitest's JSON reporter, on a host whose load average was 24 to 25 from other jobs while these ran (the host was not idle):
 
-| Run | Slowest `domains/company` test | Slowest test of the whole suite |
-|---|---|---|
-| full suite, run 1 | 776 ms (`quarter.test.ts`, seeds 157 to 160) | 2 679 ms (`lib/chain` attenuation-closure) |
-| full suite, run 2 | 745 ms (same) | 2 969 ms (same) |
-| full suite, run 3 | 661 ms (same) | 2 645 ms (same) |
-| full suite under 20 `yes > /dev/null` | 1 853 ms (`simulate.test.ts`, the quarter of `MAX_TICKS` ticks) | 9 574 ms (`lib/chain` attenuation-closure) |
+| Run | Slowest default-timeout `domains/company` test | Slowest explicit-timeout `domains/company` test | Slowest test of the whole suite |
+|---|---|---|---|
+| full suite, run 1 | 444 ms (`simulate.test.ts`, "and the check can fail") | 810 ms (`quarter.test.ts`, seeds 53 to 56) | 3 849 ms (`lib/chain` attenuation-closure, pool of 12) |
+| full suite, run 2 | 744 ms (`simulate.test.ts`, "attempts are numbered 1, 2, 3 ...") | 807 ms (`simulate.test.ts`, "accepts 0 and MAX_TICKS") | 2 447 ms (same) |
+| full suite, run 3 | 435 ms (`simulate.test.ts`, "and the check can fail") | 562 ms (`quarter.test.ts`, seeds 169 to 172) | 2 694 ms (same) |
+| full suite under 20 `yes > /dev/null` | 1 260 ms (`simulate.test.ts`, "attempts are numbered 1, 2, 3 ...") | 1 666 ms (`simulate.test.ts`, "accepts 0 and MAX_TICKS") | 9 754 ms (same) |
 
-The slowest M6 test under load took 1 853 ms of the 5 000 ms default: below 40%. The same run shows one M3 test (`lib/chain`, not changed here) at 9 574 ms; that
-is M3's and is reported, not touched.
+The slowest default-timeout M6 test under load took 1 260 ms (`simulate.test.ts`, "attempts are numbered 1, 2, 3 ..."), 25% of the 5 000 ms default. The quarter chunks and the quarter of `MAX_TICKS` ticks carry explicit 20 s timeouts (`SEED_LOOP_TIMEOUT_MS`, `LONGEST_QUARTER_TIMEOUT_MS`), and the M3 `lib/chain` pool-of-12 test, not changed here, has its own 60 s timeout (`SEED_LOOP_TIMEOUT_MS` in that file).
 
 ## Falsifiability log
 
@@ -144,60 +142,60 @@ control (no edit) is the first row. Only "N failed" is quoted, with the files th
 
 | | Edit | File | Result |
 |---|---|---|---|
-| control | none | | 0 failed of 1511 |
-| O1 | CAPABILITIES loses "hire" | `domains/company/org.ts` | 40 failed (canon-replay.test.ts, demo.test.ts, hostile-input.test.ts, org.test.ts, policies.test.ts, proofs.test.ts, script.test.ts, simulate.test.ts, view.test.ts) |
-| O2 | ROOT is "dane", not "dana" | `domains/company/org.ts` | 23 failed (canon-replay.test.ts, demo.test.ts, org.test.ts, policies.test.ts, quarter.test.ts, script.test.ts, simulate.test.ts, view.test.ts) |
-| O3 | AGENTS loses refunder | `domains/company/org.ts` | 5 failed (org.test.ts, policies.test.ts, quarter.test.ts, script.test.ts, simulate.test.ts) |
+| control | none | | 0 failed of 1513 |
+| O1 | CAPABILITIES loses "hire" | `domains/company/org.ts` | 42 failed (canon-replay.test.ts, demo.test.ts, hostile-input.test.ts, org.test.ts, policies.test.ts, proofs.test.ts, script.test.ts, simulate.test.ts, view.test.ts) |
+| O2 | ROOT is "dane", not "dana" | `domains/company/org.ts` | 24 failed (canon-replay.test.ts, demo.test.ts, org.test.ts, policies.test.ts, quarter.test.ts, script.test.ts, simulate.test.ts, view.test.ts) |
+| O3 | AGENTS loses refunder | `domains/company/org.ts` | 6 failed (org.test.ts, policies.test.ts, quarter.test.ts, script.test.ts, simulate.test.ts) |
 | O4 | CHARTER.roots gains cfo | `domains/company/org.ts` | 4 failed (hostile-input.test.ts, org.test.ts, policies.test.ts, simulate.test.ts) |
-| V1 | view: every grant is live (the firstDeadLink test is dropped) | `domains/company/view.ts` | 22 failed (policies.test.ts, proofs.test.ts, quarter.test.ts, simulate.test.ts, view.test.ts) |
+| V1 | view: every grant is live (the firstDeadLink test is dropped) | `domains/company/view.ts` | 23 failed (policies.test.ts, proofs.test.ts, quarter.test.ts, simulate.test.ts, view.test.ts) |
 | V2 | view: links is chain length + 1 | `domains/company/view.ts` | 4 failed (quarter.test.ts, view.test.ts) |
-| V3 | view: dryRun against an empty log | `domains/company/view.ts` | 7 failed (policies.test.ts, quarter.test.ts, simulate.test.ts, view.test.ts) |
+| V3 | view: dryRun against an empty log | `domains/company/view.ts` | 8 failed (policies.test.ts, quarter.test.ts, simulate.test.ts, view.test.ts) |
 | V4 | view: head + 1 | `domains/company/view.ts` | 5 failed (policies.test.ts, simulate.test.ts, view.test.ts) |
-| V5 | view: mayCommit against an empty log | `domains/company/view.ts` | 6 failed (policies.test.ts, quarter.test.ts, simulate.test.ts, view.test.ts) |
-| V6 | view: trail is always empty | `domains/company/view.ts` | 8 failed (policies.test.ts, proofs.test.ts, quarter.test.ts, simulate.test.ts, view.test.ts) |
+| V5 | view: mayCommit against an empty log | `domains/company/view.ts` | 7 failed (policies.test.ts, quarter.test.ts, simulate.test.ts, view.test.ts) |
+| V6 | view: trail is always empty | `domains/company/view.ts` | 9 failed (policies.test.ts, proofs.test.ts, quarter.test.ts, simulate.test.ts, view.test.ts) |
 | V7 | view: a fold fault is not returned as ok:false | `domains/company/view.ts` | 4 failed (demo.test.ts, proofs.test.ts, view.test.ts) |
-| S1 | INCIDENT_TICK 0 -> 1 | `domains/company/simulate.ts` | 11 failed (canon-replay.test.ts, demo.test.ts, simulate.test.ts) |
+| S1 | INCIDENT_TICK 0 -> 1 | `domains/company/simulate.ts` | 12 failed (canon-replay.test.ts, demo.test.ts, simulate.test.ts) |
 | S2 | MAX_TICKS 200 -> 201 | `domains/company/simulate.ts` | 1 failed (simulate.test.ts) |
 | S3 | ticks > MAX_TICKS -> ticks >= MAX_TICKS | `domains/company/simulate.ts` | 1 failed (simulate.test.ts) |
 | S4 | runQuarter no longer checks ticks is an integer | `domains/company/simulate.ts` | 1 failed (simulate.test.ts) |
 | S5 | runQuarter no longer checks ticks >= 0 | `domains/company/simulate.ts` | 1 failed (simulate.test.ts) |
-| S6 | mulberry32 constant 0x6d2b79f5 -> ...f4 | `domains/company/simulate.ts` | 3 failed (demo.test.ts, simulate.test.ts) |
-| S7 | offer never advances the log | `domains/company/simulate.ts` | 119 failed (canon-replay.test.ts, demo.test.ts, hostile-input.test.ts, quarter.test.ts, simulate.test.ts) |
+| S6 | mulberry32 constant 0x6d2b79f5 -> ...f4 | `domains/company/simulate.ts` | 4 failed (demo.test.ts, simulate.test.ts) |
+| S7 | offer never advances the log | `domains/company/simulate.ts` | 120 failed (canon-replay.test.ts, demo.test.ts, hostile-input.test.ts, quarter.test.ts, simulate.test.ts) |
 | S8 | outcomeOf drops the verdict (null) | `domains/company/simulate.ts` | 20 failed (canon-replay.test.ts, demo.test.ts, quarter.test.ts, simulate.test.ts) |
-| S9 | runQuarter reuses a stale view (view.log !== log dropped) | `domains/company/simulate.ts` | 4 failed (quarter.test.ts, simulate.test.ts) |
-| S10 | runQuarter seeds its generator with seed + 1 | `domains/company/simulate.ts` | 1 failed (simulate.test.ts) |
-| S11 | the script is offered at every tick from 0 on (=== -> >=) | `domains/company/simulate.ts` | 4 failed (quarter.test.ts, simulate.test.ts) |
+| S9 | runQuarter reuses a stale view (view.log !== log dropped) | `domains/company/simulate.ts` | 5 failed (quarter.test.ts, simulate.test.ts) |
+| S10 | runQuarter seeds its generator with seed + 1 | `domains/company/simulate.ts` | 2 failed (simulate.test.ts) |
+| S11 | the script is offered at every tick from 0 on (=== -> >=) | `domains/company/simulate.ts` | 5 failed (quarter.test.ts, simulate.test.ts) |
 | S12 | attempt numbers start at 0 (n: attempts.length) | `domains/company/simulate.ts` | 2 failed (simulate.test.ts) |
-| S13 | runQuarter runs ticks + 1 ticks (< -> <=) | `domains/company/simulate.ts` | 4 failed (simulate.test.ts) |
+| S13 | runQuarter runs ticks + 1 ticks (< -> <=) | `domains/company/simulate.ts` | 5 failed (simulate.test.ts) |
 | S14 | mulberry32 divides by 2^32 - 1 | `domains/company/simulate.ts` | 1 failed (simulate.test.ts) |
-| P1 | COMPROMISE_TICK 3 -> 0 | `domains/company/policies.ts` | 3 failed (policies.test.ts, simulate.test.ts) |
-| P2 | BuyerPolicy commits whatever mayCommit admits, not only what it warrants | `domains/company/policies.ts` | 3 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
-| P3 | RefunderPolicy asks whether its mandate is live | `domains/company/policies.ts` | 3 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
-| P4 | DelegatorPolicy no longer asks the engine (dryRun) before proposing | `domains/company/policies.ts` | 4 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
-| P5 | DelegatorPolicy may pick a grantee already above the parent | `domains/company/policies.ts` | 3 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
+| P1 | COMPROMISE_TICK 3 -> 0 | `domains/company/policies.ts` | 4 failed (policies.test.ts, simulate.test.ts) |
+| P2 | BuyerPolicy commits whatever mayCommit admits, not only what it warrants | `domains/company/policies.ts` | 4 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
+| P3 | RefunderPolicy asks whether its mandate is live | `domains/company/policies.ts` | 4 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
+| P4 | DelegatorPolicy no longer asks the engine (dryRun) before proposing | `domains/company/policies.ts` | 5 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
+| P5 | DelegatorPolicy may pick a grantee already above the parent | `domains/company/policies.ts` | 4 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
 | P6 | DelegatorPolicy's review revokes by the grantee, not the grantor | `domains/company/policies.ts` | 8 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
-| P7 | OverreachPolicy never acts | `domains/company/policies.ts` | 7 failed (demo.test.ts, policies.test.ts, quarter.test.ts, simulate.test.ts) |
-| P8 | revoke-twice aims at a live grant | `domains/company/policies.ts` | 3 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
-| P9 | OVERREACH_AMOUNT 10^9 -> 1 000 | `domains/company/policies.ts` | 5 failed (demo.test.ts, policies.test.ts, simulate.test.ts) |
+| P7 | OverreachPolicy never acts | `domains/company/policies.ts` | 8 failed (demo.test.ts, policies.test.ts, quarter.test.ts, simulate.test.ts) |
+| P8 | revoke-twice aims at a live grant | `domains/company/policies.ts` | 4 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
+| P9 | OVERREACH_AMOUNT 10^9 -> 1 000 | `domains/company/policies.ts` | 6 failed (demo.test.ts, policies.test.ts, simulate.test.ts) |
 | P10 | freshId reuses the head (no +1): duplicate ids | `domains/company/policies.ts` | 2 failed (policies.test.ts, simulate.test.ts) |
 | P11 | the ghost id is auto-g-1, which a policy can mint | `domains/company/policies.ts` | 1 failed (policies.test.ts) |
-| P12 | subsetOf keeps every capability | `domains/company/policies.ts` | 2 failed (demo.test.ts, simulate.test.ts) |
+| P12 | subsetOf keeps every capability | `domains/company/policies.ts` | 3 failed (demo.test.ts, simulate.test.ts) |
 | P13 | ROOT_DEPTHS gains 9, past MAX_ROOT_DEPTH | `domains/company/policies.ts` | 3 failed (policies.test.ts, quarter.test.ts) |
-| P14 | REVIEW_CHANCE 0.08 -> 0 | `domains/company/policies.ts` | 9 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
-| P15 | COMPROMISED is buyer-b | `domains/company/policies.ts` | 4 failed (policies.test.ts, simulate.test.ts) |
-| P16 | POLICIES: BuyerPolicy and RefunderPolicy swapped | `domains/company/policies.ts` | 3 failed (policies.test.ts, public-surface.test.ts, simulate.test.ts) |
-| P17 | DELEGATE_CHANCE 0.5 -> 0 | `domains/company/policies.ts` | 7 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
-| P18 | BUYERS loses ops | `domains/company/policies.ts` | 2 failed (policies.test.ts, simulate.test.ts) |
-| P19 | CompromisedPolicy acts only after COMPROMISE_TICK (< -> <=) | `domains/company/policies.ts` | 4 failed (policies.test.ts, simulate.test.ts) |
+| P14 | REVIEW_CHANCE 0.08 -> 0 | `domains/company/policies.ts` | 10 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
+| P15 | COMPROMISED is buyer-b | `domains/company/policies.ts` | 5 failed (policies.test.ts, simulate.test.ts) |
+| P16 | POLICIES: BuyerPolicy and RefunderPolicy swapped | `domains/company/policies.ts` | 4 failed (policies.test.ts, public-surface.test.ts, simulate.test.ts) |
+| P17 | DELEGATE_CHANCE 0.5 -> 0 | `domains/company/policies.ts` | 8 failed (policies.test.ts, quarter.test.ts, simulate.test.ts) |
+| P18 | BUYERS loses ops | `domains/company/policies.ts` | 3 failed (policies.test.ts, simulate.test.ts) |
+| P19 | CompromisedPolicy acts only after COMPROMISE_TICK (< -> <=) | `domains/company/policies.ts` | 5 failed (policies.test.ts, simulate.test.ts) |
 | C1 | script c1 amount 50 000 -> 50 001 | `domains/company/script.ts` | 18 failed (canon-replay.test.ts, demo.test.ts, script.test.ts) |
 | C2 | script G2 limit 400 000 -> 400 001 | `domains/company/script.ts` | 21 failed (canon-replay.test.ts, demo.test.ts, script.test.ts) |
 | C3 | script c9 acts under G1, not the ghost grant | `domains/company/script.ts` | 15 failed (canon-replay.test.ts, demo.test.ts, script.test.ts) |
-| C4 | script's launder capability becomes "hire" | `domains/company/script.ts` | 19 failed (canon-replay.test.ts, demo.test.ts, quarter.test.ts, script.test.ts, simulate.test.ts) |
+| C4 | script's launder capability becomes "hire" | `domains/company/script.ts` | 20 failed (canon-replay.test.ts, demo.test.ts, quarter.test.ts, script.test.ts, simulate.test.ts) |
 | C5 | script c8 amount 50 000 -> 20 000 | `domains/company/script.ts` | 17 failed (canon-replay.test.ts, demo.test.ts, script.test.ts) |
 | C6 | freezeDeep does not freeze the step itself | `domains/company/script.ts` | 3 failed (script.test.ts, simulate.test.ts) |
 | C7 | script's revoke of G2 is by dana, not cfo | `domains/company/script.ts` | 3 failed (canon-replay.test.ts, script.test.ts) |
-| C8 | script c10 amount 10 000 -> 10 001 | `domains/company/script.ts` | 4 failed (canon-replay.test.ts, demo.test.ts, script.test.ts, simulate.test.ts) |
-| C9 | script G1 grants three capabilities, not four | `domains/company/script.ts` | 58 failed (canon-replay.test.ts, demo.test.ts, quarter.test.ts, script.test.ts, simulate.test.ts) |
+| C8 | script c10 amount 10 000 -> 10 001 | `domains/company/script.ts` | 5 failed (canon-replay.test.ts, demo.test.ts, script.test.ts, simulate.test.ts) |
+| C9 | script G1 grants three capabilities, not four | `domains/company/script.ts` | 59 failed (canon-replay.test.ts, demo.test.ts, quarter.test.ts, script.test.ts, simulate.test.ts) |
 | I1 | barrel drops mulberry32 | `domains/company/index.ts` | 2 failed (public-surface.test.ts) |
 | I2 | barrel drops ROOT | `domains/company/index.ts` | 1 failed (public-surface.test.ts) |
 | D1 | demo oracle: bound <= limit + 10^12 | `scripts/demo-company.ts` | 1 failed (demo.test.ts) |
@@ -208,19 +206,27 @@ control (no edit) is the first row. Only "N failed" is quoted, with the files th
 | D6 | demo: exitCode 1 -> 0 | `scripts/demo-company.ts` | 8 failed (demo.test.ts) |
 | D7 | demo: the quarter's fault is not checked | `scripts/demo-company.ts` | 1 failed (demo.test.ts) |
 | L1 | lib/allowance absorbedBy returns 0 (plan §6 M6, first sabotage) | `lib/allowance/accounting.ts` | 51 failed (canon-replay.test.ts, demo.test.ts, proofs.test.ts, accounting.test.ts, exact-return.test.ts, canonical.test.ts, revoke-admission.test.ts) |
-| L2 | lib/standing: the link-dead check removed from judgeCommit (plan §6 M6, second sabotage, in the form that compiles) | `lib/standing/verdict.ts` | 48 failed (canon-replay.test.ts, demo.test.ts, policies.test.ts, proofs.test.ts, quarter.test.ts, canonical.test.ts, may-commit-equivalence.test.ts, prefix.test.ts, verdict-table.test.ts) |
+| L2 | lib/standing: the link-dead check removed from judgeCommit (plan §6 M6, second sabotage) | `lib/standing/verdict.ts` | 48 failed (canon-replay.test.ts, demo.test.ts, policies.test.ts, proofs.test.ts, quarter.test.ts, canonical.test.ts, may-commit-equivalence.test.ts, prefix.test.ts, verdict-table.test.ts) |
 | L3 | lib/standing: heir is the grantee of the first dead link | `lib/standing/standing.ts` | 41 failed (canon-replay.test.ts, demo.test.ts, canonical.test.ts, heir.test.ts) |
-| P20 | ORDER_AMOUNTS: 25 000 -> 25 001 | `domains/company/policies.ts` | 1 failed (policies.test.ts) |
-| P21 | REFUND_CHANCE 0.5 -> 1 | `domains/company/policies.ts` | 2 failed (policies.test.ts, simulate.test.ts) |
-| P22 | DRAIN_CHANCE 0.5 -> 1 | `domains/company/policies.ts` | 2 failed (policies.test.ts, simulate.test.ts) |
-| P23 | OVERREACH_CHANCE 0.5 -> 0.4 | `domains/company/policies.ts` | 2 failed (policies.test.ts, simulate.test.ts) |
+| P20 | ORDER_AMOUNTS: 25 000 -> 25 001 | `domains/company/policies.ts` | 2 failed (policies.test.ts, simulate.test.ts) |
+| P21 | REFUND_CHANCE 0.5 -> 1 | `domains/company/policies.ts` | 3 failed (policies.test.ts, simulate.test.ts) |
+| P22 | DRAIN_CHANCE 0.5 -> 1 | `domains/company/policies.ts` | 3 failed (policies.test.ts, simulate.test.ts) |
+| P23 | OVERREACH_CHANCE 0.5 -> 0.4 | `domains/company/policies.ts` | 3 failed (policies.test.ts, simulate.test.ts) |
 | P24 | ROOT_LIMITS loses 1 000 000 | `domains/company/policies.ts` | 1 failed (policies.test.ts) |
-| P25 | pick always returns the first item | `domains/company/policies.ts` | 10 failed (demo.test.ts, policies.test.ts, proofs.test.ts, quarter.test.ts, simulate.test.ts) |
+| P25 | pick always returns the first item | `domains/company/policies.ts` | 11 failed (demo.test.ts, policies.test.ts, proofs.test.ts, quarter.test.ts, simulate.test.ts) |
 | P26 | DELEGATION_LIMITS: 25 000 -> 26 000 | `domains/company/policies.ts` | 2 failed (policies.test.ts, simulate.test.ts) |
 | S15 | offer records a copy of the input, not the input | `domains/company/simulate.ts` | 5 failed (canon-replay.test.ts, hostile-input.test.ts, simulate.test.ts) |
 | C10 | freezeDeep freezes the step but not what is inside it | `domains/company/script.ts` | 3 failed (script.test.ts, simulate.test.ts) |
+| S16 | view reused across ticks (view.tick !== tick dropped) | `domains/company/simulate.ts` | 1 failed (simulate.test.ts) |
+| V8 | view: grants read again from the raw log, not from the folded tree (the code before the fix) | `domains/company/view.ts` | 1 failed (view.test.ts) |
+| Z2 | demo: conservationOracle calls the local foldedOf(log) | `scripts/demo-company.ts` | 1 failed (demo.test.ts) |
+| Z3 | demo: conservationOracle calls the local standingsOf(log) | `scripts/demo-company.ts` | 1 failed (demo.test.ts) |
+| L4 | lib/standing: the link-dead check flipped (dead === undefined, atSeq 0) | `lib/standing/verdict.ts` | 142 failed (canon-replay.test.ts, demo.test.ts, policies.test.ts, quarter.test.ts, simulate.test.ts, view.test.ts, admission-order.test.ts, canonical.test.ts, conservation.test.ts, heir.test.ts, integrity.test.ts, lattice.test.ts, locality.test.ts, may-commit-equivalence.test.ts, prefix.test.ts, verdict-table.test.ts) |
+| Y3 | scan: the < ordering token dropped | `domains/company/__tests__/support/source-scan.ts` | 1 failed (source-scan.test.ts) |
+| Y4 | scan: queueMicrotask dropped from the nondeterminism list | `domains/company/__tests__/support/source-scan.ts` | 1 failed (source-scan.test.ts) |
+| Y5 | scan: the carrier fixed point reduced to one pass | `domains/company/__tests__/support/source-scan.ts` | 1 failed (source-scan.test.ts) |
 
-The control had 0 failed of 1511, and every one of the 74 edits went red: the smallest is 1 failed, the largest 119. No row is a survivor, so none needs an equivalence argument. Rows L1 to L3 edit `lib/`, because they are the plan's sabotages and a test of this milestone has to catch them.
+The control had 0 failed of 1513, and every one of the 82 edits went red: the smallest is 1 failed, the largest 142. No row is a survivor, so none needs an equivalence argument. Rows L1 to L4 edit `lib/`, because they are the plan's sabotages (L4 is the flip of the second) and a test of this milestone has to catch them.
 
 The plan's two sabotages (§6 M6) were also run against the demo by hand, and `demo.test.ts` runs both on every `npm test`:
 `absorbedBy` returning `0` makes `npm run demo:company` exit 1 with `DEMO FAILED: ORACLE: the engine's absorbed amount is not the amount the raw log shows was bound
@@ -235,13 +241,12 @@ has `over-limit` where plan §7 has `link-dead`).
 - That `unknown-capability` is reached by a policy: it is reached by the script only.
 - That the demo's oracle is independent of everything: it imports nothing from `lib/allowance`, but it reads the standings the engine produced (it checks
   that the engine's standings respect the limits, from the raw log), so a wrong standing can be caught only if it breaks a limit or a plan §7 answer.
-- That `domains/company` is safe against every rule that could be hidden in it: the scan refuses the forms named in Decision 1, and nothing else.
+- That `domains/company` holds no authority rule: the scan refuses the forms named in Decision 1 as syntax, file by file; `policies.ts` itself proposes with depth, capability and trail tests (`canDelegate`, `lacking`, `trail.includes`), which no scan refuses and which the engine rules on afterwards.
 
 ## Plan observations (found by building; the plan is not edited)
 
 - Plan §6 M6 says "`npm run demo:company` ... exits non-zero unless ... all 15 `Rejection` kinds were actually observed". The policies reach 14 of 15 and the
   script reaches the fifteenth, so the demo's 15/15 is reached through the script.
-- The plan's second sabotage says "flip M5's `link-dead` check". The form that compiles and keeps the rest of `judgeCommit` is to delete the check, which is
-  what was run.
+- The plan says flip; both a delete and a flip (`dead === undefined`) compile and make the demo exit 1 on a step assertion. Delete is ledger row L2 and the flip is row L4.
 - The plan lists `__tests__/*` for M6; the tests also hold `__tests__/support/` (the oracle, the casts reader, the scan) and `__tests__/proofs/`, both under that directory.
 - `.genesis/checkpoints/CURRENT.md` and `.genesis/DONE.html` are not edited here, as in M1 to M5: the bookkeeping PR that marks the milestone done edits them, after an independent L4 verifier approves.
