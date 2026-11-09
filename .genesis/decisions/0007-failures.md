@@ -4,7 +4,7 @@
 - **Status:** proposed — written by the builder; not yet approved by an independent L4 pass
 - **Phase / milestone:** M7 (BUILD) — `tests/failures/**` (`01-…test.ts` to `11-…test.ts` and `helpers.ts`)
 
-The sabotage ledger and the timings below were measured on the tree of commit `2eba2e7`. The commits after it change this ADR only (`git diff 2eba2e7..HEAD --stat -- tests lib domains app` prints nothing). The rows of the ledger quote "N failed" and the files it was in,
+The sabotage ledger and the timings below were measured on the tree of commit `8956d85`. The commits after it change this ADR only (`git diff 8956d85..HEAD --stat -- tests lib domains app` prints nothing). The rows of the ledger quote "N failed" and the files it was in,
 and no count of passing tests, which goes stale whenever a test is added.
 
 ## Context
@@ -75,22 +75,22 @@ This is a restatement at a new layer and with a predicted-fault oracle, not a ne
 
 ## Decision 5 — how long the tests take
 
-`tests/failures` has no explicit timeout anywhere: every test runs under vitest's 5 s default.
+In `tests/failures` the four tests that ask the engine about case 07's 4 000-event log carry an explicit timeout of 15 000 ms (`AGED_TIMEOUT_MS`); every other test runs under vitest's 5 s default.
 
 The first measurement (three full-suite runs, then one under 20 `yes > /dev/null`, on the tree before the fix below) found one test over the 40% line: the `MAX_LOG_EVENTS` test of case 10 took 1 043 ms, 716 ms and 1 001 ms in the three runs and 4 220 ms (84% of 5 s) under load, because its
 log was 5 000 warranted commits and every warranted commit makes each replay cost more than the last. It now uses void commits (a fix of the work, not of a timeout); the test took 17 ms in a single run of `tests/failures` after the change, and it is not among the slowest of any of the runs below. The same measurement had case 07's
-authority-ends test at 1 582 ms (32%) under load, which is why that file builds its two logs once at the top.
+authority-ends test at 1 582 ms (32%) under load, which is why that file builds its two logs once at the top. After the review of this PR it also carries the explicit timeout: each engine call replays the whole log it is given (plan D3), so the five tests cannot share one fold, and the timeout is the fix that does not change an assertion.
 
-Measured again on the tree of `2eba2e7`, `vitest run --reporter=json`, the whole suite, on a laptop whose one-minute load average from other jobs was between 20 and 32 throughout (it was not idle). Slowest test of `tests/failures` in each run, and its share of the 5 s default:
+Measured again on the tree of `8956d85`, `vitest run --reporter=json`, the whole suite (64 files, 1 657 tests), on a laptop whose one-minute load average from other jobs was between 11 and 34 across the runs (it was not idle). Slowest test of `tests/failures` in each run:
 
 | Run | Slowest `tests/failures` test | Slowest test of the whole suite |
 |---|---|---|
-| full suite, run 1 | 719 ms, `07-grants-never-lapse`, "authority ends only on an explicit revoke" (14%) | 3 385 ms, `replay.test.ts` (M5, 20 s timeout) |
-| full suite, run 2 | 1 244 ms, the same test (25%) | 14 822 ms, `attenuation-closure.test.ts` pool of 12 (M3, own 60 s timeout) |
-| full suite, run 3 | 323 ms, the same test (6%) | 2 272 ms, the same M3 test |
-| full suite under 20 `yes > /dev/null` | 1 264 ms, the same test (25%) | 9 522 ms, the same M3 test |
+| full suite, run 1 | 205 ms, `07-grants-never-lapse`, "authority ends only on an explicit revoke" | 2 402 ms, `attenuation-closure.test.ts` pool of 12 (M3, own 60 s timeout) |
+| full suite, run 2 | 267 ms, `07-grants-never-lapse`, "after 4000 unrelated events G2 still warrants its whole limit…" | 2 564 ms, the same M3 test |
+| full suite, run 3 | 334 ms, the same test | 2 597 ms, the same M3 test |
+| full suite under 20 `yes > /dev/null` | 1 323 ms, "authority ends only on an explicit revoke" | 9 555 ms, the same M3 test |
 
-All four runs passed all their tests; `pgrep -x yes` printed 0 after the kill. The slowest case-10 test in each run was 141, 214 and 34 ms, and 179 ms under load. Nothing in `tests/failures` is above about 25% of its timeout on this host, with or without load; The brief puts CI at about three times a quiet laptop's speed (not measured here); three times the quiet-laptop figure of 323 ms is about 1 s, 19% of 5 s, which is arithmetic and not a CI measurement.
+All four runs passed all their tests; `pgrep -x yes` printed 0 after the kill. The slowest case-10 test in each run was 25, 49 and 55 ms, and 211 ms under load. The slowest `tests/failures` test under load, 1 323 ms, is 26% of the 5 s default and 9% of the 15 s that test now carries. The brief puts CI at about three times a quiet laptop's speed (not measured here); three times the slowest quiet-laptop figure of this table (334 ms) is about 1 s, which is arithmetic and not a CI measurement.
 
 ## Falsifiability log
 
@@ -117,14 +117,15 @@ two digits of the file) that failed and how many in each. This ledger runs the f
 | M08 | `checkGrantStructure`: the not-a-root check removed | `lib/chain/structure.ts` | 18 failed (cases 02 x4, 05 x6, 06 x2, 08 x5, 10 x1); case 08's own: 5 |
 | M09a | `append`: a breached commit is rejected (`unknown-grant`) | `lib/standing/append.ts` | 25 failed (cases 01 x4, 02 x6, 03 x1, 04 x1, 05 x1, 06 x1, 07 x1, 09 x7, 10 x3); case 09's own: 7 |
 | M09b | `apply`: a void commit charges its grant | `lib/standing/fold.ts` | 1 failed (cases 09 x1); case 09's own: 1 |
-| M10a | `read()` in intake: the try/catch removed | `lib/chain/intake.ts` | 3 failed (cases 10 x3); case 10's own: 3 |
+| M10a | `read()` in intake: the try/catch removed | `lib/chain/intake.ts` | 6 failed (cases 10 x6); case 10's own: 6 |
 | M10b | `replay`: the guarded element read made unguarded | `lib/standing/fold.ts` | 2 failed (cases 10 x2); case 10's own: 2 |
 | M10c | `openLog`: the MAX_LOG_EVENTS bound removed | `lib/standing/fold.ts` | 1 failed (cases 10 x1); case 10's own: 1 |
+| V14 | `readNames()` in intake: a `HostileRead` is rethrown, not marked as a bad field | `lib/chain/intake.ts` | 3 failed (cases 10 x3); case 10's own: 3 |
 | M11a | `deriveStanding`: heir is the grantee of the first dead link | `lib/standing/standing.ts` | 10 failed (cases 01 x1, 02 x2, 04 x1, 11 x6); case 11's own: 6 |
 | M11b | `deriveStanding`: heir is the grantor of the chain's root grant | `lib/standing/standing.ts` | 7 failed (cases 01 x1, 02 x2, 11 x4); case 11's own: 4 |
 
-The control had 0 failed of 141. Each of the 22 edits makes at least one test of its own case fail (the smallest is 1 failed, the largest 31), so no row is a survivor and none needs an equivalence argument. Rows that fail tests of other cases too are listed with their counts: an edit to `judgeCommit` or `used()` is seen by every case that rules on a commit.
-M01c is the control for the first test of case 01 (the "same rulings" assertion): an anomaly rule that is written into `judgeCommit` is the only thing that would make that assertion false, and it does. M07b alone does not touch the "ten commits of 10 000" test (each is under half the limit), which is why M07c exists.
+The control had 0 failed of 144. Each of the 23 edits makes at least one test of its own case fail (the smallest is 1 failed, the largest 31), so no row is a survivor and none needs an equivalence argument. Rows that fail tests of other cases too are listed with their counts: an edit to `judgeCommit` or `used()` is seen by every case that rules on a commit.
+M01c is the control for the first test of case 01 (the "same rulings" assertion): an anomaly rule that is written into `judgeCommit` is the only thing that would make that assertion false, and it does. M07b alone does not touch the "ten commits of 10 000" test (each is under half the limit), which is why M07c exists. V14 was added in review: on the tree of `de2028c` (141 tests) it left `tests/failures` at 0 failed, because no test gave a hostile charter to the entry points; the three charter tests added to case 10 (a roots getter that throws, a capabilities getter that throws, a revoked Proxy) are the ones it turns red, and M10a, which removes the same guard one level down, moved from 3 to 6 failed for the same reason.
 
 ## What M7 does not claim
 
@@ -139,5 +140,5 @@ M01c is the control for the first test of case 01 (the "same rulings" assertion)
 
 - §11 case 02 reads "`c4` at seq 10 is `inherited`" about the full log; the case pins the boundary by prefix length (10 binding, 11 inherited).
 - §11 case 06 suggests `limit: 0` fixtures for the masked rejection; a repair ladder is used instead (Decision 3).
-- §6 M7 says "at least five are sabotaged for real"; the ledger has 22 edits, each against the shipped source.
+- §6 M7 says "at least five are sabotaged for real"; the ledger has 23 edits, each against the shipped source.
 - `.genesis/checkpoints/CURRENT.md` and `.genesis/DONE.html` are not edited here, as in M1 to M6: the bookkeeping PR that marks the milestone done edits them, after an independent L4 verifier approves.
