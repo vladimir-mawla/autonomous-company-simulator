@@ -27,8 +27,9 @@ export type { Attempt, AttemptOutcome, CompanyCapability } from "../../domains/c
  * anything, and `__tests__/compute-demo-view.test.ts` compares it with the sum of the engine's own `charges` (one per warranted commit).
  *
  * NEVER THROWS. Each check that can fail returns `{ ok: false, error }`; the `try/catch` in `computeDemoView` is the second layer, for what the first
- * did not foresee. `demoReducer` is total over its actions (the one engine answer it does not use, a `fault` from `runQuarter`, is
- * described at that line).
+ * did not foresee. `demoReducer` has no try/catch: it calls `offer`, `replayScript` and `runQuarter` with the constants of this file, and was run on every sequence of at most four
+ * buttons without throwing (`__tests__/compute-demo-view.test.ts`); that is evidence for those sequences, not a proof for every state. The one engine answer it does not use, a `fault` from
+ * `runQuarter`, is described at that line.
  */
 
 /** The ticks of the "Autonomous quarter" button: the number `npm run demo:company` runs (`DEMO_TICKS` there), so the page shows the same quarter. */
