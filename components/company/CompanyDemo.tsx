@@ -13,8 +13,8 @@ import { commitLine, formatStanding } from "./format-standing.js";
  * that made it. It calls `computeDemoView(state)` in its render body, so every box below is the engine's answer for the state that is on
  * screen at that moment, folded again from the log; there is no second copy of anything the engine said that could go stale.
  * Neither `useEffect`, `useCallback`, `useMemo`, `setTimeout` nor `async` appears in this directory (`__tests__/source-scan.test.ts` checks the
- * forms it can see, and says which it cannot), and nothing here reads the clock or a random number, so the server's markup and the
- * browser's first render are the same string (`__tests__/CompanyDemo.render.test.tsx`).
+ * forms it can see, and says which it cannot), and nothing here reads the clock or a random number, so the markup is a function of the state alone: two renders of one state give one string
+ * (`__tests__/CompanyDemo.render.test.tsx`). That the browser's first render matches the server's was checked by running the dev build and reading the console (ADR 0008), not by a test.
  *
  * THE COMPONENT RENDERS; IT RULES ON NOTHING. It calls no engine function: the heir, the breach, the refusal and every number come from `computeDemoView`
  * (the one bridge) and are turned into words by the `format-*` files, which only read the fields the engine put there.
@@ -378,7 +378,7 @@ function Demo({ state, view, dispatch }: { readonly state: DemoState; readonly v
         <h2 id="h-bound">The bound</h2>
         <p className="cd-note">
           What the engine ruled binding or inherited, added up, against what the roots granted. The engine refuses a grant that over-allocates and
-          rules a spend past a limit void, so the first number cannot pass the second.
+          rules a spend past a limit void; this meter only adds the results up and compares them, and decides nothing.
         </p>
         <progress className={view.meter.holds ? "cd-bar cd-bar-wide" : "cd-bar cd-bar-wide cd-bar-broken"} value={view.meter.bound} max={view.meter.rootLimit} aria-label={`Bound ${formatAmount(view.meter.bound)} of ${formatAmount(view.meter.rootLimit)} granted by the roots`} />
         <p className="cd-meter" data-testid="conservation-meter">
