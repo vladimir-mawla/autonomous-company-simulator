@@ -13,7 +13,8 @@ import type { CompanyCapability } from "./org.js";
  * from `lib/standing`'s `mayCommit`, the pre-check plan D9 gives a runtime that wants prevention; and whether any other event
  * would be admitted from `append` itself, called and not kept (`append` returns a new log and changes the one it is given, so
  * calling it is a dry run). Nothing in this file
- * decides a rule, and nothing in it does arithmetic on a limit, an amount or a headroom: a policy that wants to know whether
+ * decides a rule, and nothing in it does arithmetic or an ordering comparison on an identifier or string-keyed property containing `limit`, `amount` or `headroom`
+ * (syntactic and file-local; see `__tests__/support/source-scan.ts`): a policy that wants to know whether
  * an act would be allowed asks the engine, and a policy that does not ask is simply ruled on afterwards (plan D4: acts are
  * facts). That is also why the view carries no headroom: a policy that could see one would be tempted to compute with it.
  *
