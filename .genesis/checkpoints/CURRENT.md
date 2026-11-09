@@ -3,13 +3,14 @@
 - **active_loop:** none recorded. M1 (contracts, `lib/contracts/**`), M2 (deploy skeleton,
   `app/api/health/**`), M3 (chain: intake and structure, `lib/chain/**`), M4 (allowance: conservation,
   `lib/allowance/**`), M5 (standing: the ledger fold, the verdict, the heir, `lib/standing/**`), M6
-  (domain: Meridian Supply Co., `domains/company/**`) and M7 (the failure suite, `tests/failures/**`) are
-  `done`; M8 and M9 are `todo` in this revision. The next milestone is M8, the interactive demo. Each milestone is separate, with its own branch, its own PR,
-  and its own independent (L4) verifier. `app/page.tsx` is still the genesis placeholder.
+  (domain: Meridian Supply Co., `domains/company/**`), M7 (the failure suite, `tests/failures/**`) and M8 (the
+  interactive demo, `app/` and `components/company/**`) are
+  `done`; M9 is `todo` in this revision. The next milestone is M9, deliverables. Each milestone is separate, with its own branch, its own PR,
+  and its own independent (L4) verifier. `app/page.tsx` is now the interactive demo (M8).
 
-- **last updated:** 2026-11-09 (UTC, as in every timestamp below), in the `chore(genesis): mark M7 done`
-  bookkeeping PR, after M7 passed independent L4 verification and merged (PR #14). The previous revision was
-  the `mark M6 done` PR's (#13), the one before it was the `mark M5 done` PR's (#11), the one before it was the `mark M4 done` PR's (#9), the one before that was
+- **last updated:** 2026-11-09 (UTC, as in every timestamp below), in the `chore(genesis): mark M8 done`
+  bookkeeping PR, after M8 passed independent L4 verification and merged (PR #16). The previous revision was
+  the `mark M7 done` PR's (#15), the one before it was the `mark M6 done` PR's (#13), the one before it was the `mark M5 done` PR's (#11), the one before it was the `mark M4 done` PR's (#9), the one before that was
   the `mark M3 done` PR's (#7), the one before that was the `mark M2 done` PR's (#5), the one before that
   was the `mark M1 done` PR's, and the one before that was written immediately after genesis, before any
   milestone build had begun. Recorded honestly rather than
@@ -27,18 +28,18 @@
 | M5 standing: fold, verdict, heir | `done` | PR #10 → `d47dd5f` (squash-merged); independent L4 APPROVE in round 5, after four fix rounds; see "What M5 adds" below |
 | M6 domain (Meridian Supply Co.) | `done` | PR #12 → `fe66bf5` (squash-merged); one full independent L4 pass and one targeted close, each REQUEST CHANGES, then two fix rounds; the last was approved by the orchestrator's mechanical check on the verifier's statement, not by a third independent pass; see "What M6 adds" below |
 | M7 failure suite | `done` | PR #14 → `bf44a10` (squash-merged); one full independent L4 pass at `de2028c` (APPROVE, three non-blocking items, applied), three fix commits (`8956d85`, `ae9288c`, `decdfa3`), a targeted close at `decdfa3` (APPROVE), then a one-line ADR fix and PR-body edits before merge; see "What M7 adds" below |
-| M8 interactive demo | `todo` | designed only |
+| M8 interactive demo | `done` | PR #16 → `dd1bd42` (squash-merged); one full independent L4 pass at `9bf68b0` (REQUEST CHANGES: one HIGH mark-done defect and three smaller items, the code sound), fix round 1 at `6b9cb7f`, a targeted close at `6b9cb7f` (APPROVE); live, see "What M8 adds" below |
 | M9 deliverables | `todo` | designed only |
 
 `main` is the genesis base (the plan, tooling config, app shell, a CI workflow, the README and the
-`.genesis/` ritual) plus fourteen merged PRs: #1 (the `next` 16.4.3 security upgrade), #2 (M1:
+`.genesis/` ritual) plus sixteen merged PRs: #1 (the `next` 16.4.3 security upgrade), #2 (M1:
 `lib/contracts/**` and its tests), #3 (`mark M1 done`, which edited only the two `.genesis/` files), #4
 (M2: `app/api/health/**` with its tests, ADR 0002 and the README's `Live:` line), #5 (`mark M2 done`, which
 edited only the same two `.genesis/` files), #6 (M3: `lib/chain/**` with its tests, and ADR 0003), #7
 (`mark M3 done`, again only those two files), #8 (M4: `lib/allowance/**` with its tests, and ADR 0004), #9
 (`mark M4 done`, again only those two files) #10 (M5: `lib/standing/**` with its tests, and ADR 0005), #11 (`mark M5 done`, again only those two
 files), #12 (M6: `domains/company/**` with its tests, `scripts/demo-company.ts` and ADR 0006), #13 (`mark M6
-done`, again only those two files) and #14 (M7: `tests/failures/**` and ADR 0007). `domains/` holds
+done`, again only those two files) #14 (M7: `tests/failures/**` and ADR 0007), #15 (`mark M7 done`, again only those two files) and #16 (M8: `app/page.tsx`, `app/globals.css`, `app/milestones.ts` and its test, `components/company/**` and ADR 0008). `domains/` holds
 `domains/company` only, and `lib/` holds `lib/contracts`, `lib/chain`, `lib/allowance` and `lib/standing`
 only.
 
@@ -57,8 +58,8 @@ GitHub's PR pages still show the pre-rewrite merge SHAs. To match one against `g
 | #1 `next` 16.4.3 security upgrade | `fc17afd` | `ab14763` |
 | #2 M1 contracts | `6302394` | `fc7b4ac` |
 
-PR #3 to #14 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`, `aebd77e`, `318e4e1`,
-`d06b848`, `da4fb73`, `d47dd5f`, `cc19691`, `fe66bf5`, `bc22540` and `bf44a10`; read with `gh pr view`), so no pair is needed for them.
+PR #3 to #16 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`, `aebd77e`, `318e4e1`,
+`d06b848`, `da4fb73`, `d47dd5f`, `cc19691`, `fe66bf5`, `bc22540`, `bf44a10`, `df1e57b` and `dd1bd42`; read with `gh pr view`), so no pair is needed for them.
 
 ## What the scaffold does and does not prove
 
@@ -393,17 +394,53 @@ PR #3 to #14 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`
 - **What this does not show.** The route imports nothing from M7 and no file under `app/` imports it, so the live
   site shows nothing of the failure suite; the page is still the genesis placeholder (M8).
 
+## What M8 adds, and what was run to check it
+
+- **What it is:** one interactive page that offers events to the real engine in the browser and renders only what
+  comes back. `git diff --name-only dd1bd42^ dd1bd42` lists 18 files: `app/page.tsx`, `app/globals.css`,
+  `app/milestones.ts`, `app/milestones.test.ts`, `components/company/**` (the component, the bridge
+  `compute-demo-view.ts`, four `format-*.ts` files, five test files and two support files) and
+  `.genesis/decisions/0008-demo.md`. No file under `lib`, `domains`, `scripts` or `tests` changed, nor
+  `app/api/health`, `package.json` or the lockfile. The bridge is the only M8 file that imports `lib/**` or
+  `domains/**`. `app/milestones.ts` and its test are the drift guard against `.genesis/DONE.html`: the set of
+  milestones claimed done in the two places must be equal, which is why this mark-done PR changes both in one
+  commit. The decisions, timings and sabotage ledger are in ADR 0008, which is the reference; this file does not
+  restate it.
+- **Tests (cited from PR #16's body, taken on `6b9cb7f`):** `npm test` printed `Test Files  70 passed (70)` and
+  `Tests  1861 passed (1861)`; M8 is 6 files and 204 tests on top of M7's 64 files and 1 657 tests. Gates
+  (`npm ci`, typecheck, lint, the build, `npm run demo:company`) passed. The numbers for this revision's own tree
+  are in the `mark M8 done` PR's body.
+- **How it was independently verified, and in how many rounds.** Round 1 was a full L4 pass at `9bf68b0`:
+  REQUEST CHANGES, the code sound. One HIGH finding (the drift-guard teeth and the page render test hard-coded
+  live milestone statuses, so following the mark-done steps exactly would turn CI red) and three smaller items (a
+  MEDIUM: the banned-hook scan had undisclosed holes; a LOW: the transcript and log agreement was pinned only on
+  seq and kind; a LOW, docs only). Fix round 1, at `6b9cb7f`, forced state in the teeth and derived the page
+  string from `currentMilestone()`. The targeted close at `6b9cb7f` was APPROVE: flipping M8 in both files, or M8
+  and M9 in both, leaves the whole suite green, and every one-sided flip fails exactly one test. The verifier's
+  claim, in both reports, is that M8 is clear of the defects found so far, not that it is free of defects. Both
+  reports are PR #16's comments; this file does not restate them.
+- **What the verifier did not confirm:** its re-run of the ADR's sabotage ledger matched every row it ran except
+  S15, which gave 13 against the ADR's 17 (the verifier's edit variant differs from the ADR's; the row is not
+  vacuous). `.then`, `eval` and `Atomics.wait` stay unseen by the source scan, as the ADR documents.
+- **Observed 2026-11-09 after the merge:** `gh pr view 16` gives `mergedAt` 2026-11-09T18:46:56Z and merge
+  commit `dd1bd42ff314e002b9581be4c644eeef26348fe9`; CI on that push concluded `success`; `/api/health` reported
+  `commit` `dd1bd42ff314e002b9581be4c644eeef26348fe9` with `status` `ok`; `GET /` on the live site returned 200
+  and contained "Revoke Ops-Lead" and "Autonomous quarter", and its milestone line read "Milestone 8,
+  interactive demo, is in progress." until this PR's merge.
+- **What this does not show.** The click paths (Spend, Revoke, the scrubber, Quarter) are not pinned by a
+  test, by the plan's own design (no jsdom); they were checked by hand in a real browser by the verifier.
+
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
-- `.genesis/decisions/` holds seven decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2),
+- `.genesis/decisions/` holds eight decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2),
   `0003-chain.md` (M3), `0004-allowance.md` (M4), `0005-standing.md` (M5), `0006-company.md` (M6) and
-  `0007-failures.md` (M7), each written by the milestone that made the decisions it records. M8 and M9 have none
-  yet. All seven records'
+  `0007-failures.md` (M7) and `0008-demo.md` (M8), each written by the milestone that made the decisions it records. M9 has none
+  yet. All eight records'
   Status line still says `proposed`: ADRs 0001 to 0004 read `proposed — written by the builder, not yet
-  verified by an independent L4 pass` and ADRs 0005 to 0007 read `proposed — written by the builder; not yet
-  approved by an independent L4 pass`. M1 to M7 have each since passed L4 (table above), so those lines are
+  verified by an independent L4 pass` and ADRs 0005 to 0008 read `proposed — written by the builder; not yet
+  approved by an independent L4 pass`. M1 to M8 have each since passed L4 (table above), so those lines are
   out of date. The `mark M5 done` PR (#11) did not edit ADR 0005's Status, so this PR does not edit ADR
-  0007's either. ADR 0003 also says
+  0008's either. ADR 0003 also says
   its falsifiability log was measured on `1d7ae12` and `60fb7e3`, which are on PR #6's head ref
   (`refs/pull/6/head`) and not on `main`, because the PR was squash-merged. ADR 0004 likewise names
   `842f0b0`, `03c85a4`, `acbd7e9`, `1302a66` and `e5447fe`: checked with `git merge-base --is-ancestor`, all

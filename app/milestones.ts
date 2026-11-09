@@ -28,7 +28,7 @@ export const MILESTONES: readonly Milestone[] = [
   { id: 5, title: "Standing: the ledger fold, the verdict, the heir", status: "done" },
   { id: 6, title: "Domain: Meridian Supply Co.", status: "done" },
   { id: 7, title: "The failure suite: eleven cases", status: "done" },
-  { id: 8, title: "Interactive demo", status: "in-progress" },
+  { id: 8, title: "Interactive demo", status: "done" },
   { id: 9, title: "Deliverables", status: "planned" },
 ];
 
