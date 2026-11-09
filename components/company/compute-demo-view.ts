@@ -138,8 +138,8 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
     }
     case "quarter": {
       const quarter = runQuarter(state.seed, QUARTER_TICKS);
-      // `fault` is non-null only if a log `append` built could not be replayed, which `append` cannot produce (`domains/company` runs 200 seeds
-      // of it in its own tests). If it ever were, the page keeps what it showed rather than show a log the engine could not replay.
+      // `fault` is non-null only if a log `append` built could not be replayed, which `append` has not produced in the domain's own 200-seed test. This branch is NOT covered by any test.
+      // If it ever were taken, the page keeps what it showed rather than show a log the engine could not replay.
       if (quarter.fault !== null) return state;
       return { log: quarter.log, attempts: quarter.attempts, cursor: null, seed: state.seed };
     }

@@ -67,41 +67,59 @@ describe("app/milestones.ts agrees with .genesis/DONE.html about which milestone
   });
 });
 
-/** DONE.html with milestone `id`'s pill forced to `state`, whatever it is in the real file; the result must differ from the input or the tooth would be vacuous. */
-function withPill(html: string, id: number, state: "done" | "todo"): string {
-  const forced = html.replace(new RegExp(`(<tr><td>M${id}<\\/td>(?:(?!<\\/tr>)[\\s\\S])*?<span class="pill )[a-z]+(">)[a-z]+(<\\/span>)`), `$1${state === "done" ? "ok" : "todo"}$2${state}$3`);
-  if (forced === html) throw new Error(`withPill(${id}, ${state}) changed nothing: the pill is already that or the row was not found`);
-  return forced;
+/** DONE.html with milestone `id`'s pill set to `state` (unchanged if it already is). */
+const setPill = (html: string, id: number, state: "done" | "todo"): string =>
+  html.replace(new RegExp(`(<tr><td>M${id}<\\/td>(?:(?!<\\/tr>)[\\s\\S])*?<span class="pill )[a-z]+(">)[a-z]+(<\\/span>)`), `$1${state === "done" ? "ok" : "todo"}$2${state}$3`);
+
+/** The same, but the result must differ from the input, or the tooth that uses it would be vacuous. */
+function flipPill(html: string, id: number, state: "done" | "todo"): string {
+  const flipped = setPill(html, id, state);
+  if (flipped === html) throw new Error(`flipPill(${id}, ${state}) changed nothing: the pill is already that or the row was not found`);
+  return flipped;
 }
 
-/** The module's milestones with `id`'s status forced. */
-const withStatus = (id: number, status: Milestone["status"]): Milestone[] => MILESTONES.map((milestone) => (milestone.id === id ? { ...milestone, status } : milestone));
+/**
+ * A pair that agrees by construction: `done` are the milestones both sources call done, whatever the real files say. Every tooth starts from one, so a tooth
+ * holds at every point of the project (before and after any mark-done pull request) and a real disagreement elsewhere cannot add an id to its expected answer.
+ */
+function agreeing(done: readonly number[]): { milestones: Milestone[]; html: string } {
+  let html = DONE_HTML_TEXT;
+  for (let id = 1; id <= 9; id++) html = setPill(html, id, done.includes(id) ? "done" : "todo");
+  return { milestones: MILESTONES.map((milestone) => ({ ...milestone, status: done.includes(milestone.id) ? "done" : "planned" })), html };
+}
 
-// The cases below FORCE the state they test, so they hold at every point of the project (before and after any mark-done pull request) and need no edit when one lands.
-// The base is the real pair after the other ids are made to agree: `agreeing(id)` forces both sources to say "not done" for `id`.
-const agreeing = (id: number): { milestones: Milestone[]; html: string } => ({
-  milestones: withStatus(id, "planned"),
-  html: doneIn(DONE_HTML_TEXT).includes(id) ? withPill(DONE_HTML_TEXT, id, "todo") : DONE_HTML_TEXT,
-});
+const withStatus = (milestones: readonly Milestone[], id: number, status: Milestone["status"]): Milestone[] =>
+  milestones.map((milestone) => (milestone.id === id ? { ...milestone, status } : milestone));
 
 describe("TEETH: the guard reports a disagreement in either direction, whatever the real state is", () => {
-  it("DONE.html says M9 is done and the module does not: M9 is reported", () => {
-    const base = agreeing(9);
-    const flipped = withPill(base.html, 9, "done");
-    expect(doneIn(flipped)).toContain(9);
+  const base = agreeing([1, 2, 3, 4, 5, 6, 7]);
+
+  it("the constructed pair agrees, and its parse is what it was built to be", () => {
+    expect(doneIn(base.html)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(claimedDone(base.milestones)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(disagreement(base.milestones, base.html)).toEqual([]);
-    expect(disagreement(base.milestones, flipped)).toEqual([9]);
+  });
+
+  it("DONE.html says M9 is done and the module does not: M9 is reported", () => {
+    const html = flipPill(base.html, 9, "done");
+    expect(doneIn(html)).toContain(9);
+    expect(disagreement(base.milestones, html)).toEqual([9]);
   });
 
   it("the module claims M8 done and DONE.html does not: M8 is reported", () => {
-    const base = agreeing(8);
-    expect(disagreement(withStatus(8, "done"), base.html)).toEqual([8]);
+    expect(disagreement(withStatus(base.milestones, 8, "done"), base.html)).toEqual([8]);
   });
 
   it("DONE.html marks M3 not done and the module says done: M3 is reported", () => {
-    const html = withPill(DONE_HTML_TEXT, 3, "todo");
+    const html = flipPill(base.html, 3, "todo");
     expect(doneIn(html)).not.toContain(3);
-    expect(disagreement(withStatus(3, "done"), html)).toEqual([3]);
+    expect(disagreement(base.milestones, html)).toEqual([3]);
+  });
+
+  it("both sources moved together (a mark-done pull request) is not a disagreement", () => {
+    const both = agreeing([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(disagreement(both.milestones, both.html)).toEqual([]);
+    expect(disagreement(withStatus(base.milestones, 8, "done"), both.html)).toEqual([]);
   });
 
   it("a page whose table was reshaped parses to no rows, which the first test above turns red", () => {
