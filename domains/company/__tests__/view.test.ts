@@ -161,4 +161,31 @@ describe("a log the engine cannot replay is a typed fault, not a view and not a 
     expect(made.ok).toBe(false);
     expect(!made.ok && made.fault.kind).toBe("hostile-log-input");
   });
+
+  it("a log whose every field answers once and throws on a second read: the view is built, equal to the plain log's, and each field was read once (the view is built from what the fold recorded, not from a second read of the log)", () => {
+    const plain = canon(18);
+    const reads = new Map<string, number>();
+    const hostile = plain.map((event, index) => {
+      const copy: Record<string, unknown> = {};
+      for (const key of Object.keys(event)) {
+        const value = (event as unknown as Record<string, unknown>)[key];
+        const label = `${index}.${key}`;
+        Object.defineProperty(copy, key, {
+          enumerable: true,
+          get: () => {
+            const count = (reads.get(label) ?? 0) + 1;
+            reads.set(label, count);
+            if (count > 1) throw new Error(`second read of ${label}`);
+            return value;
+          },
+        });
+      }
+      return copy;
+    }) as unknown as Log<CompanyCapability>;
+    const made = makeOrgView(hostile, 3);
+    expect(made.ok).toBe(true);
+    expect(made.ok && summary(made.view)).toEqual(summary(viewOf(plain, 3)));
+    expect([...reads.values()].every((count) => count === 1)).toBe(true);
+    expect(reads.size).toBeGreaterThan(18 * 3);
+  });
 });

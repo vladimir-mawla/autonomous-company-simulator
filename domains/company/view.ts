@@ -61,10 +61,7 @@ export function makeOrgView(log: Log<CompanyCapability>, tick: number): OrgViewR
   const { tree } = result.folded;
 
   const grants: GrantView[] = [];
-  for (const event of log) {
-    if (event.kind !== "grant") continue;
-    const recorded = tree.grants.get(event.grant.id);
-    if (recorded === undefined) continue;
+  for (const recorded of tree.grants.values()) {
     const chain = chainOf(tree, recorded.id);
     const trail = chain === undefined ? undefined : trailOf(tree, chain);
     grants.push({
