@@ -1,9 +1,54 @@
 /*
- * Minimal reset, plus (M8) the page-level layout for the one real page
- * this app will have: `app/page.tsx` and `components/company/CompanyDemo.tsx`.
- * Component-scoped styling, if any, will live alongside that component;
- * this file only owns the document-level reset and the `<main>` container.
+ * Minimal reset, plus the page-level layout and theme for the one real page this app has:
+ * `app/page.tsx` and `components/company/CompanyDemo.tsx` (M8). All colours are tokens on :root, redefined for dark mode
+ * under `prefers-color-scheme: dark`, so the page follows the visitor's system theme and nothing is hard-coded below.
+ * Layout rules that matter: nothing is wider than the viewport (long ids wrap, wide tables scroll inside their own region),
+ * and no content is inserted after load, so there is nothing to shift (the first render is the server's markup).
  */
+:root {
+  --bg: #f6f6f2;
+  --fg: #1a1c1f;
+  --muted: #565d66;
+  --card: #ffffff;
+  --border: #cfd3d9;
+  --accent: #1f4fcf;
+  --accent-fg: #ffffff;
+  --binding-bg: #d9f2df;
+  --binding-fg: #0b5226;
+  --inherited-bg: #ffecc4;
+  --inherited-fg: #6b4000;
+  --void-bg: #fadcdc;
+  --void-fg: #8a1818;
+  --code-bg: #eceef2;
+  --bar-track: #dfe2e7;
+  --bar-fill: #1f4fcf;
+  --bar-broken: #b42318;
+  --focus: #1f4fcf;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121416;
+    --fg: #e8eaed;
+    --muted: #a3abb5;
+    --card: #1b1e22;
+    --border: #3a3f46;
+    --accent: #7ea2ff;
+    --accent-fg: #0b1020;
+    --binding-bg: #17381f;
+    --binding-fg: #9be3b0;
+    --inherited-bg: #43330c;
+    --inherited-fg: #ffd98a;
+    --void-bg: #4a1c1c;
+    --void-fg: #ffb4b4;
+    --code-bg: #262a30;
+    --bar-track: #343a42;
+    --bar-fill: #7ea2ff;
+    --bar-broken: #ff8a80;
+    --focus: #9db8ff;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -14,12 +59,501 @@ html {
 
 body {
   margin: 0;
+  background: var(--bg);
+  color: var(--fg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 main {
   max-width: 64rem;
   margin: 0 auto;
-  padding: 2rem 1.25rem 4rem;
+  padding: 1.5rem 1rem 4rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.5rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* hero and tour */
+.cd-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cd-lead {
+  margin: 0 0 0.75rem;
+  max-width: 46rem;
+}
+
+.cd-tour-title {
+  margin-top: 1.25rem;
+}
+
+.cd-tour {
+  margin: 0 0 1.5rem;
+  padding-left: 1.25rem;
+  max-width: 46rem;
+}
+
+.cd-tour li {
+  margin-bottom: 0.4rem;
+}
+
+/* cards */
+.cd-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cd-note {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.cd-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.cd-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* controls */
+.cd-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.cd-btn {
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cd-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.cd-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cd-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.cd-seed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cd-seed input {
+  width: 6.5rem;
+  min-height: 44px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+}
+
+.cd-latest {
+  min-height: 4.5rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: var(--code-bg);
+}
+
+.cd-latest p {
+  margin: 0;
+}
+
+.cd-label-strong {
+  font-weight: 600;
+}
+
+.cd-tone-text {
+  font-weight: 600;
+}
+
+.cd-tone-admitted .cd-answer strong,
+.cd-tone-text.cd-tone-admitted {
+  color: var(--binding-fg);
+}
+
+.cd-tone-breached .cd-answer strong,
+.cd-tone-text.cd-tone-breached {
+  color: var(--void-fg);
+}
+
+.cd-tone-refused .cd-answer strong,
+.cd-tone-text.cd-tone-refused {
+  color: var(--inherited-fg);
+}
+
+.cd-tone-fault .cd-answer strong,
+.cd-tone-text.cd-tone-fault {
+  color: var(--void-fg);
+}
+
+/* time travel */
+.cd-scrubber {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+.cd-scrubber input[type="range"] {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--accent);
+}
+
+.cd-out {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.cd-when {
+  margin: 0;
+  min-height: 3.2rem;
+}
+
+.cd-when-past strong {
+  color: var(--inherited-fg);
+}
+
+/* bars and the meter */
+.cd-bar {
+  display: block;
+  width: 100%;
+  height: 0.75rem;
+  accent-color: var(--bar-fill);
+}
+
+.cd-bar-wide {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.cd-bar-broken {
+  accent-color: var(--bar-broken);
+}
+
+.cd-meter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  margin: 0;
+}
+
+.cd-leq {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* pills and badges: always carry their meaning in words, never in colour alone */
+.cd-pill,
+.cd-badge {
+  display: inline-block;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cd-pill-live,
+.cd-badge-binding {
+  background: var(--binding-bg);
+  color: var(--binding-fg);
+}
+
+.cd-pill-dead,
+.cd-badge-void {
+  background: var(--void-bg);
+  color: var(--void-fg);
+}
+
+.cd-badge-inherited {
+  background: var(--inherited-bg);
+  color: var(--inherited-fg);
+}
+
+/* the grant tree */
+.cd-tree {
+  list-style: none;
+  margin: 0;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--border);
+}
+
+.cd-tree-root {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.cd-tree li {
+  margin: 0.5rem 0;
+}
+
+.cd-grant {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.cd-grant-dead {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.cd-grant p {
+  margin: 0 0 0.3rem;
+}
+
+.cd-grant-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+  align-items: center;
+}
+
+.cd-caps {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.cd-nums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+}
+
+.cd-nums div {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.cd-nums dt {
+  color: var(--muted);
+}
+
+.cd-nums dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* tables and scroll regions */
+.cd-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 6px;
+}
+
+.cd-scroll-tall {
+  max-height: 32rem;
+  overflow-y: auto;
+}
+
+.cd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.cd-table th,
+.cd-table td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.cd-table thead th {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cd-commit .cd-id {
+  display: block;
+  font-weight: 700;
+}
+
+.cd-sub {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.82rem;
+}
+
+.cd-seq {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cd-answers span {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.cd-detail {
+  display: block;
+  font-size: 0.78rem;
+}
+
+.cd-outcomes {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+/* transcript */
+.cd-transcript {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cd-attempt {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+}
+
+.cd-attempt p {
+  margin: 0 0 0.2rem;
+}
+
+.cd-tone-admitted.cd-attempt {
+  border-left-color: var(--binding-fg);
+}
+
+.cd-tone-breached.cd-attempt,
+.cd-tone-fault.cd-attempt {
+  border-left-color: var(--void-fg);
+}
+
+.cd-tone-refused.cd-attempt {
+  border-left-color: var(--inherited-fg);
+}
+
+.cd-n {
+  font-weight: 700;
+}
+
+.cd-source,
+.cd-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.cd-offered {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.cd-error {
+  border-color: var(--void-fg);
+}
+
+/* footer */
+.cd-footer {
+  margin-top: 2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.cd-milestones {
+  padding-left: 1.25rem;
+}
+
+.cd-ms-id {
+  font-weight: 700;
+}
+
+.cd-ms-status {
+  font-size: 0.8rem;
+}
+
+.cd-ms-done .cd-ms-status {
+  color: var(--binding-fg);
+}
+
+@media (min-width: 48rem) {
+  main {
+    padding: 2.25rem 1.5rem 4rem;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+  }
+
+  .cd-scrubber {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+  }
 }
