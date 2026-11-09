@@ -349,6 +349,18 @@ describe("computeDemoView never throws, and says why when it has no view", () =>
     expect(computeDemoView(swapped).ok).toBe(false);
   });
 
+  it("an admitted call with the log's seq and kind but other contents is an error", () => {
+    const forged = {
+      ...good,
+      attempts: good.attempts.map((attempt) =>
+        attempt.outcome.kind === "admitted" && attempt.outcome.event.kind === "commit" && attempt.outcome.event.seq === 7
+          ? { ...attempt, outcome: { ...attempt.outcome, event: { ...attempt.outcome.event, commit: { ...attempt.outcome.event.commit, amount: 51_000 } } } }
+          : attempt,
+      ),
+    };
+    expect(computeDemoView(forged)).toEqual({ ok: false, error: "the admitted call at position 7 is not the log's event at that position" });
+  });
+
   it("a log the engine cannot replay is the engine's own FoldFault, as an error", () => {
     // the transcript is forged to agree with the log, so that the first check passes and the engine's own fold is what refuses
     const gappy = {

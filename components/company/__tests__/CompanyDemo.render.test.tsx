@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { currentMilestone } from "../../../app/milestones";
 import Home from "../../../app/page";
 import CompanyDemo from "../CompanyDemo";
 import { computeDemoView, initialDemoState } from "../compute-demo-view.js";
@@ -143,7 +144,8 @@ describe("the page as a whole, and the error path", () => {
     expect(page.match(/<h1[ >]/g)).toHaveLength(1);
     expect(text(page)).toContain("A 90-second tour");
     expect(text(page)).toContain("Revoke Ops-Lead");
-    expect(text(page)).toContain("Milestone 8, interactive demo, is in progress.");
+    const current = currentMilestone();
+    expect(text(page)).toContain(current === undefined ? "All nine milestones are done." : `Milestone ${current.id}, ${current.title.toLowerCase()}, is ${current.status === "in-progress" ? "in progress" : "next"}.`);
     expect(page.match(/<li class="cd-ms /g)).toHaveLength(9);
   });
 

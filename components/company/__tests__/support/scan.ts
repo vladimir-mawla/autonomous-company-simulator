@@ -12,13 +12,13 @@ import { referencesIn } from "../../../../lib/contracts/__tests__/support/module
  * exactly these, and nothing else:
  *
  *   `banned-hook`      an IDENTIFIER, or a string literal, spelt `useEffect`, `useLayoutEffect`, `useInsertionEffect`, `useCallback`, `useMemo`, `setTimeout`,
- *                      `setInterval`, `requestAnimationFrame` or `queueMicrotask`. An identifier is seen wherever it is: a call, an import specifier, the name after a dot
+ *                      `setInterval`, `setImmediate`, `requestAnimationFrame`, `queueMicrotask`, `MessageChannel` or `use` (React's `use(promise)`). An identifier is seen wherever it is: a call, an import specifier, the name after a dot
  *                      (`React.useMemo`), a destructuring (`const { useEffect } = React`), an alias (`import { useEffect as e }` has the identifier twice). A string literal
  *                      is seen too, so `React["useMemo"]` is.
- *   `async`            an `async` modifier, an `await` expression, the identifier `Promise`.
+ *   `async`            an `async` modifier, an `await` expression, the `await` of a `for await` loop, the identifier `Promise`.
  *   `other-hook`       an identifier that looks like a hook (`use` then a capital letter) and is not `useReducer`: the page's one hook is `useReducer`.
  *   `nondeterminism`   the identifiers `Date`, `performance`, `crypto`, `fetch`, `window`, `document`, `navigator`, `localStorage`, `sessionStorage`, `process`, `globalThis`,
- *                      and `Math.random`. The page's markup must be a function of its state alone, so the server and the browser agree.
+ *                      `Intl`, `toLocaleString` (both depend on the locale of whoever runs them), `Function` (`new Function(...)`) and `Math.random`. The page's markup must be a function of its state alone, so the server and the browser agree.
  *   `engine-import`    a module reference (an import, an export-from, a dynamic `import()`, a `require` call, an import type, a `/// <reference>`) that resolves, by real
  *                      path, into `lib/` or `domains/`, in any file but the bridge (`components/company/compute-demo-view.ts`); and in the bridge, one that is not the
  *                      `index.ts` of `lib/contracts`, `lib/chain`, `lib/allowance`, `lib/standing` or `domains/company`.
@@ -27,8 +27,10 @@ import { referencesIn } from "../../../../lib/contracts/__tests__/support/module
  *   `import-other`     a module reference that is not a file of this repository, `react`, `react-dom` or `next`/`next/*`, or whose specifier is not a string literal (it cannot be resolved, so it fails closed).
  *   `inventory`        a file under `components/company/` (not `__tests__/`) that is not a `.ts`/`.tsx` source, is a symlink, or does not parse.
  *
- * WHAT IT DOES NOT SEE, so that nobody reads more into a green result than is there (each is pinned as "not reported" in the test file):
- *   - a name built at run time: `"use" + "Effect"`, a template literal with a substitution, `["use", "Effect"].join("")`;
+ * WHAT IT DOES NOT SEE, so that nobody reads more into a green result than is there. This list is EXAMPLES, NOT A COMPLETE LIST: the scan matches names and
+ * syntax, and any way of reaching a banned capability without writing its name or its syntax is unseen. The forms named below are planted and shown "not reported" in the test file:
+ *   - a `.then(...)` chain on any value (the identifier `then` is not looked for), `eval(...)`, and `Atomics.wait`;
+ *   - a name built at run time: `"us" + "eEffect"`, a template literal with a substitution, `["us", "eEffect"].join("")` (a piece that is itself a banned word, such as the literal `"use"`, is seen);
  *   - a name reached through `Reflect.get`, `Object.getOwnPropertyDescriptor`, a computed key whose value is not a literal (`React[name]`), or a `with` block;
  *   - a hook or timer that arrives from a module this scan allows (a function named something else exported from another file of the directory, that calls `useEffect`:
  *     that file would be scanned and reported, but a file outside the scanned set is not);
@@ -54,8 +56,8 @@ export interface ScanResult {
   readonly engineImporters: readonly string[];
 }
 
-export const BANNED_HOOKS: readonly string[] = ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback", "useMemo", "setTimeout", "setInterval", "requestAnimationFrame", "queueMicrotask"];
-export const NONDETERMINISTIC: readonly string[] = ["Date", "performance", "crypto", "fetch", "window", "document", "navigator", "localStorage", "sessionStorage", "process", "globalThis"];
+export const BANNED_HOOKS: readonly string[] = ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback", "useMemo", "setTimeout", "setInterval", "setImmediate", "requestAnimationFrame", "queueMicrotask", "MessageChannel", "use"];
+export const NONDETERMINISTIC: readonly string[] = ["Date", "performance", "crypto", "fetch", "window", "document", "navigator", "localStorage", "sessionStorage", "process", "globalThis", "Intl", "toLocaleString", "Function"];
 export const ENGINE_NAMES: readonly string[] = [
   "append", "fold", "standings", "standingOf", "mayCommit", "usedOf", "headroomOf", "absorbedBy", "checkHeadroom", "offer", "runQuarter", "replayScript",
   "makeOrgView", "chainOf", "firstDeadLink", "trailOf", "readEventInput", "readLogEvent", "readCharter", "mulberry32",
@@ -175,7 +177,7 @@ export function scanPageSource(options: ScanOptions): ScanResult {
           report("banned-hook", node, `"${node.text}"`);
         } else if (node.kind === SyntaxKind.AsyncKeyword) {
           report("async", node, "async");
-        } else if (node.kind === SyntaxKind.AwaitExpression) {
+        } else if (node.kind === SyntaxKind.AwaitExpression || node.kind === SyntaxKind.AwaitKeyword) {
           report("async", node, "await");
         }
         node.forEachChild(visit);

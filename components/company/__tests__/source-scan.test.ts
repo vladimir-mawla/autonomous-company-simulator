@@ -109,6 +109,13 @@ describe("TEETH: every form the scan claims to see is reported, in exactly the p
     "components/company/w-call.ts": "declare const fold: () => number;\nexport const W = fold();\n",
     "components/company/x-fetch.ts": 'export const X = () => fetch("/x");\n',
     "components/company/y.json": "{}\n",
+    "components/company/z1-use.tsx": 'import * as React from "react";\ndeclare const p: object;\nexport const Z1 = () => React.use(p);\n',
+    "components/company/z2-immediate.ts": "export const Z2 = () => setImmediate(() => 1);\n",
+    "components/company/z3-forawait.ts": "declare const it: AsyncIterable<number>;\nexport const Z3 = async () => { for await (const x of it) void x; };\n",
+    "components/company/z4-locale.ts": "export const Z4 = (n: number) => n.toLocaleString();\n",
+    "components/company/z5-intl.ts": 'export const Z5 = new Intl.NumberFormat("en");\n',
+    "components/company/z6-function.ts": 'export const Z6 = new Function("return 1");\n',
+    "components/company/z7-channel.ts": "export const Z7 = new MessageChannel();\n",
     "app/page.tsx": 'import { useMemo } from "react";\nexport default function Home() { return useMemo(() => null, []); }\n',
   };
 
@@ -144,6 +151,13 @@ describe("TEETH: every form the scan claims to see is reported, in exactly the p
         "components/company/w-call.ts:engine-call",
         "components/company/x-fetch.ts:nondeterminism",
         "components/company/y.json:inventory",
+        "components/company/z1-use.tsx:banned-hook",
+        "components/company/z2-immediate.ts:banned-hook",
+        "components/company/z3-forawait.ts:async",
+        "components/company/z4-locale.ts:nondeterminism",
+        "components/company/z5-intl.ts:nondeterminism",
+        "components/company/z6-function.ts:nondeterminism",
+        "components/company/z7-channel.ts:banned-hook",
         "app/page.tsx:banned-hook",
       ].sort(),
     );
@@ -196,11 +210,14 @@ describe("controls: things that look like violations and are not reported", () =
 
 describe("THE BLIND SPOTS: evasions the scan does not see, planted and shown not reported", () => {
   const evasions: Readonly<Record<string, string>> = {
-    "components/company/concat.tsx": 'import * as React from "react";\nconst key = "use" + "Effect";\nexport const C = (React as unknown as Record<string, () => void>)[key];\n',
+    "components/company/concat.tsx": 'import * as React from "react";\nconst key = "us" + "eEffect";\nexport const C = (React as unknown as Record<string, () => void>)[key];\n',
     "components/company/template.ts": 'const part = "Timeout";\nexport const T = (self as unknown as Record<string, unknown>)[`set${part}`];\n',
-    "components/company/join.tsx": 'import * as React from "react";\nexport const J = (React as unknown as Record<string, unknown>)[["use", "Memo"].join("")];\n',
-    "components/company/reflect.tsx": 'import * as React from "react";\nexport const R = Reflect.get(React, ["use", "Callback"].join(""));\n',
+    "components/company/join.tsx": 'import * as React from "react";\nexport const J = (React as unknown as Record<string, unknown>)[["us", "eMemo"].join("")];\n',
+    "components/company/reflect.tsx": 'import * as React from "react";\nexport const R = Reflect.get(React, ["us", "eCallback"].join(""));\n',
     "components/company/computed.tsx": 'import * as React from "react";\ndeclare const hook: string;\nexport const K = (React as unknown as Record<string, unknown>)[hook];\n',
+    "components/company/then.ts": "declare const p: { then: (f: (x: number) => number) => number };\nexport const T = p.then((x) => x);\n",
+    "components/company/eval.ts": 'export const E = eval("1");\n',
+    "components/company/atomics.ts": "declare const a: Int32Array;\nexport const A = Atomics.wait(a, 0, 0, 1);\n",
     "components/company/dyn-react.ts": 'declare const k: string;\nexport const D = import("react").then((m) => (m as unknown as Record<string, unknown>)[k]);\n',
   };
 
