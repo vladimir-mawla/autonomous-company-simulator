@@ -8,6 +8,7 @@ import {
   isIdentifier,
   isImportDeclaration,
   isNamedImports,
+  isVariableStatement,
   SyntaxKind,
   type Node,
 } from "typescript/unstable/ast";
@@ -235,7 +236,11 @@ describe("the exit code: non-zero when the engine, or the script's own list, sto
 });
 
 describe("the oracle in the demo reads the raw log and the standings and calls nothing from the engine", () => {
-  /** The identifiers inside the named functions of `file` that are also a local name some value import of `file` introduced. */
+  /**
+   * The identifiers inside the named functions of `file` that are also a local name some value import of `file` introduced, or the name of any other
+   * function or variable declared at the top level of `file` (a helper declared there can call the engine for the oracle, so the oracle may not call one).
+   * Types are not collected: an interface or a type alias cannot call anything.
+   */
   function importedNamesUsedIn(root: string, tsconfig: string, file: string, functions: readonly string[]): { used: string[]; found: string[] } {
     const api = new API();
     try {
@@ -257,6 +262,12 @@ describe("the oracle in the demo reads the raw log and the standings and calls n
         node.forEachChild(collect);
       };
       collect(sf);
+      for (const statement of sf.statements) {
+        if (isFunctionDeclaration(statement) && statement.name !== undefined && !functions.includes(statement.name.text)) valueImports.add(statement.name.text);
+        if (isVariableStatement(statement)) {
+          for (const declaration of statement.declarationList.declarations) if (isIdentifier(declaration.name)) valueImports.add(declaration.name.text);
+        }
+      }
 
       const used = new Set<string>();
       const found: string[] = [];
@@ -283,7 +294,7 @@ describe("the oracle in the demo reads the raw log and the standings and calls n
     expect(result.used).toEqual([]);
   });
 
-  it("and the check can fail: a copy of the script whose oracle calls headroomOf, or whose spentUnder calls fold, is caught, naming it", () => {
+  it("and the check can fail: a copy of the script whose oracle calls headroomOf, or whose spentUnder calls fold, or whose oracle calls a helper (a function or a const) declared in the file that calls fold, is caught, naming it", () => {
     const dir = mkdtempSync(join(tmpdir(), "act-demo-oracle-"));
     scratch.push(dir);
     const put = (path: string, text: string): void => {
@@ -300,7 +311,12 @@ describe("the oracle in the demo reads the raw log and the standings and calls n
       "dirty.ts",
       'import { headroomOf, fold } from "./lib.js";\nfunction conservationOracle(): number { return headroomOf(); }\nfunction spentUnder(): number { return fold(); }\nexport { conservationOracle, spentUnder };\n',
     );
+    put(
+      "dirty2.ts",
+      'import { fold } from "./lib.js";\nfunction helper(): number { return fold(); }\nconst viaConst = (): number => fold();\nfunction conservationOracle(): number { return helper(); }\nfunction spentUnder(): number { return viaConst(); }\nexport { conservationOracle, spentUnder };\n',
+    );
     expect(importedNamesUsedIn(dir, "tsconfig.json", "clean.ts", ["conservationOracle", "spentUnder"])).toEqual({ used: [], found: ["conservationOracle", "spentUnder"] });
     expect(importedNamesUsedIn(dir, "tsconfig.json", "dirty.ts", ["conservationOracle", "spentUnder"])).toEqual({ used: ["fold", "headroomOf"], found: ["conservationOracle", "spentUnder"] });
+    expect(importedNamesUsedIn(dir, "tsconfig.json", "dirty2.ts", ["conservationOracle", "spentUnder"])).toEqual({ used: ["helper", "viaConst"], found: ["conservationOracle", "spentUnder"] });
   });
 });

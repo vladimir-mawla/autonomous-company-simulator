@@ -28,7 +28,7 @@ import type { Attempt, CompanyCapability, ScriptStep } from "../domains/company/
  *
  * THE ORACLE (`conservationOracle`, `spentUnder`) reads only the raw log's events (their parent pointers and amounts) and the engine's STANDINGS, to know which
  * commits bind. It calls nothing from `lib/allowance` or `lib/standing`: `domains/company/__tests__/demo.test.ts` walks this file's syntax tree and fails if
- * either function mentions anything this file imports as a value. It trusts the engine's classification (which commit is void), not its accounting.
+ * either function mentions a name this file imports, directly or through a helper declared in it. It trusts the engine's classification (which commit is void), not its accounting.
  *
  * `absorbedBy` and `headroomOf` ARE imported, to print the engine's numbers; the oracle is what they are checked against. Plan §6 M6 says that making
  * `absorbedBy` return 0 "makes the demo exit non-zero on the oracle": the literal oracle (a sum against a root's limit) is blind to that, because nothing in
