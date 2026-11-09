@@ -16,7 +16,7 @@ lib/contracts  ->  lib/chain  ->  lib/allowance  ->  lib/standing  ->  domains/c
         app/api/health/route.ts                                       (imports lib/contracts only)
 ```
 
-The arrows are the imports found in the source files on `main` after M8 (checked by reading every `from "..."` of the non-test sources). A layer may import its own layer and layers to its left; it imports another layer only through that layer's `index.ts`.
+The arrows are the imports found in the source files on `main` after M8 (checked by reading every `from "..."` of the non-test sources). A layer imports its own layer and layers to its left. The scans below pin this for `lib/` and say what each covers; for `domains/`, `components/` and `app/` they pin a narrower set of rules, which are listed with them.
 
 What enforces it, and how far:
 
@@ -74,7 +74,7 @@ Authority is conserved (D2): a child grant's `limit` is reserved out of its pare
 |---|---|---|---|
 | a reservation larger than the parent's headroom (`over-allocation`, with the exact shortfall) | delegating must not create authority | `lib/allowance/accounting.ts` (`checkHeadroom`) | `lib/allowance/__tests__/conservation.test.ts` › "a child grant is admitted only with limit <= the parent's headroom, and a refusal carries the exact shortfall" |
 | returning spent authority on a revoke, and returning less than the unspent part | a revoke that forgave spending would let revoke-and-regrant mint authority; one that returned nothing would strand it | `lib/allowance/accounting.ts` (`absorbedBy`) | `lib/allowance/__tests__/exact-return.test.ts` › "revoking h raises its live parent's headroom by exactly limit(h) - subtreeOwn(h)" |
-| a live grant with negative headroom, and a dead grant with non-zero headroom | the conservation invariants | `lib/allowance/accounting.ts` | `lib/allowance/__tests__/conservation.test.ts` › "every live grant has headroom >= 0" |
+| a live grant with negative headroom, and a dead grant with non-zero headroom | the conservation invariants | `lib/allowance/accounting.ts` | `lib/allowance/__tests__/conservation.test.ts` › "every live grant has headroom >= 0" and › "every dead grant has headroom exactly 0" |
 | the canonical numbers being anything else | G2 absorbs 220 000 and returns 180 000, and G1's headroom goes from 500 000 to 680 000 | `lib/allowance/accounting.ts` | `lib/allowance/__tests__/accounting.test.ts` › "revoking G2 at seq 11: absorbed 220 000 (80 000 + 50 000 + 90 000), returned 180 000, G1's headroom 500 000 -> 680 000" |
 
 The conservation tests are properties over generated logs from a seeded generator; the files say how many seeds and steps, and that a generator that does not reach an edge is itself tested (`lib/allowance/__tests__/conservation.test.ts` › "each count is at least its floor, so each property above was evaluated over many prefixes, at the edges the floors name").
@@ -91,8 +91,8 @@ The conservation tests are properties over generated logs from a seeded generato
 | naming the revoker as the one who answers | accountability follows the delegation chain: the heir is the grantor of the first dead link (D7) | `lib/standing/standing.ts` | `lib/standing/__tests__/heir.test.ts` › "who revoked is irrelevant to who answers (plan D7, failure case 11)" |
 | a pre-check that differs from the record | `mayCommit` and `append` go through one predicate (D9) | `lib/standing/append.ts` | `lib/standing/__tests__/may-commit-equivalence.test.ts` › "the boundary, asked of both: exactly the headroom is warranted and one more is over-limit" |
 | charging the allowance for a void commit | a void act is recorded, and costs nothing | `lib/standing/fold.ts` (`apply`) | `lib/standing/__tests__/conservation.test.ts` › "a breached commit is recorded and the grant's headroom is exactly what it was" |
-| a log or charter it cannot replay: a gap in `seq`, an inadmissible event, a hostile read, a log over `MAX_LOG_EVENTS` | the answer is a typed `FoldFault`, not a throw and not a smaller log | `lib/standing/fold.ts` (`replay`) | `tests/failures/10-hostile-input-fails-closed.test.ts` › "10 hostile input fails closed: the bounds, N and N + 1, through the domain's offer and the log's length" |
-| an engine that rules differently from the log as it stood | every prefix of a log is ruled as the log up to it was | `lib/standing/fold.ts` | `lib/standing/__tests__/canonical.test.ts` › "the fifteen rejections of plan section 7, each at the point the table places it" |
+| a log or charter it cannot replay: a gap in `seq`, an inadmissible event, a hostile read, a log over `MAX_LOG_EVENTS` | the answer is a typed `FoldFault`, not a throw and not a smaller log | `lib/standing/fold.ts` (`replay`) | `tests/failures/02-arrival-is-order.test.ts` › "a hand-built log in which the seqs of the revoke and the commit are exchanged does not fold: seq must be the position (seq-mismatch)"; `tests/failures/05-authorship-is-asserted-not-authenticated.test.ts` › "05 replay re-validates: a cast-built log with an event that could not have been admitted fails closed at its index"; `lib/standing/__tests__/hostile-input.test.ts` › "a revoked Proxy as the log, as an element and as a nested list is a typed fault, not a throw"; `tests/failures/10-hostile-input-fails-closed.test.ts` › "10 hostile input fails closed: the bounds, N and N + 1, through the domain's offer and the log's length" |
+| an engine that does not reproduce the canonical incident | the numbers in the plan are the engine's, event by event | `lib/standing/fold.ts` | `lib/standing/__tests__/canonical.test.ts` › "the eighteen admitted events of plan section 7, offered to append one at a time" and › "the fifteen rejections of plan section 7, each at the point the table places it" |
 
 ### Stage 5 — the domain (`domains/company`)
 
@@ -100,14 +100,14 @@ Meridian Supply Co.: the charter, the canonical incident script, five policies a
 
 | Refuses | Why | Where | Pinned by |
 |---|---|---|---|
-| answering the incident script with anything other than what plan section 7 gives for each of its 33 steps | the demo is the engine's answer, step by step, and a step that differs ends the script with a non-zero exit | `scripts/demo-company.ts` | `domains/company/__tests__/demo.test.ts` › "prints the attempt, the engine's typed result and plan §7's answer for each of the 33 steps, in order" |
+| answering the incident script with anything other than what plan section 7 gives for each of its 33 steps | the demo is the engine's answer, step by step; the script's own header says it throws at the first step that differs | `scripts/demo-company.ts` | `domains/company/__tests__/demo.test.ts` › "prints the attempt, the engine's typed result and plan §7's answer for each of the 33 steps, in order" |
 | a policy driving a quarter into a log the engine cannot fold, or one that breaks conservation | the five policies are pure functions of a view and a seeded generator | `domains/company/simulate.ts` | `domains/company/__tests__/quarter.test.ts` › "never throws, always folds, conserves at every prefix" |
 
 ### Stage 6 — the demo (`components/company`, `app/page.tsx`)
 
 | Refuses | Why | Where | Pinned by |
 |---|---|---|---|
-| rendering a ruling the engine did not just produce for the log on screen | one bridge calls the engine; the component renders what it returns | `components/company/compute-demo-view.ts` | `components/company/__tests__/compute-demo-view.test.ts` › "each scrubbed view equals the view of a state whose log stops there" |
+| rendering a ruling the engine did not just produce for the log on screen | one bridge calls the engine; the component renders what it returns | `components/company/compute-demo-view.ts` | `components/company/__tests__/compute-demo-view.test.ts` › "a transcript that is not the log's story is an error" |
 | showing a different table from `npm run demo:company` | the test runs the script and diffs it against the rendered page | `components/company/CompanyDemo.tsx` | `components/company/__tests__/demo-diff.test.tsx` › "the standings blocks of the script are the rows of the page's table" |
 | a button sequence that throws or breaks conservation | the reducer is total over the page's eight buttons, for sequences of up to four | `components/company/compute-demo-view.ts` | `components/company/__tests__/compute-demo-view.test.ts` › "EXHAUSTIVE: every sequence of at most 4 buttons yields a view, and the view conserves" |
 | claiming a milestone done that `.genesis/DONE.html` does not | the page's milestone list and the definition-of-done file are compared | `app/milestones.ts` | `app/milestones.test.ts` › "claims exactly the milestones DONE.html marks done" |
