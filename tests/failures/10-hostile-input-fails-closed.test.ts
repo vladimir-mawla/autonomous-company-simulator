@@ -303,9 +303,11 @@ describe("10 hostile input fails closed: the bounds, N and N + 1, through the do
   });
 
   it("MAX_LOG_EVENTS: a log of N folds and N + 1 is log-too-long { N + 1, N } at every entry point; an append to N - 1 is admitted, to N is faulty-log log-too-long", () => {
+    // One grant, then commits under a grant that does not exist: each is recorded and ruled void, and a void commit charges
+    // nothing, so replaying 5 000 of them stays cheap (warranted ones would make every replay quadratic in the log's length).
     const events = (count: number): Ev[] => [
       grantEv({ id: "G1", grantor: "dana", grantee: "cfo", capabilities: ["purchase"], limit: MAX_AMOUNT, depth: 2 }),
-      ...Array.from({ length: count - 1 }, (_, n) => commitEv(`k${n}`, "cfo", "G1", "purchase", 1)),
+      ...Array.from({ length: count - 1 }, (_, n) => commitEv(`k${n}`, "cfo", "g-ghost", "purchase", 1)),
     ];
     const full = stamped(events(MAX_LOG_EVENTS));
     expect(fold(CHARTER, full)).toMatchObject({ ok: true, folded: { head: MAX_LOG_EVENTS } });
@@ -315,8 +317,8 @@ describe("10 hostile input fails closed: the bounds, N and N + 1, through the do
     }
 
     const almost = stamped(events(MAX_LOG_EVENTS - 1));
-    expect(append(CHARTER, almost, commitEv("last", "cfo", "G1", "purchase", 1)).ok).toBe(true);
-    expect(append(CHARTER, full, commitEv("one-too-many", "cfo", "G1", "purchase", 1))).toEqual({
+    expect(append(CHARTER, almost, commitEv("last", "cfo", "g-ghost", "purchase", 1)).ok).toBe(true);
+    expect(append(CHARTER, full, commitEv("one-too-many", "cfo", "g-ghost", "purchase", 1))).toEqual({
       ok: false,
       failure: { kind: "faulty-log", fault: { kind: "log-too-long", length: MAX_LOG_EVENTS + 1, max: MAX_LOG_EVENTS } },
     });

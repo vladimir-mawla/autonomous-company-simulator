@@ -38,25 +38,28 @@ function lapseLog(unrelated: number): CompanyLog {
   return stamped(events);
 }
 
+const AGED = lapseLog(UNRELATED);
+const FRESH = lapseLog(0);
+
 describe("07 grants never lapse", () => {
   it(`the hand-built log of ${UNRELATED} unrelated events folds: it is a real log, ${UNRELATED + 2} events, head ${UNRELATED + 2}`, () => {
-    const result = fold(CHARTER, lapseLog(UNRELATED));
+    const result = fold(CHARTER, AGED);
     expect(result.ok && result.folded.head).toBe(UNRELATED + 2);
   });
 
   it(`after ${UNRELATED} unrelated events G2 still warrants its whole limit in one commit; the verdict is the one it gave with none`, () => {
-    const fresh = askCommit(lapseLog(0), "whole", "ops", "G2", "purchase", 100_000);
-    const aged = askCommit(lapseLog(UNRELATED), "whole", "ops", "G2", "purchase", 100_000);
+    const fresh = askCommit(FRESH, "whole", "ops", "G2", "purchase", 100_000);
+    const aged = askCommit(AGED, "whole", "ops", "G2", "purchase", 100_000);
     expect(fresh.ok && fresh.verdict.kind).toBe("warranted");
     expect(aged).toEqual(fresh);
 
-    const recorded = append(CHARTER, lapseLog(UNRELATED), commitEv("whole", "ops", "G2", "purchase", 100_000));
+    const recorded = append(CHARTER, AGED, commitEv("whole", "ops", "G2", "purchase", 100_000));
     expect(recorded.ok && recorded.event.seq).toBe(UNRELATED + 3);
     expect(recorded.ok && recorded.verdict?.kind).toBe("warranted");
   });
 
   it(`after ${UNRELATED} unrelated events, one more than the limit is void: over-limit { requested 100 001, headroom 100 000 }: age moved the limit by nothing`, () => {
-    expect(askCommit(lapseLog(UNRELATED), "over", "ops", "G2", "purchase", 100_001)).toEqual({
+    expect(askCommit(AGED, "over", "ops", "G2", "purchase", 100_001)).toEqual({
       ok: true,
       verdict: { kind: "breached", breach: { kind: "over-limit", grantId: grantId("G2"), requested: 100_001, headroom: 100_000 } },
     });
@@ -81,7 +84,7 @@ describe("07 grants never lapse", () => {
   });
 
   it(`authority ends only on an explicit revoke: after ${UNRELATED} unrelated events cfo revokes G2 (seq ${UNRELATED + 3}), and the next commit is void: link-dead { G2, atSeq ${UNRELATED + 3} }`, () => {
-    const revoked = admit(lapseLog(UNRELATED), revokeEv("G2", "cfo"));
+    const revoked = admit(AGED, revokeEv("G2", "cfo"));
     expect(revoked.result.event.seq).toBe(UNRELATED + 3);
     expect(askCommit(revoked.log, "after", "ops", "G2", "purchase", 1)).toEqual({
       ok: true,
