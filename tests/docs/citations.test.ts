@@ -109,11 +109,12 @@ describe("this repository: README.md and docs/ARCHITECTURE.md cite files and tes
     expect(citationProblems(ARCHITECTURE, REPO, "docs/ARCHITECTURE.md")).toEqual([]);
   });
 
-  it("the scan really saw citations (an empty scan would pass the two tests above): both documents cite many files, and most of them with a title", () => {
-    for (const [name, text] of [["README.md", README], ["docs/ARCHITECTURE.md", ARCHITECTURE]] as const) {
+  it("the scan really saw citations (an empty scan would pass the two tests above): each document cites at least its floor of files, and of those with a title", () => {
+    // Floors, not counts: they are set below what each document has, so that deleting most of a document's citations fails and adding one does not.
+    for (const [name, text, all, titled] of [["README.md", README, 15, 12], ["docs/ARCHITECTURE.md", ARCHITECTURE, 40, 25]] as const) {
       const citations = findCitations(text);
-      expect(citations.length, name).toBeGreaterThanOrEqual(20);
-      expect(citations.filter((citation) => citation.title !== null).length, name).toBeGreaterThanOrEqual(15);
+      expect(citations.length, name).toBeGreaterThanOrEqual(all);
+      expect(citations.filter((citation) => citation.title !== null).length, name).toBeGreaterThanOrEqual(titled);
     }
   });
 
