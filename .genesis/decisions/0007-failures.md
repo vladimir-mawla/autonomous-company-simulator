@@ -79,7 +79,7 @@ In `tests/failures` the four tests that ask the engine about case 07's 4 000-eve
 
 The first measurement (three full-suite runs, then one under 20 `yes > /dev/null`, on the tree before the fix below) found one test over the 40% line: the `MAX_LOG_EVENTS` test of case 10 took 1 043 ms, 716 ms and 1 001 ms in the three runs and 4 220 ms (84% of 5 s) under load, because its
 log was 5 000 warranted commits and every warranted commit makes each replay cost more than the last. It now uses void commits (a fix of the work, not of a timeout); the test took 17 ms in a single run of `tests/failures` after the change, and it is not among the slowest of any of the runs below. The same measurement had case 07's
-authority-ends test at 1 582 ms (32%) under load, which is why that file builds its two logs once at the top. After the review of this PR it also carries the explicit timeout: each engine call replays the whole log it is given (plan D3), so the five tests cannot share one fold, and the timeout is the fix that does not change an assertion.
+authority-ends test at 1 582 ms (32%) under load, which is why that file builds its two logs once at the top. After the review of this PR it also carries the explicit timeout: each engine call replays the whole log it is given (plan D3), so the four tests that ask about the aged log cannot share one fold, and the timeout is the fix that does not change an assertion.
 
 Measured again on the tree of `8956d85`, `vitest run --reporter=json`, the whole suite (64 files, 1 657 tests), on a laptop whose one-minute load average from other jobs was between 11 and 34 across the runs (it was not idle). Slowest test of `tests/failures` in each run:
 
