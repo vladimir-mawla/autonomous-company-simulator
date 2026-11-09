@@ -2,15 +2,17 @@
 
 - **active_loop:** none recorded. M1 (contracts, `lib/contracts/**`), M2 (deploy skeleton,
   `app/api/health/**`), M3 (chain: intake and structure, `lib/chain/**`), M4 (allowance: conservation,
-  `lib/allowance/**`) and M5 (standing: the ledger fold, the verdict, the heir, `lib/standing/**`) are
-  `done`; M6 to M9 are `todo` in this revision. Each milestone is separate, with its own branch, its own PR,
+  `lib/allowance/**`), M5 (standing: the ledger fold, the verdict, the heir, `lib/standing/**`) and M6
+  (domain: Meridian Supply Co., `domains/company/**`) are `done`; M7 to M9 are `todo` in this revision. The
+  next milestone is M7, the failure suite. Each milestone is separate, with its own branch, its own PR,
   and its own independent (L4) verifier. `app/page.tsx` is still the genesis placeholder.
 
-- **last updated:** 2026-10-26 (UTC, as in every timestamp below), in the `chore(genesis): mark M5 done`
-  bookkeeping PR, after M5 passed independent L4 verification and merged (PR #10). The previous revision was
-  the `mark M4 done` PR's (#9), the one before it was the `mark M3 done` PR's (#7), the one before that was
-  the `mark M2 done` PR's (#5), the one before that was the `mark M1 done` PR's, and the one before that was
-  written immediately after genesis, before any milestone build had begun. Recorded honestly rather than
+- **last updated:** 2026-11-09 (UTC, as in every timestamp below), in the `chore(genesis): mark M6 done`
+  bookkeeping PR, after M6 passed independent L4 verification and merged (PR #12). The previous revision was
+  the `mark M5 done` PR's (#11), the one before it was the `mark M4 done` PR's (#9), the one before that was
+  the `mark M3 done` PR's (#7), the one before that was the `mark M2 done` PR's (#5), the one before that
+  was the `mark M1 done` PR's, and the one before that was written immediately after genesis, before any
+  milestone build had begun. Recorded honestly rather than
   implying progress that does not exist: a checkpoint that overstates status is worse than no checkpoint at
   all.
 
@@ -23,20 +25,21 @@
 | M3 chain: intake and structure | `done` | PR #6 → `aebd77e` (squash-merged); independent L4 APPROVE in round 2, after one fix round; see "What M3 adds" below |
 | M4 allowance: conservation | `done` | PR #8 → `d06b848` (squash-merged); independent L4 APPROVE in round 2, after one fix round; see "What M4 adds" below |
 | M5 standing: fold, verdict, heir | `done` | PR #10 → `d47dd5f` (squash-merged); independent L4 APPROVE in round 5, after four fix rounds; see "What M5 adds" below |
-| M6 domain (Meridian Supply Co.) | `todo` | designed only |
+| M6 domain (Meridian Supply Co.) | `done` | PR #12 → `fe66bf5` (squash-merged); one full independent L4 pass and one targeted close, each REQUEST CHANGES, then two fix rounds; the last was approved by the orchestrator's mechanical check on the verifier's statement, not by a third independent pass; see "What M6 adds" below |
 | M7 failure suite | `todo` | designed only |
 | M8 interactive demo | `todo` | designed only |
 | M9 deliverables | `todo` | designed only |
 
 `main` is the genesis base (the plan, tooling config, app shell, a CI workflow, the README and the
-`.genesis/` ritual) plus ten merged PRs: #1 (the `next` 16.4.3 security upgrade), #2 (M1:
+`.genesis/` ritual) plus twelve merged PRs: #1 (the `next` 16.4.3 security upgrade), #2 (M1:
 `lib/contracts/**` and its tests), #3 (`mark M1 done`, which edited only the two `.genesis/` files), #4
 (M2: `app/api/health/**` with its tests, ADR 0002 and the README's `Live:` line), #5 (`mark M2 done`, which
 edited only the same two `.genesis/` files), #6 (M3: `lib/chain/**` with its tests, and ADR 0003), #7
 (`mark M3 done`, again only those two files), #8 (M4: `lib/allowance/**` with its tests, and ADR 0004), #9
-(`mark M4 done`, again only those two files) and #10 (M5: `lib/standing/**` with its tests, and ADR 0005).
-There is no `domains/`, and `lib/` holds `lib/contracts`, `lib/chain`, `lib/allowance` and `lib/standing`
-only.
+(`mark M4 done`, again only those two files) #10 (M5: `lib/standing/**` with its tests, and ADR 0005), #11 (`mark M5 done`, again only those two
+files) and #12 (M6: `domains/company/**` with its tests, `scripts/demo-company.ts` and ADR 0006). `domains/`
+holds `domains/company` only, and `lib/` holds `lib/contracts`, `lib/chain`, `lib/allowance` and
+`lib/standing` only.
 
 ## `main` history was rewritten on 2026-10-24 (SHAs you may see on PR pages)
 
@@ -53,14 +56,14 @@ GitHub's PR pages still show the pre-rewrite merge SHAs. To match one against `g
 | #1 `next` 16.4.3 security upgrade | `fc17afd` | `ab14763` |
 | #2 M1 contracts | `6302394` | `fc7b4ac` |
 
-PR #3 to #10 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`, `aebd77e`, `318e4e1`,
-`d06b848`, `da4fb73` and `d47dd5f`; read with `gh pr view`), so no pair is needed for them.
+PR #3 to #12 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`, `aebd77e`, `318e4e1`,
+`d06b848`, `da4fb73`, `d47dd5f`, `cc19691` and `fe66bf5`; read with `gh pr view`), so no pair is needed for them.
 
 ## What the scaffold does and does not prove
 
 - **Proves:** a clean clone restores with `npm ci` (all 15 `@rolldown/binding-*` platform bindings are
   in the lockfile), `npm run typecheck` is clean, `npm test` runs the scaffold's one smoke test (M1
-  added 12 more test files, M2 added 2, M3 added 7, M4 added 4 and M5 added 15, below), and `npm run build`
+  added 12 more test files, M2 added 2, M3 added 7, M4 added 4, M5 added 15 and M6 added 12, below), and `npm run build`
   succeeds under webpack.
 - **The one smoke test** (`tests/smoke.test.ts`) pins that the `dev`/`build` scripts really pass
   `--webpack` and that `next.config.ts` really declares `experimental.extensionAlias` (it imports the
@@ -72,8 +75,8 @@ PR #3 to #10 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`
   `app/api/health/route.ts`; with the block in place it exited 0. The same removal on a warm `.next` cache
   built without error, so run that check with `.next` removed first.
 - **Does not prove anything about the engine.** The scaffold has none. The engine code that exists is M1's
-  contracts, the health route that self-checks them (M2), M3's `lib/chain`, M4's `lib/allowance` and M5's
-  `lib/standing`, each covered next. `domains/` does not exist.
+  contracts, the health route that self-checks them (M2), M3's `lib/chain`, M4's `lib/allowance`, M5's
+  `lib/standing` and M6's `domains/company` (with `scripts/demo-company.ts`), each covered next.
 
 ## What M1 adds, and what was run to check it
 
@@ -128,8 +131,8 @@ PR #3 to #10 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`
   that branch the only matches for `lib/chain` elsewhere were a comment in `app/api/health/route.ts` and
   string fixtures in `lib/contracts/__tests__/architecture.test.ts`, found by `grep`. Since M4,
   `lib/allowance/accounting.ts` imports `chainOf` and `firstDeadLink` from `lib/chain/index.js` and M4's
-  tests import it too, and since M5 four of the five source files of `lib/standing` do as well; on this
-  branch no file under `app/` does, found by `grep`, so no route or page runs it.
+  tests import it too, since M5 four of the five source files of `lib/standing` do as well, and since M6
+  `domains/company/view.ts` does; on this branch no file under `app/` does, found by `grep`, so no route or page runs it.
 - **Intake reads each field once.** `intake.ts` reads each property of untrusted input once, through one
   helper, and the rest of intake looks only at that read; a read that throws is a typed `hostile` result
   for an event (an invalid charter, for a charter), not an exception. `hostile-input.test.ts` counts reads
@@ -255,11 +258,12 @@ PR #3 to #10 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`
 - **What it is:** `lib/standing/**` (`verdict.ts`, `fold.ts`, `standing.ts`, `append.ts`, `index.ts`), fifteen test
   files under `lib/standing/__tests__/` (beside `fixtures.ts`, the shared generator and fixtures, which is not a
   test file) and ADR 0005. `git diff --stat d47dd5f^ d47dd5f` lists those 22 files and no others. Its source files
-  import `lib/contracts`, `lib/chain` and `lib/allowance` through their `index.ts` barrels only. Nothing outside
-  `lib/standing` imports it. On this branch `git grep lib/standing`, outside `lib/standing` and `.genesis/`, finds
-  the comment at `app/api/health/route.ts:38` (see the known gaps below) and otherwise only comments, layer
+  import `lib/contracts`, `lib/chain` and `lib/allowance` through their `index.ts` barrels only. Nothing outside `lib/standing` imported it when M5 was marked done: `git grep lib/standing` then found
+  the comment in `app/api/health/route.ts` (see the known gaps below) and otherwise only comments, layer
   tables and string fixtures in the architecture tests of `lib/contracts` and `lib/allowance`, and in the
-  layer-graph module `lib/contracts/__tests__/support/module-graph.ts`. So no route or page runs it.
+  layer-graph module `lib/contracts/__tests__/support/module-graph.ts`. Since M6, `domains/company/simulate.ts`
+  and `domains/company/view.ts` import it, and so does `scripts/demo-company.ts`. No file under `app/` does, so
+  no route or page runs it.
 - **The five public functions** (the barrel exports these five and eight types, `CommitRecord`, `Folded`,
   `FoldResult`, `AppendFailure`, `AppendResult`, `MayCommitResult`, `StandingOfResult` and `StandingsResult`):
   `fold`, `append`, `mayCommit`, `standings` and `standingOf`. What each does at its edges is ADR 0005,
@@ -302,27 +306,77 @@ PR #3 to #10 show the same merge SHAs as `main` (`2cca53b`, `167e4e7`, `9035b53`
   claim" has the full list. The ADR's falsifiability log (43 one-edit sabotages, each recorded there as failing,
   and one unedited control) is the builder's measurement and was not re-run for this PR. The independent L4
   APPROVE in round 5, and the four fix rounds before it, are as given to the author of this PR and not read
-  from the verifier's report. `domains/company` does not exist, so nothing here shows the Meridian Supply Co.
-  demo, the failure suite or the page.
+  from the verifier's report. `domains/company` did not exist then; what it adds is under "What M6 adds"
+  below, and nothing here shows the failure suite or the page.
+
+## What M6 adds, and what was run to check it
+
+- **What it is:** `domains/company/**` (`org.ts`, `view.ts`, `policies.ts`, `script.ts`, `simulate.ts`,
+  `index.ts`), twelve test files under `domains/company/__tests__/` (beside `support/casts.ts`,
+  `support/oracle.ts`, `support/source-scan.ts` and `proofs/capability.proofs.ts`, which are not test files),
+  `scripts/demo-company.ts` and ADR 0006. `git diff --stat fe66bf5^ fe66bf5` lists those 24 files and no
+  others. The domain proposes and never rules: the engine (`lib/standing`, through `append`, `fold` and
+  `mayCommit`) answers every proposal. What each part does at its edges is ADR 0006, which is the reference;
+  this file does not restate it. `npm run demo:company` runs `scripts/demo-company.ts`; before M6 that script
+  did not exist.
+- **The demo.** `npm run demo:company` exited 0 on the merge commit and printed `demo OK: every step got the
+  answer plan §7 gives it, every kind of Standing, Breach and Rejection was observed, and the oracle held.`
+  The oracle (`support/oracle.ts`) recomputes, from the raw log, what was bound
+  per root grant and checks it against the engine's `absorbedBy` at every prefix: 18 prefixes for the
+  canonical incident, and 118 for the seed-1 quarter that follows it. ADR 0006 and the PR record what the
+  sabotages of plan §6 M6 did to the demo's exit code.
+- **Tests:** `npm ci && npm test` printed `Test Files  53 passed (53)` and `Tests  1513 passed (1513)`: 12
+  files and 258 tests under `domains/company/__tests__/` on top of M5's 41 files and 1 255 tests. `npm test --
+  domains/company` printed `Test Files  12 passed (12)` and `Tests  258 passed (258)`. `npm run typecheck`
+  exited 0 and `npm run build` finished with `.next` removed first. These runs were on the mark-done branch's
+  base, `fe66bf5`, after `npm ci` left the lockfile unchanged (`git status` clean).
+- **How it was independently verified, and in how many rounds.** Round 1 was a full L4 pass at `c7c5133`:
+  REQUEST CHANGES, for a surviving mutant (F1: dropping the `view.tick !== tick` check in `runQuarter`'s view
+  reuse survived all 256 domain tests), a test hole (F3: the oracle-independence test missed a local helper
+  that calls the engine), three documentation items and one robustness item (F5: `makeOrgView`
+  re-read the raw log after `fold`). Fix round 1 answered it, and a follow-up scoped two comments. Round 2 was
+  a targeted close at `a433c70`: REQUEST CHANGES, docs only, three items (the ADR header's diff claim, a wrong
+  path in a `policies.ts` comment, and an overstated oracle-independence claim, now disclosed with five forms
+  the check misses: a destructured top-level binding, a class, an `import x = ns.y` alias, `globalThis` and a
+  dynamic `import()`). Fix round 2 was `5c3cef2` plus `5a6dbe3`; it was approved by the orchestrator's
+  mechanical check of the verifier's statement, not by a third independent pass: `git diff a433c70..5a6dbe3`
+  touches only the ADR and comment lines in `policies.ts`, `demo.test.ts` and `scripts/demo-company.ts`, and
+  the comment-stripped emit of every source file edited after `bbd8385` is byte-identical at `bbd8385` and
+  `5c3cef2`. The verifier's claim is that M6 is clear of the defects found in two independent reviews, not
+  that it is free of defects generally. Both reports are PR #12's comments; this file does not restate them.
+  Re-run by the verifier at the close: F5's old-versus-new differential on 58 436 views with 0 differences, and
+  ledger rows O1, O3, V1, V8, S7, S16, P14, P20, Z2, Z3, L2, L4, Y3, Y4 and Y5, all matching ADR 0006.
+- **Observed 2026-11-09 after the merge:** `/api/health` reported `commit` `fe66bf570bc86c996fc84334d4ed52616a28e61e`,
+  M6's own merge commit (`gh pr view 12` gives `mergedAt` 2026-11-09T16:20:24Z), with `status` `ok` and all
+  three `checks.contracts` assertions at `"pass":true`. The route checks `lib/contracts` only.
+- **What this does not show.** The route imports nothing from M6, `npm run build` does not run it, and no
+  file under `app/` imports `domains/company`, so the live site shows nothing of the company; the page is
+  still the genesis placeholder and the demo is a command, not a page (M8). The ADR's falsifiability log (82
+  one-edit sabotages, each recorded there as going red, and one unedited control) is the builder's
+  measurement and was not re-run for this PR. The limits of the source scan that ADR 0006 discloses stand, including the five forms above; the failure suite is M7's.
 
 ## Known gaps in this repository's own record, stated up front rather than discovered later
 
-- `.genesis/decisions/` holds five decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2),
-  `0003-chain.md` (M3), `0004-allowance.md` (M4) and `0005-standing.md` (M5), each written by the milestone
-  that made the decisions it records. M6 to M9 have none yet. All five records' Status line still says
-  `proposed`: ADRs 0001 to 0004 read `proposed — written by the builder, not yet verified by an independent
-  L4 pass` and ADR 0005 reads `proposed — written by the builder; not yet approved by an independent L4
-  pass`. M1 to M5 have each since passed L4 (table above), so those lines are out of date. ADR 0003 also says
+- `.genesis/decisions/` holds six decision records, `0001-contracts.md` (M1), `0002-deploy.md` (M2),
+  `0003-chain.md` (M3), `0004-allowance.md` (M4), `0005-standing.md` (M5) and `0006-company.md` (M6), each
+  written by the milestone that made the decisions it records. M7 to M9 have none yet. All six records'
+  Status line still says `proposed`: ADRs 0001 to 0004 read `proposed — written by the builder, not yet
+  verified by an independent L4 pass` and ADRs 0005 and 0006 read `proposed — written by the builder; not yet
+  approved by an independent L4 pass`. M1 to M6 have each since passed L4 (table above), so those lines are
+  out of date. The `mark M5 done` PR (#11) did not edit ADR 0005's Status, so this PR does not edit ADR
+  0006's either. ADR 0003 also says
   its falsifiability log was measured on `1d7ae12` and `60fb7e3`, which are on PR #6's head ref
   (`refs/pull/6/head`) and not on `main`, because the PR was squash-merged. ADR 0004 likewise names
   `842f0b0`, `03c85a4`, `acbd7e9`, `1302a66` and `e5447fe`: checked with `git merge-base --is-ancestor`, all
   five are on PR #8's head ref (`refs/pull/8/head`) and none is an ancestor of `main`. ADR 0005 names
   `39624cd` (the tree its timings were measured on) and `43c52f4` (the tree of its falsifiability log): checked
   the same way, both are on PR #10's head ref (`refs/pull/10/head`) and neither is an ancestor of `main`.
+  ADR 0006 names `bbd8385`, `5c3cef2` and `7c4323c`: checked the same way against `refs/pull/12/head`, all
+  three are on PR #12's head ref and none is an ancestor of `main`.
   ADR 0002's Decision 7 still says production serves a branch head deployed by the CLI and that the
   post-merge redeploy "has not happened yet". Each was true when written; no record was edited here (this PR
-  touches only `DONE.html` and this file). "What M2 adds", "What M3 adds", "What M4 adds" and "What M5 adds"
-  have the state after each merge.
+  touches only `DONE.html` and this file). "What M2 adds", "What M3 adds", "What M4 adds", "What M5 adds"
+  and "What M6 adds" have the state after each merge.
 - **A comment in `app/api/health/route.ts` is out of date and is not edited here.** Lines 37 and 38 say
   `lib/chain`, `lib/allowance` and `lib/standing` "are not built". All three are on `main` (M3, M4 and M5), and
   the comment has been out of date for `lib/chain` since M3 and for `lib/allowance` since M4. The claim the
