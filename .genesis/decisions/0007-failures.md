@@ -52,7 +52,7 @@ Tests are cited by file and title. The control is the edit named in the ledger, 
 
 The plan says its own sketch will be partly wrong and names cases 02 and 09 as the two most exposed (§6 M7, §8 D). No case was replaced. What was found:
 
-- **02.** §11 says "`c4` at seq 10 is `inherited`, `c5` at seq 12 is `void`". On the §7 log `c4` is `binding` at seq 10 (the prefix of ten events) and `inherited` only once the revoke at seq 11 has arrived. The case pins that, with the warrant unchanged between the two, because the plan's sentence taken literally is false.
+- **02.** §11 says "`c4` at seq 10 is `inherited`". In the full §7 log that is true (`c4`, `committedAt` 10, is `inherited` once the revoke at seq 11 is in the log). What is ambiguous is the "N/N+1" pin: the case pins it as prefix length, `binding` on the 10-event prefix and `inherited` on the 11-event prefix, with the warrant unchanged. The engine and the plan's rules agree.
   It is a partial pin, as the plan says: the engine never sees two things at once, so the case fixes the order and does not show that concurrent submissions would be ordered correctly. "Tests only that the caller behaves" was avoided by asserting outcomes on both sides of the boundary (the same commit asked at seq 11 and at seq 12, and `[commit, revoke]` against `[revoke, commit]`) and by showing that a field the engine does not know (`initiatedAt`, and a `seq` of 3) changes nothing.
 - **09.** Kept as the plan words it: the engine's admission behaviour is what is asserted (`append` `ok: true` and one event longer, `mayCommit` the same verdict and writes nothing). No assertion says that any caller consults the pre-check. The consequence side the plan calls "tested elsewhere" is pinned here too (a void commit charges nothing, a warranted one does), because without it a recorded void act could be a log entry that does nothing.
 - **06.** §11 suggests `limit: 0` fixtures to expose a masked `Rejection`. A repair ladder does it for every rung without needing one: each rung's event is repaired by one field, and the next rung's reason appears. M5's `admission-order.test.ts` already shows each rule hiding `over-allocation`; the ladder differs in that it shows each masked reason is really there (repairing only the named one admits nothing yet) and that the last rung is then admitted. Its fixtures keep `depth` at 7 or below because `MAX_ROOT_DEPTH` is 7 and a larger depth is `invalid-event-shape`, not the rejection the rung is about.
@@ -61,7 +61,7 @@ The plan says its own sketch will be partly wrong and names cases 02 and 09 as t
 
 ## Decision 4 — case 10 restates guarantees M3 and M5 own, and says what it adds
 
-§11 lists for case 10 throwing getters, a Proxy log, a mutating accessor read once, `seq` gaps, `MAX_LOG_EVENTS` at N and N+1, `MAX_ID_LENGTH` and `MAX_AMOUNT`. M3 and M5 already test each of these
+§11 lists for case 10 throwing getters, a Proxy log/charter, a mutating accessor read once, `seq` gaps, `MAX_LOG_EVENTS` at N and N+1, `MAX_ID_LENGTH` and `MAX_AMOUNT`. M3 and M5 already test each of these
 (`lib/chain/__tests__/hostile-input.test.ts`, `lib/chain/__tests__/boundaries.test.ts`, `lib/standing/__tests__/hostile-input.test.ts`, `lib/standing/__tests__/fold-faults.test.ts`), and the plan also says an M7 case must not restate an M3 to M5 test without new scale or a new layer.
 The file therefore says in its header what is new, and the new parts are what it spends its tests on:
 
@@ -137,7 +137,7 @@ M01c is the control for the first test of case 01 (the "same rulings" assertion)
 
 ## Plan observations (found by building; the plan is not edited)
 
-- §11 case 02 says "`c4` at seq 10 is `inherited`". It is `binding` at seq 10 and `inherited` from seq 11 (Decision 3).
+- §11 case 02 reads "`c4` at seq 10 is `inherited`" about the full log; the case pins the boundary by prefix length (10 binding, 11 inherited).
 - §11 case 06 suggests `limit: 0` fixtures for the masked rejection; a repair ladder is used instead (Decision 3).
 - §6 M7 says "at least five are sabotaged for real"; the ledger has 22 edits, each against the shipped source.
 - `.genesis/checkpoints/CURRENT.md` and `.genesis/DONE.html` are not edited here, as in M1 to M6: the bookkeeping PR that marks the milestone done edits them, after an independent L4 verifier approves.

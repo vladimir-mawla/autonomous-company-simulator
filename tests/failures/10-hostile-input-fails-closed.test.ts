@@ -216,6 +216,33 @@ describe("10 hostile input fails closed: a fault is the whole answer, and leaves
   });
 });
 
+describe("10 hostile input fails closed: a hostile charter is an invalid-charter fault at every entry point", () => {
+  const log = runQuarter(3, TICKS).log;
+  const valid = { roots: [...CHARTER.roots], capabilities: [...CHARTER.capabilities] };
+  const revoked = (): unknown => {
+    const revocable = Proxy.revocable({ ...valid }, {});
+    revocable.revoke();
+    return revocable.proxy;
+  };
+  const rows: readonly (readonly [string, () => unknown, readonly string[]])[] = [
+    ["a roots getter that throws", () => ({ ...valid, get roots(): never { return boom(); } }), ["roots"]],
+    ["a capabilities getter that throws", () => ({ ...valid, get capabilities(): never { return boom(); } }), ["capabilities"]],
+    ["a revoked Proxy as the charter", revoked, ["capabilities", "roots"]],
+  ];
+
+  it.each(rows)("%s: every entry point answers invalid-charter with the named fields, and none throws", (_name, make, fields) => {
+    for (const [entry, run] of ENTRY_POINTS) {
+      let fault: FoldFault | null = null;
+      try {
+        fault = run(make(), log);
+      } catch (error) {
+        throw new Error(`${entry} threw: ${String(error)}`);
+      }
+      expect(fault, entry).toEqual({ kind: "invalid-charter", fields });
+    }
+  });
+});
+
 describe("10 hostile input fails closed: an amount read once, inside a real log element, from nine first-answer classes", () => {
   const log = runQuarter(5, TICKS).log;
   const at = log.findIndex((event) => event.kind === "commit");

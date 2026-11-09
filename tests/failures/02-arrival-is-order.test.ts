@@ -39,6 +39,7 @@ describe("02 arrival is order: the canonical incident (plan section 7), both sid
     const before = standingFor(upTo(10), "c4");
     const after = standingFor(upTo(11), "c4");
     expect(before.kind).toBe("binding");
+    expect(standingFor(full, "c4").kind).toBe("inherited"); // the full log, as the plan reads it
     expect(after).toMatchObject({
       kind: "inherited",
       committedAt: 10,

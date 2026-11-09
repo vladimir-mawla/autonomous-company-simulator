@@ -38,6 +38,9 @@ function lapseLog(unrelated: number): CompanyLog {
   return stamped(events);
 }
 
+// Each engine call replays the whole log it is given (plan D3: the log is the only state), so no test can share a fold with
+// another; the tests that ask the engine about AGED carry an explicit timeout instead.
+const AGED_TIMEOUT_MS = 15_000;
 const AGED = lapseLog(UNRELATED);
 const FRESH = lapseLog(0);
 
@@ -45,7 +48,7 @@ describe("07 grants never lapse", () => {
   it(`the hand-built log of ${UNRELATED} unrelated events folds: it is a real log, ${UNRELATED + 2} events, head ${UNRELATED + 2}`, () => {
     const result = fold(CHARTER, AGED);
     expect(result.ok && result.folded.head).toBe(UNRELATED + 2);
-  });
+  }, AGED_TIMEOUT_MS);
 
   it(`after ${UNRELATED} unrelated events G2 still warrants its whole limit in one commit; the verdict is the one it gave with none`, () => {
     const fresh = askCommit(FRESH, "whole", "ops", "G2", "purchase", 100_000);
@@ -56,14 +59,14 @@ describe("07 grants never lapse", () => {
     const recorded = append(CHARTER, AGED, commitEv("whole", "ops", "G2", "purchase", 100_000));
     expect(recorded.ok && recorded.event.seq).toBe(UNRELATED + 3);
     expect(recorded.ok && recorded.verdict?.kind).toBe("warranted");
-  });
+  }, AGED_TIMEOUT_MS);
 
   it(`after ${UNRELATED} unrelated events, one more than the limit is void: over-limit { requested 100 001, headroom 100 000 }: age moved the limit by nothing`, () => {
     expect(askCommit(AGED, "over", "ops", "G2", "purchase", 100_001)).toEqual({
       ok: true,
       verdict: { kind: "breached", breach: { kind: "over-limit", grantId: grantId("G2"), requested: 100_001, headroom: 100_000 } },
     });
-  });
+  }, AGED_TIMEOUT_MS);
 
   it("there is no rate limit: the whole limit goes in consecutive seqs (ten commits of 10 000 at seq 3 to 12), and the eleventh, of 1, is over-limit with headroom 0", () => {
     let log = build([
@@ -90,5 +93,5 @@ describe("07 grants never lapse", () => {
       ok: true,
       verdict: { kind: "breached", breach: { kind: "link-dead", grantId: grantId("G2"), atSeq: UNRELATED + 3 } },
     });
-  });
+  }, AGED_TIMEOUT_MS);
 });
