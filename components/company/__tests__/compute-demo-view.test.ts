@@ -102,7 +102,8 @@ describe("Revoke Ops-Lead on that log (plan §7, seq 11)", () => {
   });
 
   it("absorbs 220 000 under G2 and takes G1's headroom from 500 000 to 680 000", () => {
-    expect(node(revoked, "G2")).toMatchObject({ live: false, revokedAt: 11, absorbed: 220_000 });
+    expect(node(revoked, "G2")).toMatchObject({ live: false, revokedAt: 11, absorbed: 220_000, returned: 180_000 });
+    expect(node(revoked, "G4")).toMatchObject({ absorbed: null, returned: null });
     expect(node(after(), "G1").headroom).toBe(500_000);
     expect(node(revoked, "G1").headroom).toBe(680_000);
   });

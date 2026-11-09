@@ -69,6 +69,12 @@ function GrantItem({ node }: { readonly node: GrantNode }) {
               <dd>{formatAmount(node.absorbed)}</dd>
             </div>
           ) : null}
+          {node.returned !== null ? (
+            <div>
+              <dt>returned to the parent</dt>
+              <dd>{formatAmount(node.returned)}</dd>
+            </div>
+          ) : null}
         </dl>
       </div>
       {node.children.length > 0 ? (

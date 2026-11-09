@@ -22,8 +22,8 @@ export type { Attempt, AttemptOutcome, CompanyCapability } from "../../domains/c
  * log on screen again, from nothing, on every call, and returns what `lib/standing`, `lib/allowance` and `domains/company` say about it.
  *
  * WHAT IT DOES NOT DO. It decides no standing, no heir, no rejection and no headroom; each of those is read off a value the engine returned.
- * The one arithmetic in this file is `meterOf`, the conservation meter the plan asks for (the sum of the amounts ruled binding or inherited
- * against the sum of the root grants' limits). It is an OBSERVER, as `scripts/demo-company.ts`'s oracle is: nothing reads it to admit or refuse
+ * The arithmetic in this file is two things the plan names: `returned` (one subtraction, see `GrantNode`) and `meterOf`, the conservation meter (the sum of the
+ * amounts ruled binding or inherited against the sum of the root grants' limits). It is an OBSERVER, as `scripts/demo-company.ts`'s oracle is: nothing reads it to admit or refuse
  * anything, and `__tests__/compute-demo-view.test.ts` compares it with the sum of the engine's own `charges` (one per warranted commit).
  *
  * NEVER THROWS. Each check that can fail returns `{ ok: false, error }`; the `try/catch` in `computeDemoView` is the second layer, for what the first
@@ -165,6 +165,8 @@ export interface GrantNode {
   readonly headroom: number;
   /** `lib/allowance`'s `absorbedBy`, for a grant that was revoked itself; `null` for any other. */
   readonly absorbed: number | null;
+  /** What a revoke gave back to the parent: this grant's limit less `absorbed`, the subtraction `scripts/demo-company.ts` prints as `returned` (plan §8 A: "`absorbedBy` + `grant.limit`"). `null` for a grant that was not revoked itself. */
+  readonly returned: number | null;
   readonly children: readonly GrantNode[];
 }
 
@@ -288,8 +290,9 @@ function build(state: DemoState): DemoResult {
     const headroom = headroomOf(tree, charges, id);
     if (used === undefined || headroom === undefined) return fail(`the engine does not know the grant ${id} that its own log admitted`);
     const revokedAt = tree.revokedAt.get(id) ?? null;
+    const absorbed = revokedAt === null ? null : (absorbedBy(tree, charges, id) ?? null);
     nodes.set(id, {
-      node: { grant: entry.grant, live: entry.live, revokedAt, used, headroom, absorbed: revokedAt === null ? null : (absorbedBy(tree, charges, id) ?? null) },
+      node: { grant: entry.grant, live: entry.live, revokedAt, used, headroom, absorbed, returned: absorbed === null ? null : entry.grant.limit - absorbed },
       children: [],
     });
     if (entry.grant.parent === null) rootIds.push(id);

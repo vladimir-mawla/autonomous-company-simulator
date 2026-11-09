@@ -87,10 +87,12 @@ describe("the standings blocks of the script are the rows of the page's table", 
 describe("the revoke's numbers", () => {
   it("absorbed 220000 and G1's headroom 500000 -> 680000 are what the page shows", () => {
     expect(run.stdout).toContain("absorbed (engine: lib/allowance absorbedBy G2) = 220000");
+    expect(run.stdout).toContain("returned = limit(G2) 400000 - absorbed = 180000");
     expect(run.stdout).toContain("G1 headroom: 500000 -> 680000");
     const flat = (nodes: ReturnType<typeof viewOf>["grants"]): ReturnType<typeof viewOf>["grants"][number][] => nodes.flatMap((n) => [n, ...flat(n.children)]);
     const g = (state: DemoState, id: string) => flat(viewOf(state).grants).find((n) => n.grant.id === id);
     expect(g(after(REVOKE), "G2")?.absorbed).toBe(220000);
+    expect(g(after(REVOKE), "G2")?.returned).toBe(180000);
     expect([g(after(), "G1")?.headroom, g(after(REVOKE), "G1")?.headroom]).toEqual([500000, 680000]);
   });
 });

@@ -80,7 +80,7 @@ describe("after Revoke Ops-Lead", () => {
 
   it("shows G2 revoked at seq 11 with 220,000 absorbed, and G1's headroom at 680,000", () => {
     expect(markup).toContain('aria-label="G2: limit 400,000, used 350,000, headroom 0, revoked at seq 11"');
-    expect(words).toContain("absorbed by the revoke 220,000");
+    expect(words).toContain("absorbed by the revoke 220,000 returned to the parent 180,000");
     expect(markup).toContain('aria-label="G1: limit 1,000,000, used 320,000, headroom 680,000, live"');
     expect(markup).toContain('aria-label="G4: limit 120,000, used 50,000, headroom 0, cut off (a grant above it was revoked)"');
   });
