@@ -181,6 +181,14 @@ describe("runQuarter: what it accepts", () => {
   });
 });
 
+describe("runQuarter: the view it hands the policies", () => {
+  it("runQuarter's view carries the current tick: seed 26 at 60 ticks (a view reused across a tick with no admitted event would shift CompromisedPolicy's draws)", () => {
+    const q = runQuarter(26, 60);
+    expect(q.attempts.length).toBe(125);
+    expect(q.attempts.filter((a) => a.source === "CompromisedPolicy").slice(0, 2).map((a) => a.tick)).toEqual([6, 10]);
+  });
+});
+
 describe("runQuarter: the incident at its scripted tick", () => {
   it("INCIDENT_TICK is 0: so plan §7's absolute numbers (the revoke at seq 11, link-dead at seq 11) hold in every quarter", () => {
     expect(INCIDENT_TICK).toBe(0);
