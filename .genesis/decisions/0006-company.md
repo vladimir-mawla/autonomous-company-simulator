@@ -5,7 +5,7 @@
 - **Phase / milestone:** M6 (BUILD) — `domains/company/**` (`org.ts view.ts policies.ts script.ts simulate.ts index.ts`, `__tests__/`) and `scripts/demo-company.ts`
 
 The falsifiability log and the timings below were measured on the tree of commit `bbd8385`, the last commit of `domains/company` before this ADR
-was last edited (`git diff bbd8385..HEAD --stat` lists this file and nothing under `domains/`, `scripts/` or `lib/`). The rows of the log quote "N failed" and no count of
+was last edited (`git diff bbd8385..a433c70 --stat` lists this file and the comment-only edits of commit `a433c70` in `domains/company/policies.ts` and `domains/company/view.ts`, and nothing under `scripts/` or `lib/`). The rows of the log quote "N failed" and no count of
 passing tests, which goes stale whenever a test is added. The counts under "Coverage" are counts of what a trace did.
 
 ## Context
@@ -91,8 +91,8 @@ split, so a table in which every first answer went the same way would fail.
 differs throws and the exit code is 1. At the revoke it prints the standings before and after with `absorbed` and `returned`. It then prints the final
 standings, the scrub back to seq 10, the kinds observed (Standing 3/3, Breach 5/5, Rejection 15/15, and it exits 1 otherwise), and an oracle: per root grant,
 the sum of the amounts ruled `binding` or `inherited`, computed from the raw log and the standings and importing nothing from `lib/allowance`, against
-the root's limit, at every prefix. `demo.test.ts` checks that the oracle's functions mention nothing the script imports as a value (a copy of the script
-whose oracle calls `headroomOf` is caught). It then runs an autonomous quarter (seed 1, 60 ticks), checks the engine's answers to the script's 33 attempts again, and the
+the root's limit, at every prefix. `demo.test.ts` checks that the oracle's functions mention nothing the script imports as a value and no function or const, let or var that the script declares at its top level (a copy of the script
+whose oracle calls `headroomOf`, or a local helper that calls `fold`, is caught; the forms the check does not see are listed under "What M6 does not claim"). It then runs an autonomous quarter (seed 1, 60 ticks), checks the engine's answers to the script's 33 attempts again, and the
 oracle at every prefix of the quarter's log.
 
 `demo.test.ts` runs the real demo on the real tree for the output checks and, for the exit-code checks, on a copy of the tree with one change at a time (the
@@ -241,6 +241,7 @@ has `over-limit` where plan §7 has `link-dead`).
 - That `unknown-capability` is reached by a policy: it is reached by the script only.
 - That the demo's oracle is independent of everything: it imports nothing from `lib/allowance`, but it reads the standings the engine produced (it checks
   that the engine's standings respect the limits, from the raw log), so a wrong standing can be caught only if it breaks a limit or a plan §7 answer.
+- That the oracle cannot reach the engine at all: `demo.test.ts` refuses a value import or a top-level plain function or const, let or var helper used by the oracle, and does not see a destructured top-level binding, a class, an `import x = ns.y` alias, `globalThis`, or a dynamic `import()`.
 - That `domains/company` holds no authority rule: the scan refuses the forms named in Decision 1 as syntax, file by file; `policies.ts` itself proposes with depth, capability and trail tests (`canDelegate`, `lacking`, `trail.includes`), which no scan refuses and which the engine rules on afterwards.
 
 ## Plan observations (found by building; the plan is not edited)

@@ -16,7 +16,7 @@ import type { GrantView, OrgView } from "./view.js";
  * So the amounts below are fixed price lists a policy draws from, never a share of a limit or a headroom: a policy that
  * computed with those would be a second copy of the engine's accounting. `__tests__/source-scan.test.ts` refuses
  * arithmetic or an ordering comparison on an identifier or string-keyed property containing `limit`, `amount` or `headroom` (syntactic and file-local; see
- * `support/source-scan.ts`) in this directory, and a string equal to any kind of ruling.
+ * `__tests__/support/source-scan.ts`) in this directory, and a string equal to any kind of ruling.
  *
  * WHAT EACH POLICY MODELS (the name of each is the plan's):
  *  - `DelegatorPolicy`: the managers. They hand a part of what they hold to someone below them, and from time to time

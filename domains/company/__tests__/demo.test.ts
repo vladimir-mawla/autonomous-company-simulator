@@ -239,7 +239,8 @@ describe("the oracle in the demo reads the raw log and the standings and calls n
   /**
    * The identifiers inside the named functions of `file` that are also a local name some value import of `file` introduced, or the name of any other
    * function or variable declared at the top level of `file` (a helper declared there can call the engine for the oracle, so the oracle may not call one).
-   * Types are not collected: an interface or a type alias cannot call anything.
+   * Types are not collected: an interface or a type alias cannot call anything. A variable is collected when it is a const, let or var bound to a plain identifier.
+   * It does not see a destructured top-level binding, a class, an `import x = ns.y` alias, `globalThis`, or a dynamic `import()`.
    */
   function importedNamesUsedIn(root: string, tsconfig: string, file: string, functions: readonly string[]): { used: string[]; found: string[] } {
     const api = new API();
