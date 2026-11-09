@@ -134,7 +134,7 @@ M01c is the control for the first test of case 01 (the "same rulings" assertion)
 - That the controls in the ledger are the only edits that would turn a case red, or that every test of every case has its own edit. A test that no row of the ledger makes fail is not shown to be able to fail by this ledger.
 - That case 02 shows ordering under concurrency. The engine is a function of a log; the case fixes the order of a log and is called a partial pin for that reason.
 - That case 10 is new coverage of a guarantee M3 or M5 left open. Decision 4 says what is new.
-- That the failure suite shows M1 to M6 correct. No case found a defect in them (every case passed on `main` as it was, `git diff origin/main..HEAD -- lib domains app` is empty); the plan's own sentences that the cases corrected are in Decision 3.
+- That the failure suite shows M1 to M6 correct. No case found a defect in them (every case passed on `main` as it was, `git diff origin/main..HEAD -- lib domains app` is empty); Decision 3 records where cases 06 and 07 use a different fixture from the plan's sketch, and for case 02 a reading of the plan, not a correction.
 
 ## Plan observations (found by building; the plan is not edited)
 
