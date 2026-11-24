@@ -10,7 +10,7 @@ The plan, `.genesis/PLAN.md`, divides the work into nine milestones, each one pu
 
 | | What | PR | Review, per `CURRENT.md` |
 |---|---|---|---|
-| M1 | contracts (`lib/contracts`) | #2 | APPROVE in round 3, after three fix rounds |
+| M1 | contracts (`lib/contracts`) | #2 | APPROVE in round 3 (CURRENT.md says "after three fix rounds"; its M2 row, also round 3, says two) |
 | M2 | deploy skeleton, `/api/health` | #4 | APPROVE in round 3, after two fix rounds |
 | M3 | chain: intake and structure | #6 | APPROVE in round 2, after one fix round |
 | M4 | allowance: conservation | #8 | APPROVE in round 2, after one fix round |
@@ -24,7 +24,7 @@ The plan, `.genesis/PLAN.md`, divides the work into nine milestones, each one pu
 
 ## What the review history shows, and does not
 
-The rounds were not spread evenly: M5 took five and M1 three, while M3 and M4 took two each. By the records, the documents and comments that make a claim about the code were a recurring place for defects. That is an observation about one project's records, not a rate. It is the reason M9's checks are mechanical where they can be: `tests/docs/citations.test.ts` fails when a cited file is missing or a cited test title is not in its file, and bounds the thesis and the Loom narration by word count.
+M5 took five rounds, M1 and M2 three each, M3 and M4 two each. By the records, the documents and comments that make a claim about the code were a recurring place for defects. That is an observation about one project's records, not a rate. It is the reason M9's checks are mechanical where they can be: `tests/docs/citations.test.ts` fails when a cited file is missing or a cited test title is not in its file, and bounds the thesis and the Loom narration by word count.
 
 ## What M9 did
 
