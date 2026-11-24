@@ -1,6 +1,6 @@
 # Thesis: in two years the dispute is retroactivity
 
-As I read it, delegation tokens and revocation lists are converging on attenuation and expiry. Today "revoked" describes a credential; I bet it will describe an act.
+As I read it, delegation tokens and revocation lists are converging on attenuation and expiry, and "revoked" today describes a credential; I bet it will describe an act.
 
 **The claim, stated so it can be wrong.** Within two years, the first widely discussed multi-agent incident will hinge on one question: did revoking an agent's delegation void what it had already done? The workable answer will be prospective revocation. What the agent did while authorised stands, and someone named and still authorised answers. This repository calls that standing `inherited`; its heir is the grantor of the first revoked link. The rejected alternative, voiding everything a revoked agent did, gives every counterparty a reason to doubt any deal with an agent that might later be cut.
 

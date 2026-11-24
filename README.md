@@ -39,7 +39,7 @@ CI is `.github/workflows/ci.yml`: a fresh checkout, `npm ci`, a check that the b
 | Two-year thesis, at most 300 words | [`docs/THESIS.md`](docs/THESIS.md) |
 | Process record | [`docs/NOTES.md`](docs/NOTES.md); the decisions are `.genesis/decisions/0001` to `0009` |
 
-What keeps the documents honest: `tests/docs/citations.test.ts` fails when a backticked source or test path in `README.md` or `docs/ARCHITECTURE.md` does not exist, when a quoted test title is not in the file it is cited against, when a failure case is missing from this README, when the thesis exceeds 300 words, or when the Loom narration exceeds 230 words. It does not check that a cited test asserts what the sentence next to it says, and a sentence with no citation is not covered by it.
+What keeps the documents honest: `tests/docs/citations.test.ts` fails when a backticked source or test path in `README.md` or `docs/ARCHITECTURE.md` does not exist, when the quoted test title that directly follows a cited path is not in that file (a second title joined to the same path by "and" or a comma is not checked), when a failure case is missing from this README, when the thesis exceeds 300 words, or when the Loom narration exceeds 230 words. It does not check that a cited test asserts what the sentence next to it says, and a sentence with no citation is not covered by it.
 
 ## Honest limits
 

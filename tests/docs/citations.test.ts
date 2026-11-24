@@ -22,7 +22,7 @@ import { describe, expect, it } from "vitest";
  *
  * WHAT THIS DOES NOT CHECK. That a cited test asserts what the sentence next to it says: only a person reading both can do that, and the L4 verifier did.
  * That a sentence without a citation is true. That a number in prose matches the code. A title that appears in a test file is not shown to be a test that
- * can fail. The scan reads Markdown by pattern; a citation written in another form (for example a path in a link, not in backticks) is not seen.
+ * can fail. Only the title that directly follows a path is checked: a second title joined to the same path by "and" or a comma is not. The scan reads Markdown by pattern; a citation written in another form (for example a path in a link, not in backticks) is not seen.
  */
 
 const REPO = join(import.meta.dirname, "..", "..");
