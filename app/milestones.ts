@@ -29,7 +29,7 @@ export const MILESTONES: readonly Milestone[] = [
   { id: 6, title: "Domain: Meridian Supply Co.", status: "done" },
   { id: 7, title: "The failure suite: eleven cases", status: "done" },
   { id: 8, title: "Interactive demo", status: "done" },
-  { id: 9, title: "Deliverables", status: "planned" },
+  { id: 9, title: "Deliverables", status: "done" },
 ];
 
 /** The milestone the page calls current: the first in progress, else the first planned, else none (every milestone done). */
